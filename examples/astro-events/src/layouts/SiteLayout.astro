@@ -1,0 +1,28 @@
+---
+import "../styles/global.css";
+import { messagesForLocale } from "../lib/messages";
+
+interface Props {
+	title: string;
+	locale: string;
+}
+
+const { title, locale } = Astro.props;
+const labels = messagesForLocale(locale);
+---
+
+<!doctype html>
+<html lang={locale}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="light" />
+		<meta name="description" content="Browse upcoming events." />
+		<title>{title}</title>
+	</head>
+	<body>
+		<a class="skip-link" href="#main-content">{labels.skipToContent}</a>
+		<slot />
+		<footer class="site-footer">Event listings provided by Eventual</footer>
+	</body>
+</html>

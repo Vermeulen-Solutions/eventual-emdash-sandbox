@@ -1,0 +1,70 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { displayDate, eventDetailsUrl, eventEndDate, eventStartDate, eventTimeRange, normalizeLocale, safeHttpUrl, safeImageUrl } from "../../lib/calendar";
+import { fetchPublicFeed, type PublicEvent } from "../../lib/feed";
+import { eventRange } from "../../lib/event-range";
+import { messagesForLocale } from "../../lib/messages";
+
+export const prerender = false;
+
+const locale = normalizeLocale(process.env.EVENTUAL_LOCALE || "en-GB");
+const labels = messagesForLocale(locale);
+const eventId = Astro.params.id ?? "";
+const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
+const range = eventRange(Astro.url.searchParams);
+let event: PublicEvent | undefined;
+let feedError = false;
+
+if (range) {
+	try {
+		event = (await fetchPublicFeed(apiOrigin, range.from, range.through)).events.find((item) => item.id === eventId);
+	} catch {
+		feedError = true;
+	}
+}
+Astro.response.status = feedError ? 502 : event ? 200 : 404;
+
+const title = event?.title ?? labels.eventDetails;
+const calendarUrl = event ? eventDetailsUrl(event, "/events", ".ics") : "";
+const eventImageUrl = event ? safeImageUrl(event.imageUrl, apiOrigin) : "";
+const eventWebsite = event ? safeHttpUrl(event.externalUrl) : "";
+const eventDirections = event ? safeHttpUrl(event.directionsUrl) : "";
+const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : true;
+---
+
+<SiteLayout title={`${title} · ${labels.title}`} locale={locale}>
+	<main class="event-browser event-detail" id="main-content" tabindex="-1">
+		<p><a class="back-link" href="/events">← {labels.backToEvents}</a></p>
+		{feedError ? (
+			<section class="notice notice--error" role="status">
+				<h1>{labels.feedUnavailable}</h1>
+				<p>{labels.feedErrorDetail}</p>
+			</section>
+		) : event ? (
+			<>
+				<h1>{event.title}</h1>
+				<ul class="event-actions">
+					<li><a class="button-link" href={calendarUrl}>{labels.addToCalendar}</a></li>
+					{eventWebsite && <li><a href={eventWebsite} target="_blank" rel="noopener noreferrer">{labels.externalWebsite}</a></li>}
+				</ul>
+				<article class="event-detail-card">
+					{eventImageUrl && <img class="event-card__image" src={eventImageUrl} alt="" />}
+					<p class="event-card__date">
+						<time datetime={event.start}>{displayDate(event.start, locale, event.timezone, event.allDay)}</time>
+						{!eventSameDay && <> – <time datetime={event.end}>{displayDate(event.end, locale, event.timezone, event.allDay)}</time></>}
+						{event.allDay ? ` · ${labels.allDay}` : ` · ${eventTimeRange(event, locale)} · ${event.timezone}`}
+					</p>
+					{event.organizer && <p class="event-card__organizer">{labels.organizer} {event.organizer}</p>}
+					{event.location && <p class="event-card__location">{event.location}{eventDirections && <> · <a href={eventDirections} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>}
+					{event.description && <div class="event-card__description">{event.description}</div>}
+					{event.categories.length > 0 && <p class="event-card__categories"><span>{labels.categories}:</span> {event.categories.join(", ")}</p>}
+				</article>
+			</>
+		) : (
+			<section class="notice notice--empty" role="status">
+				<h1>{labels.eventDetails}</h1>
+				<p>{labels.eventNotFound}</p>
+			</section>
+		)}
+	</main>
+</SiteLayout>

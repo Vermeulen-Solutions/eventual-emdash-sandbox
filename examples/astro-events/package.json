@@ -1,0 +1,25 @@
+{
+	"name": "eventual-astro-events-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"check": "astro check",
+		"test": "vitest run",
+		"build": "astro build",
+		"preview": "astro preview"
+	},
+	"dependencies": {
+		"@astrojs/node": "^11.1.6",
+		"astro": "^7.3.4"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.10",
+		"@types/node": "^24.10.0",
+		"typescript": "^5.9.3",
+		"vitest": "^5.0.1"
+	},
+	"engines": {
+		"node": ">=22.12.0"
+	}
+}

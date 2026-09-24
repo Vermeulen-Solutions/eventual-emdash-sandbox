@@ -1,0 +1,45 @@
+{
+	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+	"slug": "eventual",
+	"publisher": "did:plc:75gind6hughxo3wi4i7f6hsb", // jacoplane.bsky.social
+
+	"license": "MIT",
+	"author": { "name": "Jaap Vermeulen", "email": "jaap.vermeulen@gmail.com" },
+	"security": { "email": "jaap.vermeulen@gmail.com" },
+	"name": "Eventual",
+	"description": "Manage one-off and recurring events, saved venues, and public JSON/iCalendar feeds in EmDash.",
+	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
+	"sections": {
+		"installation": { "file": "./docs/registry-installation.md" }
+	},
+	"repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+
+	// Trust contract — what runtime APIs the plugin asks for.
+	// Empty arrays mean no extra privileges beyond logging,
+	// KV, and route/hook registration. Changing these between
+	// releases requires a version bump because installed
+	// users have consented to the old contract.
+	"capabilities": ["media:read", "media:bytes:read"],
+	"allowedHosts": [],
+	"storage": {
+		"events": { "indexes": ["start", "published", ["published", "start"], "venueId"] },
+		"venues": { "indexes": ["name"] },
+		"calendar_cancellations": { "indexes": ["eventId", "cancelledAt"] }
+	},
+	"admin": {
+		"pages": [
+			{ "path": "/events", "label": "Events", "icon": "calendar" },
+			{ "path": "/venues", "label": "Venues", "icon": "map-pin" },
+			{ "path": "/settings", "label": "Settings", "icon": "settings" }
+		],
+		"settingsSchema": {
+			"defaultTimezone": {
+				"label": "Default timezone for new events",
+				"description": "IANA timezone used to initialize new events. Each event can use its own timezone.",
+				"type": "string",
+				"default": "UTC"
+			}
+		}
+	}
+}

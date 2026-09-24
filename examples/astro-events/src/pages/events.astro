@@ -1,0 +1,157 @@
+---
+import { fetchPublicFeed, type PublicEvent } from "../lib/feed";
+import {
+	buildCalendar,
+	eventDetailsUrl,
+	eventTimeRange,
+	fullWeekdayHeadings,
+	monthDateRange,
+	monthLabel,
+	normalizeLocale,
+	normalizeTimeZone,
+	safeHttpUrl,
+	weekdayHeadings,
+} from "../lib/calendar";
+import { adjacentMonth, eventBrowserState, eventBrowserUrl } from "../lib/browser-state";
+import { messagesForLocale } from "../lib/messages";
+import EventCard from "../components/EventCard.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const locale = normalizeLocale(process.env.EVENTUAL_LOCALE || "en-GB");
+const timeZone = normalizeTimeZone(process.env.EVENTUAL_DISPLAY_TIMEZONE || "UTC");
+const dateParts = new Intl.DateTimeFormat("en", {
+	timeZone,
+	year: "numeric",
+	month: "2-digit",
+}).formatToParts(new Date());
+const currentMonth = `${dateParts.find((part) => part.type === "year")?.value}-${dateParts.find((part) => part.type === "month")?.value}`;
+const state = eventBrowserState(Astro.url.searchParams, currentMonth);
+const { month, view, category } = state;
+const labels = messagesForLocale(locale);
+const range = monthDateRange(month);
+const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
+let events: PublicEvent[] = [];
+let feedError = false;
+try {
+	const feed = await fetchPublicFeed(apiOrigin, range.from, range.through, category);
+	events = feed.events;
+} catch {
+	feedError = true;
+}
+
+const eventCategories = [...new Set(events.flatMap((event) => event.categories))]
+	.sort((left, right) => left.localeCompare(right, locale));
+const weeks = buildCalendar(month, locale, events);
+const headings = weekdayHeadings(locale);
+const fullHeadings = fullWeekdayHeadings(locale);
+const monthTitle = monthLabel(month, locale);
+const fullDateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
+const todayMonth = currentMonth;
+const externalBase = safeHttpUrl(apiOrigin);
+---
+
+<SiteLayout title={`${labels.title} · ${monthTitle}`} locale={locale}>
+	<main class="event-browser" id="main-content" tabindex="-1">
+		<header class="page-heading">
+			<div>
+				<p class="eyebrow">{labels.title}</p>
+				<h1>{monthTitle}</h1>
+			</div>
+			<nav class="view-switch" aria-label={labels.viewLabel}>
+				<a href={eventBrowserUrl(state, "list")} aria-current={view === "list" ? "page" : undefined}>{labels.listView}</a>
+				<a href={eventBrowserUrl(state, "month")} aria-current={view === "month" ? "page" : undefined}>{labels.monthView}</a>
+			</nav>
+		</header>
+
+		<div class="browser-toolbar">
+			<nav class="month-navigation" aria-label={labels.title}>
+				<a class="icon-link" href={eventBrowserUrl(state, view, adjacentMonth(state, -1))} aria-label={labels.previousMonth}>‹</a>
+				<a class="today-link" href={eventBrowserUrl(state, view, todayMonth)}>{labels.backToToday}</a>
+				<a class="icon-link" href={eventBrowserUrl(state, view, adjacentMonth(state, 1))} aria-label={labels.nextMonth}>›</a>
+			</nav>
+			<form method="get" class="category-filter">
+				<input type="hidden" name="month" value={month} />
+				<input type="hidden" name="view" value={view} />
+				<label for="event-category">{labels.filterLabel}</label>
+				<input id="event-category" type="search" name="category" value={category} list="event-category-options" placeholder={labels.allCategories} autocomplete="off" />
+				<datalist id="event-category-options">
+					{eventCategories.map((item) => <option value={item} />)}
+				</datalist>
+				<button type="submit">{labels.applyFilter}</button>
+			</form>
+		</div>
+
+		{feedError ? (
+			<section class="notice notice--error" role="status" aria-live="polite">
+				<h2>{labels.feedUnavailable}</h2>
+				<p>{labels.feedErrorDetail}</p>
+				<a class="button-link" href={Astro.url.pathname + Astro.url.search}>{labels.tryAgain}</a>
+			</section>
+		) : events.length === 0 ? (
+			<section class="notice notice--empty" role="status">
+				<h2>{labels.empty}</h2>
+			</section>
+		) : view === "list" ? (
+			<section aria-labelledby="events-heading">
+				<h2 class="section-heading" id="events-heading">{labels.monthEvents}</h2>
+				<ul class="event-list">
+					{events.map((event) => <li><EventCard event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} /></li>)}
+				</ul>
+			</section>
+		) : (
+			<section aria-labelledby="month-heading" class="month-section">
+				<h2 class="section-heading" id="month-heading">{labels.monthEvents}: {monthTitle}</h2>
+				<table class="calendar-table">
+					<caption class="visually-hidden">{labels.monthEvents}: {monthTitle}</caption>
+					<thead>
+						<tr>
+							{headings.map((day, index) => (
+								<th scope="col" aria-label={fullHeadings[index]}>{day}</th>
+							))}
+						</tr>
+					</thead>
+					<tbody>
+						{weeks.map((week) => (
+							<tr>
+								{week.map((cell, index) => {
+									const fullDate = fullDateFormatter.format(new Date(`${cell.date}T12:00:00Z`));
+									const shortWeekday = headings[index];
+									return (
+										<td class:list={["calendar-day", !cell.inMonth && "calendar-day--outside"]}>
+											<div class="calendar-day__head">
+												<span class="calendar-day__weekday" aria-hidden="true">{shortWeekday}</span>
+												<time class="calendar-day__date" datetime={cell.date} aria-label={fullDate}>{cell.dayNumber}</time>
+											</div>
+											{cell.events.length > 0 ? (
+												<details class="calendar-day__events">
+													<summary aria-label={`${fullDate}: ${labels.eventCount(cell.events.length)}`}>{labels.eventCount(cell.events.length)}</summary>
+													<ul>
+														{cell.events.map((event) => {
+															return (
+																<li>
+																	<span class="calendar-day__time">
+																		{event.allDay ? labels.allDay : eventTimeRange(event, locale)}
+																	</span>
+																<span>
+																	<a href={eventDetailsUrl(event)}>{event.title}</a>
+																</span>
+																</li>
+															);
+														})}
+													</ul>
+												</details>
+											) : (
+												<span class="calendar-day__empty" aria-hidden="true">—</span>
+											)}
+									</td>
+								);
+							})}
+							</tr>
+						))}
+					</tbody>
+				</table>
+				<p class="calendar-hint">{labels.monthEvents} · {labels.eventCount(events.length)}</p>
+			</section>
+		)}
+	</main>
+</SiteLayout>

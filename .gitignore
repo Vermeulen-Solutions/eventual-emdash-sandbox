@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.astro/
+.env
+.env.*
+!.env.example
+
+.agents/
+.claude/

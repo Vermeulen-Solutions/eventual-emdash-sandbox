@@ -1,0 +1,43 @@
+---
+import { displayDate, eventDetailsUrl, eventEndDate, eventStartDate, eventTimeRange, safeHttpUrl, safeImageUrl } from "../lib/calendar";
+import type { PublicEvent } from "../lib/feed";
+import type { EventBrowserMessages } from "../lib/messages";
+
+interface Props {
+	event: PublicEvent;
+	locale: string;
+	labels: EventBrowserMessages;
+	apiOrigin?: string;
+}
+
+const { event, locale, labels, apiOrigin } = Astro.props;
+const externalUrl = safeHttpUrl(event.externalUrl);
+const detailsUrl = eventDetailsUrl(event);
+const directionsUrl = safeHttpUrl(event.directionsUrl);
+const imageUrl = apiOrigin ? safeImageUrl(event.imageUrl, apiOrigin) : "";
+const start = displayDate(event.start, locale, event.timezone, event.allDay);
+const end = displayDate(event.end, locale, event.timezone, event.allDay);
+const sameCalendarDate = eventStartDate(event) === eventEndDate(event);
+const timeRange = eventTimeRange(event, locale);
+---
+
+<article class="event-card">
+	{imageUrl && <img class="event-card__image" src={imageUrl} alt="" loading="lazy" />}
+	<div class="event-card__body">
+		<div class="event-card__heading">
+			<div>
+				<p class="event-card__date">
+					<time datetime={event.start}>{start}</time>
+					{!sameCalendarDate && <> – <time datetime={event.end}>{end}</time></>}
+					{event.allDay ? ` · ${labels.allDay}` : timeRange ? ` · ${timeRange}` : ""}
+				</p>
+				<h3><a href={detailsUrl}>{event.title}</a></h3>
+			</div>
+			{event.organizer && <p class="event-card__organizer">{labels.organizer} {event.organizer}</p>}
+		</div>
+		{event.location && <p class="event-card__location">{event.location}{directionsUrl && <> · <a href={directionsUrl} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>}
+		{externalUrl && <p class="event-card__external"><a href={externalUrl} target="_blank" rel="noopener noreferrer">{labels.externalWebsite}</a></p>}
+		{event.description && <p class="event-card__description">{event.description}</p>}
+		{event.categories.length > 0 && <p class="event-card__categories"><span>{labels.categories}:</span> {event.categories.join(", ")}</p>}
+	</div>
+</article>
