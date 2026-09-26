@@ -4,9 +4,12 @@ import { handleAdmin } from "./admin";
 import { handlePublicEvents } from "./routes/public-events";
 import { handlePublicEventImage } from "./routes/public-media";
 import { handleCalendarFeed } from "./routes/calendar-feed";
+import { mcpTools } from "./mcp-schemas";
+import { mcpRoutes } from "./mcp";
 
 const plugin: SandboxedPlugin = {
 	routes: {
+		...mcpRoutes,
 		admin: {
 			handler: async (routeCtx, ctx) => handleAdmin(routeCtx.input, ctx),
 		},
@@ -38,6 +41,7 @@ const plugin: SandboxedPlugin = {
 			}),
 		}),
 	},
+	mcp: { tools: mcpTools },
 };
 
 export default plugin;

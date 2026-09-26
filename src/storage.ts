@@ -108,6 +108,10 @@ export function deleteVenue(ctx: EventualContext, id: string): Promise<boolean> 
 	return venueCollection(ctx).delete(id);
 }
 
+export async function listEventsByVenueId(ctx: EventualContext, id: string): Promise<boolean> {
+	return (await eventCollection(ctx).count({ venueId: id })) > 0;
+}
+
 export async function listEvents(
 	ctx: EventualContext,
 	options: { published?: boolean; order?: "asc" | "desc"; maxItems?: number } = {},

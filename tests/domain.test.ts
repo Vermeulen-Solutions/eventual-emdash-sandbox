@@ -4,7 +4,7 @@ import { localDateTimeToInstant, normalizeEventDates } from "../src/domain/date-
 import { normalizeTimeEntry } from "../src/domain/time-entry";
 import { duplicateEventDraft, monthlyPositionForDate, prepareEventData } from "../src/domain/event-data";
 import { categoryKey, normalizeCategories } from "../src/domain/category";
-import { expandRecurringEvent } from "../src/domain/recurrence";
+import { exceptionIdsMatchRecurrence, expandRecurringEvent } from "../src/domain/recurrence";
 import { EMPTY_EVENT_DRAFT, type EventRecord } from "../src/domain/event";
 import { directionsUrl, eventLocation, formatVenueAddress, safeHttpUrl } from "../src/domain/venue";
 import { formatCalendarFeed } from "../src/domain/icalendar";
@@ -336,5 +336,23 @@ describe("saved venue public links", () => {
 		expect(formatVenueAddress(partial)).toBe("Utrecht, Netherlands");
 		expect(eventLocation(partial, "Use the east entrance")).toBe("Riverside field · Utrecht, Netherlands · Use the east entrance");
 		expect(directionsUrl("")).toBe("");
+	});
+});
+
+describe("recurrence exception references", () => {
+	it("accepts exceptions for scheduled occurrences and rejects IDs orphaned by rule changes", () => {
+		const series: EventRecord = {
+			id: "weekly-series", title: "Practice", description: "", start: "2026-10-10T07:00:00.000Z",
+			end: "2026-10-10T08:00:00.000Z", allDay: false, timezone: "UTC", location: "", organizer: "",
+			externalUrl: "", imageUrl: "", categories: [], published: true,
+			recurrence: { frequency: "daily", until: "2026-10-12" },
+			exceptions: [{ recurrenceId: "2026-10-11T07:00", status: "cancelled" }],
+			createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
+		};
+		expect(exceptionIdsMatchRecurrence(series)).toBe(true);
+		expect(exceptionIdsMatchRecurrence({
+			...series,
+			recurrence: { frequency: "weekly", until: "2026-10-12" },
+		})).toBe(false);
 	});
 });

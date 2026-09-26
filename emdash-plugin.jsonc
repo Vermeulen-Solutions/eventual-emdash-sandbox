@@ -28,6 +28,9 @@
 		"calendar_cancellations": { "indexes": ["eventId", "cancelledAt"] }
 	},
 	"admin": {
+		"widgets": [
+			{ "id": "upcoming-events", "title": "Upcoming events", "size": "half" }
+		],
 		"pages": [
 			{ "path": "/events", "label": "Events", "icon": "calendar" },
 			{ "path": "/venues", "label": "Venues", "icon": "map-pin" },

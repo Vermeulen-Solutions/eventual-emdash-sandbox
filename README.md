@@ -15,6 +15,10 @@ A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.co
   exceptions. One-off events stay non-recurring.
 - The saved event editor shows a timezone-aware schedule summary and up to
   three sample dates for a recurring series.
+- A compact EmDash dashboard widget lists the next published events with local
+  date/time, venue or location, an empty state, and a link to the Events page.
+- MCP tools let authorized agents manage event series, publication, occurrence
+  exceptions, saved venues, and the default timezone.
 - Plugin-owned EmDash storage for events and venues; assigned venues cannot be
   deleted.
 - Event images can be selected from the EmDash media library. Public images
@@ -34,8 +38,9 @@ To attach an image, upload it from EmDash Media first, then find it by filename
 in the event form. An Astro site can build its own list or month view by
 consuming the public route.
 
-This MVP focuses on reliable event management and public event feeds. Bulk
-CSV/iCalendar imports and MCP event-management tools are not included.
+The plugin manages events and returns public feed data; the visitor calendar
+remains in the consuming Astro site. Bulk CSV/iCalendar imports are not
+included.
 
 Event dates use EmDash's date picker and each event has a searchable IANA
 timezone selector. For timed events, enter the local clock time as `18:30` or
@@ -49,6 +54,22 @@ identify the end date as inclusive.
 ## License
 
 Eventual is licensed under the MIT License. See [LICENSE](./LICENSE).
+
+## MCP tools
+
+The plugin exposes 15 MCP tools under the `eventual__` namespace: list and get
+events; create, update, publish, unpublish, and delete events; set or remove a
+recurrence occurrence exception; list, create, update, and delete saved venues;
+and read or update the default timezone. Create starts with an unpublished
+event. Deletion preserves calendar cancellation tombstones, assigned venues
+cannot be removed, and schedule edits that orphan saved exceptions are
+rejected. Timed MCP values use local `YYYY-MM-DDTHH:mm` wall times with an IANA
+timezone.
+
+All MCP routes require the `plugins:manage` permission. An administrator must
+enable the desired tools in the EmDash MCP settings before agents can call
+them. Read tools are marked non-destructive; changes and exception operations
+are marked destructive for host approval handling.
 
 ## Public events API
 

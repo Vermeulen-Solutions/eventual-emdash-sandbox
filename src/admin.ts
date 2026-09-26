@@ -21,7 +21,8 @@ import {
 	isValidTimeZone,
 	localDateTimeToInstant,
 } from "./domain/date-time";
-import { expandRecurringEvent } from "./domain/recurrence";
+import { exceptionIdsMatchRecurrence, expandEventsInDateRange, expandRecurringEvent } from "./domain/recurrence";
+import { eventLocation } from "./domain/venue";
 import {
 	deleteEvent,
 	deleteVenue,
@@ -29,7 +30,9 @@ import {
 	getEventsById,
 	getVenue,
 	listEvents,
+	listEventsByVenueId,
 	listVenues,
+	listVenuesById,
 	putEvent,
 	putVenue,
 	type EventualContext,
@@ -764,6 +767,38 @@ async function renderEvents(ctx: EventualContext, cursor?: string): Promise<Bloc
 	return { blocks };
 }
 
+async function renderUpcomingWidget(ctx: EventualContext): Promise<BlockResponse> {
+	const today = new Date().toISOString().slice(0, 10);
+	const throughDate = new Date(`${today}T00:00:00.000Z`);
+	throughDate.setUTCDate(throughDate.getUTCDate() + 90);
+	const through = throughDate.toISOString().slice(0, 10);
+	const events = await listEvents(ctx, { published: true, order: "asc", maxItems: 5000 });
+	const upcoming = expandEventsInDateRange(events, today, through).slice(0, 4);
+	const venues = await listVenuesById(ctx, upcoming.flatMap((event) => event.venueId ? [event.venueId] : []));
+	const blocks: BlockResponse["blocks"] = [];
+	if (!upcoming.length) {
+		blocks.push({ type: "empty", title: "No upcoming events", description: "Published events scheduled in the next 90 days will appear here." });
+	} else {
+		for (const event of upcoming) {
+			const start = event.allDay
+				? new Date(`${event.start.slice(0, 10)}T00:00:00.000Z`).toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })
+				: new Date(event.start).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: event.timezone });
+			const endDate = event.end.slice(0, 10);
+			const when = event.allDay && endDate !== event.start.slice(0, 10)
+				? `${start} – ${new Date(`${endDate}T00:00:00.000Z`).toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })} (inclusive)`
+				: event.allDay ? `${start} (all day)` : `${start} (${event.timezone})`;
+			const venue = event.venueId ? venues.get(event.venueId) : undefined;
+			const location = eventLocation(venue, event.location);
+			blocks.push({ type: "section", text: `${event.title}\n${when}${location ? `\n${location}` : ""}` });
+		}
+	}
+	blocks.push({
+		type: "actions",
+		elements: [{ type: "link", label: "Open Eventual events", target: { kind: "plugin-page", path: "/events" } }],
+	});
+	return { blocks };
+}
+
 async function renderVenues(ctx: EventualContext): Promise<BlockResponse> {
 	const venues = await listVenues(ctx);
 	const blocks: BlockResponse["blocks"] = [
@@ -881,6 +916,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 	if (!interaction) return { blocks: [{ type: "banner", title: "Invalid admin request", variant: "error" }] };
 
 	if (interaction.type === "page_load") {
+		if (interaction.page === "widget:upcoming-events") return renderUpcomingWidget(ctx);
 		if (interaction.page === "/venues") return renderVenues(ctx);
 		if (interaction.page === "/settings") return renderSettings(ctx);
 		return renderEvents(ctx);
@@ -954,8 +990,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 				: { blocks: [{ type: "banner", title: "Venue no longer exists", variant: "error" }] };
 		}
 		if (interaction.action_id === "delete-venue" && typeof interaction.value === "string") {
-			const events = await listEvents(ctx, { maxItems: 5000 });
-			if (events.some((event) => event.venueId === interaction.value)) {
+			if (await listEventsByVenueId(ctx, interaction.value)) {
 				return { blocks: venueFormBlocks((await getVenue(ctx, interaction.value)) ?? blankVenue(), interaction.value, "This venue is assigned to one or more events."), toast: { message: "Venue is still in use", type: "error" } };
 			}
 			await deleteVenue(ctx, interaction.value);
@@ -1019,10 +1054,13 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		const event: EventRecord = {
 			...prepared.data,
 			id: id || crypto.randomUUID(),
-			exceptions: prepared.data.recurrence ? previous?.exceptions ?? [] : [],
+			exceptions: previous?.exceptions ?? [],
 			createdAt: previous?.createdAt ?? now,
 			updatedAt: now,
 		};
+		if (!exceptionIdsMatchRecurrence(event)) {
+			return renderEventEditor(ctx, previous!, draft, "Changing this recurrence would invalidate saved occurrence exceptions. Remove or update those exceptions first.");
+		}
 		await putEvent(ctx, event);
 		return { ...(await renderEventEditor(ctx, event)), toast: { message: previous ? "Event updated" : "Event created", type: "success" } };
 	}
