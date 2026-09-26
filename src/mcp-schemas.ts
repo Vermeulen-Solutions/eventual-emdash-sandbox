@@ -1,11 +1,12 @@
 import { z } from "../node_modules/zod/mini/index.js";
 import type { EventRecurrence } from "./domain/event";
+import { isDateOnly } from "./domain/date-time";
 
 const str = (min = 0, max = 12000, pattern?: RegExp) => z.string().check(
 	...(min ? [z.minLength(min)] : []), z.maxLength(max), ...(pattern ? [z.regex(pattern)] : []),
 );
 const optional = (schema: any) => z.optional(schema);
-const date = z.string().check(z.refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), { error: "Use a valid YYYY-MM-DD date." }));
+const date = z.string().check(z.refine(isDateOnly, { error: "Use a valid YYYY-MM-DD date." }));
 const weekday = z.enum(["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]);
 const monthlyPosition = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal("last")]);
 const recurrence = z.discriminatedUnion("frequency", [
@@ -53,12 +54,14 @@ const exceptionSet = z.object({ eventId: str(1, 200), recurrenceId: str(0, 16), 
 const exceptionRemove = z.object({ eventId: str(1, 200), recurrenceId: str(0, 16) });
 const noInput = z.object({});
 const listEvents = z.object({ from: optional(date), through: optional(date), includeDrafts: optional(z.boolean()), limit: optional(z.number().check(z.int(), z.gte(1), z.lte(100))) });
+const listOccurrences = z.object({ id: str(1, 200), from: optional(date), through: optional(date), limit: optional(z.number().check(z.int(), z.gte(1), z.lte(100))) });
 const updateSettings = z.object({ defaultTimezone: str(1, 100) });
 const mcpInput = (schema: unknown) => schema as import("zod").ZodType;
 
 export const mcpTools = {
 	listEvents: { description: "List published Eventual occurrences in a date range; set includeDrafts to include drafts.", route: "mcp/events/list", input: mcpInput(listEvents), destructive: false },
 	getEvent: { description: "Get an Eventual event series, including recurrence rules and occurrence exceptions.", route: "mcp/events/get", input: mcpInput(eventId), destructive: false },
+	listOccurrences: { description: "Inspect saved event occurrences, including cancellations and moved dates, in up to 366 inclusive dates. Returns original recurrenceIds for exception tools, local schedules, and truncation metadata; drafts are included.", route: "mcp/events/occurrences", input: mcpInput(listOccurrences), destructive: false },
 	createEvent: { description: "Create an unpublished Eventual event. Timed values use local YYYY-MM-DDTHH:mm in the supplied IANA timezone.", route: "mcp/events/create", input: mcpInput(event), destructive: false },
 	updateEvent: { description: "Update event fields while retaining valid recurrence exceptions. Timed values use local YYYY-MM-DDTHH:mm in the event timezone.", route: "mcp/events/update", input: mcpInput(updateEvent), destructive: true },
 	publishEvent: { description: "Publish an Eventual event and its active occurrences.", route: "mcp/events/publish", input: mcpInput(eventId), destructive: true },

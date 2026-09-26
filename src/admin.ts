@@ -21,7 +21,9 @@ import {
 	isValidTimeZone,
 	localDateTimeToInstant,
 } from "./domain/date-time";
-import { exceptionIdsMatchRecurrence, expandEventsInDateRange, expandRecurringEvent } from "./domain/recurrence";
+import { addDays, exceptionIdsMatchRecurrence, expandEventsInDateRange, expandRecurringEvent, scheduledOccurrence } from "./domain/recurrence";
+import { validOccurrenceRange } from "./domain/occurrences";
+import { occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
 import { eventLocation } from "./domain/venue";
 import {
 	deleteEvent,
@@ -546,6 +548,7 @@ function eventEditorBlocks(
 	eventError?: string,
 	exceptionEditor?: { draft: ExceptionFormDraft; originalRecurrenceId?: string; error?: string },
 	images: EventImageOptions = { items: [], hasMore: false },
+	window?: OccurrenceWindow,
 ): BlockResponse["blocks"] {
 	const blocks: BlockResponse["blocks"] = exceptionEditor
 		? [
@@ -554,14 +557,16 @@ function eventEditorBlocks(
 			{ type: "context", text: "Edit the occurrence exception below. Close the exception editor to return to the event details." },
 		]
 		: eventFormBlocks(draft, venues, event.id, eventError, images);
-	blocks.push({ type: "divider" }, { type: "header", text: "Occurrence exceptions" });
+	blocks.push({ type: "divider" });
+	if (event.recurrence && !exceptionEditor) blocks.push(...occurrenceBlocks(event, window), { type: "divider" });
+	blocks.push({ type: "header", text: "Occurrence exceptions" });
 	if (!event.recurrence) {
 		blocks.push({ type: "context", text: "Set a repeat pattern and save this event before managing occurrence exceptions." });
 		return blocks;
 	}
 	blocks.push({ type: "context", text: "Cancel or change individual dates without changing the recurring series. Exceptions are saved separately from the event details above." });
 	if (!event.exceptions.length) blocks.push({ type: "context", text: "No occurrence exceptions yet." });
-	for (const exception of event.exceptions) {
+	for (const exception of event.exceptions.slice(0, 25)) {
 		const occurrenceLabel = exception.recurrenceId.replace("T", " at ");
 		blocks.push(
 			{ type: "section", text: `${occurrenceLabel} · ${exception.status === "cancelled" ? "Cancelled" : "Changed"}` },
@@ -578,6 +583,7 @@ function eventEditorBlocks(
 			},
 		);
 	}
+	if (event.exceptions.length > 25) blocks.push({ type: "context", text: "Showing the first 25 exceptions. Use the occurrence date window to find and edit other dates." });
 	blocks.push({ type: "actions", elements: [{ type: "button", action_id: "add-exception", label: "Add occurrence exception", value: event.id, style: "primary" }] });
 	if (exceptionEditor) {
 		blocks.push(...exceptionFormBlocks(event, exceptionEditor.draft, exceptionEditor.originalRecurrenceId, exceptionEditor.error));
@@ -600,6 +606,7 @@ async function renderEventEditor(
 	draft = eventToDraft(event),
 	eventError?: string,
 	exceptionEditor?: { draft: ExceptionFormDraft; originalRecurrenceId?: string; error?: string },
+	window?: OccurrenceWindow,
 ): Promise<BlockResponse> {
 	if (exceptionEditor) {
 		return { blocks: eventEditorBlocks(event, [], draft, eventError, exceptionEditor) };
@@ -608,7 +615,7 @@ async function renderEventEditor(
 		listVenues(ctx),
 		listEventImages(ctx, draft.imageMediaId),
 	]);
-	return { blocks: eventEditorBlocks(event, venues, draft, eventError, exceptionEditor, images) };
+	return { blocks: eventEditorBlocks(event, venues, draft, eventError, exceptionEditor, images, window) };
 }
 
 function eventExceptionFromForm(
@@ -923,6 +930,34 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 	}
 
 	if (interaction.type === "block_action") {
+		if (interaction.action_id === "occurrences-page") {
+			const window = occurrenceWindowValue(interaction.value);
+			const event = window ? await getEvent(ctx, window.eventId) : null;
+			return event?.recurrence ? renderEventEditor(ctx, event, eventToDraft(event), undefined, undefined, window!)
+				: { blocks: [{ type: "banner", title: "Invalid occurrence window", variant: "error" }] };
+		}
+		if (interaction.action_id === "change-occurrence" || interaction.action_id === "cancel-occurrence") {
+			const identity = exceptionIdentityFromValue(interaction.value);
+			const event = identity ? await getEvent(ctx, identity.eventId) : null;
+			if (!event || !identity || !scheduledOccurrence(event, identity.recurrenceId)) {
+				return { blocks: [{ type: "banner", title: "Occurrence no longer exists", variant: "error" }] };
+			}
+			const exception = event.exceptions.find((item) => item.recurrenceId === identity.recurrenceId);
+			if (interaction.action_id === "change-occurrence") {
+				return renderEventEditor(ctx, event, eventToDraft(event), undefined, {
+					draft: emptyExceptionFormDraft(event, { ...exception, recurrenceId: identity.recurrenceId, status: "modified" }),
+					...(exception ? { originalRecurrenceId: identity.recurrenceId } : {}),
+				});
+			}
+			if (exception?.status === "cancelled") return renderEventEditor(ctx, event);
+			if (!exception && event.exceptions.length >= 500) return { blocks: [{ type: "banner", title: "Too many occurrence exceptions", variant: "error" }] };
+			const updated: EventRecord = { ...event, updatedAt: new Date().toISOString(), exceptions: [
+				...event.exceptions.filter((item) => item.recurrenceId !== identity.recurrenceId),
+				{ recurrenceId: identity.recurrenceId, status: "cancelled" as const },
+			].sort((a, b) => a.recurrenceId.localeCompare(b.recurrenceId)) };
+			await putEvent(ctx, updated);
+			return { ...await renderEventEditor(ctx, updated, eventToDraft(updated), undefined, undefined, occurrenceWindowValue(interaction.value) ?? undefined), toast: { message: "Occurrence cancelled", type: "success" } };
+		}
 		if (interaction.action_id === "new-event") {
 			const timezone = (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC";
 			return renderEventForm(ctx, { ...EMPTY_EVENT_DRAFT, timezone }, "");
@@ -970,7 +1005,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 				updatedAt: new Date().toISOString(),
 			};
 			await putEvent(ctx, updated);
-			return { ...(await renderEventEditor(ctx, updated)), toast: { message: "Occurrence exception removed", type: "success" } };
+			return { ...(await renderEventEditor(ctx, updated, eventToDraft(updated), undefined, undefined, occurrenceWindowValue(interaction.value) ?? undefined)), toast: { message: "Occurrence restored to the series schedule", type: "success" } };
 		}
 		if (interaction.action_id === "cancel-exception-edit" && typeof interaction.value === "string") {
 			const event = await getEvent(ctx, interaction.value);
@@ -1000,6 +1035,14 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		return { blocks: [{ type: "context", text: "No action was taken." }] };
 	}
 
+	if (interaction.action_id === "show-occurrences") {
+		const eventId = idFromBlock(interaction.block_id, "occurrence-window:");
+		const from = readString(interaction.values.from);
+		const event = eventId ? await getEvent(ctx, eventId) : null;
+		if (!event?.recurrence || !isDateOnly(from) || !validOccurrenceRange(from, addDays(from, 89))) return { blocks: [{ type: "banner", title: "Choose a valid occurrence start date", variant: "error" }] };
+		return renderEventEditor(ctx, event, eventToDraft(event), undefined, undefined, { from, offset: 0 });
+	}
+
 	if (interaction.action_id === "save-exception") {
 		const identity = exceptionFormIdentity(interaction.block_id);
 		if (!identity) return { blocks: [{ type: "banner", title: "Invalid occurrence exception form", variant: "error" }] };
@@ -1022,6 +1065,10 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 			.filter((item) => item.recurrenceId !== identity.originalRecurrenceId && item.recurrenceId !== result.exception!.recurrenceId)
 			.concat(result.exception)
 			.sort((left, right) => left.recurrenceId.localeCompare(right.recurrenceId));
+		if (exceptions.length > 500) return renderEventEditor(ctx, event, eventToDraft(event), undefined, {
+			draft: exceptionFormDraftFromValues(interaction.values), originalRecurrenceId: identity.originalRecurrenceId,
+			error: "An event can have at most 500 occurrence exceptions.",
+		});
 		const updated: EventRecord = { ...event, exceptions, updatedAt: new Date().toISOString() };
 		await putEvent(ctx, updated);
 		return { ...(await renderEventEditor(ctx, updated)), toast: { message: "Occurrence exception saved", type: "success" } };

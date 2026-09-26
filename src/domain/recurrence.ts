@@ -33,7 +33,7 @@ function dateKey(value: Date): string {
   return `${String(value.getUTCFullYear()).padStart(4, "0")}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(value.getUTCDate()).padStart(2, "0")}`;
 }
 
-function addDays(value: string, count: number): string {
+export function addDays(value: string, count: number): string {
   const date = dateFromKey(value);
   date.setUTCDate(date.getUTCDate() + count);
   return dateKey(date);
@@ -72,6 +72,32 @@ function recurrenceStartDate(event: EventRecord): string {
 
 function recurrenceIdForDate(date: string, wallTime: string, allDay: boolean): string {
   return allDay ? date : `${date}T${wallTime}`;
+}
+
+function matchesRecurrenceDate(event: EventRecord, date: string): boolean {
+  const recurrence = event.recurrence;
+  const first = recurrenceStartDate(event);
+  if (!recurrence || date < first || date > recurrence.until) return false;
+  return recurrence.frequency === "daily" || (recurrence.frequency === "weekly"
+    ? dateFromKey(date).getUTCDay() === dateFromKey(first).getUTCDay()
+    : matchesMonthlyPattern(date, recurrence));
+}
+
+/** Resolve the original schedule directly, including membership and DST validation. */
+export function scheduledOccurrence(event: EventRecord, recurrenceId: string): EventRecord | null {
+  const date = recurrenceId.slice(0, 10);
+  if (!isDateOnly(date) || !matchesRecurrenceDate(event, date)) return null;
+  const wallTime = event.allDay ? "" : instantToLocalDateTime(event.start, event.timezone).slice(11, 16);
+  if (recurrenceId !== recurrenceIdForDate(date, wallTime, event.allDay)) return null;
+  let start = date;
+  let end = addDays(date, dayDifference(event.start.slice(0, 10), event.end.slice(0, 10)));
+  if (!event.allDay) {
+    const instant = localDateTimeToInstant(`${date}T${wallTime}`, event.timezone);
+    if (!instant.value) return null;
+    start = instant.value;
+    end = new Date(Date.parse(start) + Date.parse(event.end) - Date.parse(event.start)).toISOString();
+  }
+  return applyException({ ...event, start, end }, recurrenceId);
 }
 
 function exceptionInRange(
@@ -123,7 +149,7 @@ export function expandRecurringEvent(
   const recurrence = event.recurrence;
   if (!recurrence || !isDateOnly(from) || !isDateOnly(through) || from > through) return [];
   const span = dayDifference(from, through);
-  if (span > MAX_EXPANSION_RANGE_DAYS) return [];
+  if (span >= MAX_EXPANSION_RANGE_DAYS) return [];
 
   const firstDate = recurrenceStartDate(event);
   if (!isDateOnly(firstDate) || firstDate > recurrence.until) return [];
@@ -144,13 +170,7 @@ export function expandRecurringEvent(
 
   for (let date = lower; date <= upper; date = addDays(date, 1)) {
     if (date < firstDate) continue;
-    const weekdayMatches = dateFromKey(date).getUTCDay() === dateFromKey(firstDate).getUTCDay();
-    const matches = recurrence.frequency === "daily"
-      ? true
-      : recurrence.frequency === "weekly"
-        ? weekdayMatches
-        : matchesMonthlyPattern(date, recurrence);
-    if (!matches) continue;
+    if (!matchesRecurrenceDate(event, date)) continue;
 
     const recurrenceId = recurrenceIdForDate(date, timedWallStart, event.allDay);
     const exception = exceptionMap.get(recurrenceId);
@@ -173,7 +193,8 @@ export function expandRecurringEvent(
   for (const exception of event.exceptions ?? []) {
     if (!exceptionInRange(exception, event, from, through)) continue;
     if (result.some((item) => item.id === `${event.id}#${exception.recurrenceId}`)) continue;
-    const moved = applyException(event, exception.recurrenceId, exception);
+    const original = scheduledOccurrence(event, exception.recurrenceId);
+    const moved = original ? applyException({ ...original, id: event.id }, exception.recurrenceId, exception) : null;
     if (moved && overlaps(moved, from, through)) result.push(moved);
   }
 
@@ -198,16 +219,5 @@ export function exceptionIdsMatchRecurrence(event: EventRecord): boolean {
   const exceptions = event.exceptions ?? [];
   if (!exceptions.length) return true;
   if (!event.recurrence || new Set(exceptions.map((item) => item.recurrenceId)).size !== exceptions.length) return false;
-  const days = new Set<string>();
-  for (const exception of exceptions) {
-    const day = exception.recurrenceId.slice(0, 10);
-    if (!isDateOnly(day) || day > event.recurrence.until) return false;
-    days.add(day);
-  }
-  for (const day of days) {
-    const scheduled = expandEventsInDateRange([{ ...event, exceptions: [] }], day, day);
-    if (exceptions.some((item) => item.recurrenceId.startsWith(day) &&
-      !scheduled.some((occurrence) => occurrence.id === `${event.id}#${item.recurrenceId}`))) return false;
-  }
-  return true;
+  return exceptions.every((exception) => scheduledOccurrence(event, exception.recurrenceId) !== null);
 }

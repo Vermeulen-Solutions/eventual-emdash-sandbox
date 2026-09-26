@@ -21,6 +21,7 @@ import {
 } from "./storage";
 import { normalizeEventDates } from "./domain/date-time";
 import { isUsableEventImage } from "./media";
+import { inspectOccurrences, validOccurrenceRange } from "./domain/occurrences";
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -65,7 +66,7 @@ function validVenuePatch(value: unknown): boolean { return isObject(value) && va
 function validId(value: unknown): boolean { return isObject(value) && validText(value.id, 200, 1); }
 function validEmpty(value: unknown): boolean { return isObject(value) && !Object.keys(value).length; }
 function validListEvents(value: unknown): boolean {
-	return isObject(value) && (value.from === undefined || isDateOnly(String(value.from))) && (value.through === undefined || isDateOnly(String(value.through))) &&
+	return isObject(value) && (value.from === undefined || typeof value.from === "string" && isDateOnly(value.from)) && (value.through === undefined || typeof value.through === "string" && isDateOnly(value.through)) &&
 		(value.includeDrafts === undefined || typeof value.includeDrafts === "boolean") && (value.limit === undefined || Number.isInteger(value.limit) && Number(value.limit) >= 1 && Number(value.limit) <= 100);
 }
 function validExceptionSet(value: unknown): boolean {
@@ -175,6 +176,14 @@ export const mcpRoutes = {
 		const event = await getEvent(ctx, id);
 		if (!event) return { ok: false, error: "NOT_FOUND" };
 		return { ok: true, event, venue: event.venueId ? await getVenue(ctx, event.venueId) : null };
+	}),
+	"mcp/events/occurrences": route((input) => validId(input) && validListEvents(input), async (input, ctx) => {
+		const event = await getEvent(ctx, input.id);
+		if (!event) return { ok: false, error: "NOT_FOUND" };
+		const from = input.from ?? new Date().toISOString().slice(0, 10);
+		const through = input.through ?? addDays(from, 89);
+		if (!validOccurrenceRange(from, through)) return { ok: false, error: "INVALID_DATE_RANGE" };
+		return { ok: true, eventId: event.id, published: event.published, ...inspectOccurrences(event, from, through, input.limit ?? 50) };
 	}),
 	"mcp/events/create": route((input) => validEventInput(input), async (input, ctx) => saveEvent(ctx, input)),
 	"mcp/events/update": route(validEventPatch, async ({ id, patch }, ctx) => {
