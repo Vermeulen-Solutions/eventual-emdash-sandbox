@@ -1,9 +1,14 @@
 # Eventual 0.7.0
 
-Status: prepared and validated on `feature/eventual-occurrence-recurrence`.
-Not published. Publication remains a separate step after resolving the
-previous 0.6.0 registry update failure (aggregator metadata did not match the
-publisher's signed records). No site installation or update was performed.
+Status: published to the publisher PDS on 2026-09-27 from
+`feature/eventual-occurrence-recurrence` at commit `9ce4deb`. The first status
+check reported **Release 0.7.0: approved**, **Package details: needs review**,
+and **Public listing: not available**. Release approval and package-listing
+approval are separate; availability is not yet confirmed.
+
+The publisher reported that 0.6.0 was accepted after a manual-review false
+positive: the compatibility claim was flagged as impersonation. This resolved
+the earlier publication hold. No site installation or update was performed.
 
 ## Included
 
@@ -109,7 +114,7 @@ is 10,124 bytes; complete package growth is 17,079 bytes.
 Compressed archive: **37,154 bytes**. SHA-256:
 
 ```text
-52e542f354af9f4436573e01ce1e344db7022a90cfc0df98bd4f474ed979c7b2
+3bfdaa073f0ea1e1a399cbfe38d7aeae6a2dd415b9c6c9cb26464197ad4b3597
 ```
 
 Exact size/inspection output from `npm exec emdash-plugin -- bundle --validate-only`:
@@ -136,18 +141,34 @@ Registry acceptance is based on decompressed package entries, not gzip size.
 - Visitor calendars and presentation remain the consuming Astro site's
   responsibility.
 
-## Later publication and site update
+## Publication and later site update
 
-After the previous registry issue is resolved, publish the new version from
-this repository using the documented workflow:
+Published using the documented direct CLI workflow:
 
 ```powershell
 Set-Location C:\dev\eventual-em\eventual-emdash-sandbox
-npm run publish
+npm run publish -- --json
 ```
 
-Do not overwrite the 0.6.0 release. Verify the new registry version before
-updating a site:
+The CLI rebuilt and validated the package, uploaded its blob, and created a
+new immutable release without overwriting an existing release. The published
+archive checksum above supersedes the preparation archive checksum (archive
+timestamps changed during the publish build; package-entry sizes are unchanged).
+
+Release URI:
+
+```text
+at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.7.0
+```
+
+Release record CID: `bafyreiahrhax5aeno3kvzrxdnno2iacqjqvtb4dsdwct3inutfjedbshly`.
+
+The publish command retained the existing package installation text. A dry run
+of `npm exec emdash-plugin -- update-package --json` showed only the intended
+installation-section addition (recurrence features and MCP tool enablement).
+It was applied with `npm exec emdash-plugin -- update-package --yes --json`.
+
+Recheck registry status before updating a site:
 
 ```powershell
 npm exec emdash-plugin -- info vermeulen.solutions eventual --version 0.7.0
