@@ -11,7 +11,8 @@ const weekday = z.enum(["sunday", "monday", "tuesday", "wednesday", "thursday", 
 const monthlyPosition = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal("last")]);
 const interval = optional(z.number().check(z.int(), z.minimum(1), z.maximum(52)));
 const recurrence = z.discriminatedUnion("frequency", [
-	z.object({ frequency: z.enum(["daily", "weekly"]), until: date, interval }),
+	z.object({ frequency: z.literal("daily"), until: date, interval }),
+	z.object({ frequency: z.literal("weekly"), until: date, interval, weekdays: optional(z.array(weekday).check(z.minLength(1), z.maxLength(7), z.refine((days) => new Set(days).size === days.length))) }),
 	z.object({
 		frequency: z.literal("monthly"), until: date, interval,
 		pattern: z.discriminatedUnion("type", [

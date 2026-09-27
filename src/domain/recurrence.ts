@@ -83,7 +83,9 @@ function matchesRecurrenceDate(event: EventRecord, date: string): boolean {
   if (recurrence.frequency === "daily") return days % interval === 0;
   if (recurrence.frequency === "weekly") {
     const week = Math.floor((days + (dateFromKey(first).getUTCDay() + 6) % 7) / 7);
-    return week % interval === 0 && dateFromKey(date).getUTCDay() === dateFromKey(first).getUTCDay();
+    const weekday = dateFromKey(date).getUTCDay();
+    return week % interval === 0 && (recurrence.weekdays ? recurrence.weekdays.includes(WEEKDAYS[weekday]!)
+      : weekday === dateFromKey(first).getUTCDay());
   }
   const current = dateFromKey(date);
   const start = dateFromKey(first);

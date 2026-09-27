@@ -23,7 +23,7 @@ import {
 } from "./domain/date-time";
 import { addDays, exceptionIdsMatchRecurrence, expandEventsInDateRange, expandRecurringEvent, scheduledOccurrence } from "./domain/recurrence";
 import { validOccurrenceRange } from "./domain/occurrences";
-import { recurrenceSummary } from "./domain/recurrence-rule";
+import { recurrenceSummary, WEEKDAYS } from "./domain/recurrence-rule";
 import { occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
 import { eventLocation } from "./domain/venue";
 import {
@@ -67,6 +67,7 @@ interface EventFormValues {
 	repeatFrequency: "none" | "daily" | "weekly" | "monthly";
 	recurrenceUntil: string;
 	recurrenceInterval?: number;
+	weeklyWeekdays?: WeekdayName[];
 	monthlyDayOfMonth?: number;
 	monthlyPattern: "dayOfMonth" | "weekdayOfMonth";
 	missingDayBehavior: "skip" | "lastDay";
@@ -155,6 +156,7 @@ function parseEventValues(value: unknown): EventFormValues | null {
 	if (requiredStrings.some((key) => typeof value[key] !== "string") || !hasOptionalStringFields(value, optionalStrings)) return null;
 	if (typeof value.allDay !== "boolean" || typeof value.published !== "boolean") return null;
 	if (["recurrenceInterval", "monthlyDayOfMonth"].some((key) => value[key] !== undefined && typeof value[key] !== "number")) return null;
+	if (value.weeklyWeekdays !== undefined && (!Array.isArray(value.weeklyWeekdays) || !value.weeklyWeekdays.every((day) => WEEKDAYS.includes(day)))) return null;
 	if (!isOneOf(value.repeatFrequency, ["none", "daily", "weekly", "monthly"])) return null;
 	if (!isOneOf(value.monthlyPattern, ["dayOfMonth", "weekdayOfMonth"])) return null;
 	if (!isOneOf(value.missingDayBehavior, ["skip", "lastDay"])) return null;
@@ -380,6 +382,7 @@ function eventFormBlocks(
 			{ type: "toggle", action_id: "published", label: "Published on the public events route", initial_value: draft.published },
 			selectField("repeatFrequency", "Repeat", recurrenceOptions, draft.repeatFrequency),
 			{ type: "number_input", action_id: "recurrenceInterval", label: "Every N days, weeks, or months (1–52)", initial_value: draft.recurrenceInterval ?? 1, min: 1, max: 52, condition: { field: "repeatFrequency", neq: "none" } },
+			{ type: "checkbox", action_id: "weeklyWeekdays", label: "Weekly days (leave empty to use the first event's weekday; weeks start Monday)", options: [...WEEKDAYS.slice(1), WEEKDAYS[0]!].map((day) => ({ label: day[0]!.toUpperCase() + day.slice(1), value: day })), initial_value: draft.weeklyWeekdays ?? [], condition: { field: "repeatFrequency", eq: "weekly" } },
 			{ type: "date_input", action_id: "recurrenceUntil", label: "Repeat through (inclusive)", initial_value: draft.recurrenceUntil, condition: { field: "repeatFrequency", neq: "none" } },
 			selectField("monthlyPattern", "Monthly pattern", [
 				{ label: "Same day of the month", value: "dayOfMonth" },
@@ -644,13 +647,7 @@ function eventExceptionFromForm(
 	if (event.exceptions.some((item) => item.recurrenceId === recurrenceId && item.recurrenceId !== originalRecurrenceId)) {
 		return { error: "This occurrence already has an exception. Edit that exception instead." };
 	}
-	const baseSeries = {
-		...event,
-		exceptions: event.exceptions.filter((item) => item.recurrenceId !== originalRecurrenceId && item.recurrenceId !== recurrenceId),
-	};
-	const occurrenceExists = expandRecurringEvent(baseSeries, date, date)
-		.some((occurrence) => occurrence.id === `${event.id}#${recurrenceId}`);
-	if (!occurrenceExists) return { error: "Choose a date and time that belongs to this recurring series." };
+	if (!scheduledOccurrence(event, recurrenceId)) return { error: "Choose a date and time that belongs to this recurring series." };
 	if (value.status !== "modified") return { exception: { recurrenceId, status: "cancelled" } };
 	const originalOverride = event.exceptions.find((item) => item.recurrenceId === originalRecurrenceId)?.overrides;
 
@@ -903,6 +900,7 @@ function valuesToDraft(values: Record<string, unknown>): { draft: EventDraft | n
 		repeatFrequency: value.repeatFrequency,
 		recurrenceUntil: value.recurrenceUntil,
 		recurrenceInterval: value.recurrenceInterval ?? 1,
+		weeklyWeekdays: value.weeklyWeekdays,
 		monthlyDayOfMonth: value.monthlyDayOfMonth,
 		monthlyPattern: value.monthlyPattern,
 		missingDayBehavior: value.missingDayBehavior,

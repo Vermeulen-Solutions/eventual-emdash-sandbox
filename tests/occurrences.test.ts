@@ -49,6 +49,39 @@ describe("saved occurrence inspection", () => {
 });
 
 describe("recurrence intervals", () => {
+  it("selects multiple weekdays in alternate Monday-based weeks and preserves exceptions", () => {
+    const multi: EventRecord = { ...event, recurrence: { frequency: "weekly", interval: 2, until: "2026-11-06", weekdays: ["tuesday", "thursday"] },
+      exceptions: [{ recurrenceId: "2026-10-08T18:00", status: "cancelled" }] };
+    expect(inspectOccurrences(multi, "2026-10-01", "2026-11-06").occurrences.map((row) => row.recurrenceId))
+      .toEqual(["2026-10-06T18:00", "2026-10-08T18:00", "2026-10-20T18:00", "2026-10-22T18:00", "2026-11-03T18:00", "2026-11-05T18:00"]);
+    expect(exceptionIdsMatchRecurrence(multi)).toBe(true);
+    expect(exceptionIdsMatchRecurrence({ ...multi, recurrence: { ...multi.recurrence!, frequency: "weekly", weekdays: ["tuesday"] } })).toBe(false);
+    expect(prepareEventData(eventToDraft({ ...multi, recurrence: { frequency: "weekly", until: "2026-11-06", weekdays: ["thursday", "tuesday"] } })).data?.recurrence)
+      .toMatchObject({ weekdays: ["tuesday", "thursday"] });
+    expect(prepareEventData({ ...eventToDraft(multi), weeklyWeekdays: ["monday"] }).error).toContain("first event");
+    expect(validRecurrence({ frequency: "weekly", until: "2026-11-06", weekdays: [] })).toBe(false);
+    expect(validRecurrence({ frequency: "weekly", until: "2026-11-06", weekdays: ["tuesday", "tuesday"] })).toBe(false);
+  });
+
+  it("anchors a Sunday start to its containing week and never emits earlier selected weekdays", () => {
+    const sunday: EventRecord = { ...event, start: "2026-10-04T16:00:00.000Z", end: "2026-10-04T17:00:00.000Z",
+      recurrence: { frequency: "weekly", interval: 2, until: "2026-10-31", weekdays: ["monday", "sunday"] } };
+    expect(inspectOccurrences(sunday, "2026-10-01", "2026-10-31").occurrences.map((row) => row.localStart))
+      .toEqual(["2026-10-04T18:00", "2026-10-12T18:00", "2026-10-18T18:00", "2026-10-26T18:00"]);
+  });
+
+  it("skips nonexistent selected wall times and missing fifth weekdays with intervals", () => {
+    const gap: EventRecord = { ...event, start: "2026-03-22T01:30:00.000Z", end: "2026-03-22T02:30:00.000Z",
+      recurrence: { frequency: "weekly", until: "2026-04-05", weekdays: ["sunday"] } };
+    expect(inspectOccurrences(gap, "2026-03-22", "2026-04-05").occurrences.map((row) => row.localStart))
+      .toEqual(["2026-03-22T02:30", "2026-04-05T02:30"]);
+    expect(scheduledOccurrence(gap, "2026-03-29T02:30")).toBeNull();
+    const fifth: EventRecord = { ...event, allDay: true, start: "2026-08-29", end: "2026-08-29", recurrence: {
+      frequency: "monthly", interval: 2, until: "2026-12-31", pattern: { type: "weekdayOfMonth", weekday: "saturday", position: 5 },
+    } };
+    expect(expandRecurringEvent(fifth, "2026-08-01", "2026-12-31").map((row) => row.start)).toEqual(["2026-08-29", "2026-10-31"]);
+  });
+
   it("retains legacy schedules and weekly wall time through DST", () => {
     const everyWeek = expandRecurringEvent(event, "2026-10-01", "2026-11-30");
     expect(expandRecurringEvent({ ...event, recurrence: { ...event.recurrence!, interval: 1 } }, "2026-10-01", "2026-11-30")).toEqual(everyWeek);

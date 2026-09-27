@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createPluginRuntimeTestHost, type PluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 import type { EventRecord } from "../src/domain/event";
 import { mcpTools } from "../src/mcp-schemas";
+import { addDays } from "../src/domain/recurrence";
 
 let host: PluginRuntimeTestHost | undefined;
 afterEach(async () => { await host?.dispose(); host = undefined; });
@@ -18,6 +19,42 @@ async function seed() {
 }
 
 describe("occurrence editor and MCP", () => {
+  it("shares multi-day rules across admin, MCP, public routes, and calendar cancellations", async () => {
+    const h = await seed();
+    let from = addDays(new Date().toISOString().slice(0, 10), 1);
+    while (new Date(`${from}T00:00:00Z`).getUTCDay() !== 2) from = addDays(from, 1);
+    const until = addDays(from, 30);
+    const created = await h.transport.invokeRoute("mcp/events/create", {
+      title: "Training", start: `${from}T18:00`, end: `${from}T19:00`, allDay: false, timezone: "Europe/Paris",
+      recurrence: { frequency: "weekly", interval: 2, until, weekdays: ["thursday", "tuesday"] },
+    }) as { ok: boolean; event: EventRecord };
+    expect(created.ok).toBe(true);
+    expect(created.event.recurrence).toMatchObject({ weekdays: ["tuesday", "thursday"] });
+    const id = created.event.id;
+    const editor = await h.admin.act("/events", "edit-event", { value: id });
+    const form = editor.blocks.find((block) => block.type === "form" && block.block_id === `event-form:${id}`);
+    expect(form?.type === "form" && form.fields.find((field) => field.action_id === "weeklyWeekdays"))
+      .toMatchObject({ type: "checkbox", initial_value: ["tuesday", "thursday"] });
+    // Submit actual saved values through the validated host to catch conversion losses.
+    const draftValues = form?.type === "form" ? Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined])) : {};
+    await h.admin.submit("/events", "save-event", { ...draftValues, title: "Training updated" }, { blockId: `event-form:${id}` });
+    expect(await h.inspect.storage.get<EventRecord>("events", id)).toMatchObject({ title: "Training updated", recurrence: created.event.recurrence });
+    await h.transport.invokeRoute("mcp/events/publish", { id });
+    const publicFeed = await h.transport.invokeRoute("publicEvents", { from, through: until }, { method: "GET" }) as { events: EventRecord[] };
+    expect(publicFeed.events.filter((row) => row.id.startsWith(`${id}#`))).toHaveLength(6);
+    const widget = await h.admin.loadWidget("upcoming-events");
+    expect(JSON.stringify(widget)).toContain("Training updated");
+    const thursday = `${addDays(from, 2)}T18:00`;
+    await h.transport.invokeRoute("mcp/events/exception/set", { eventId: id, recurrenceId: thursday, status: "cancelled" });
+    await expect(h.transport.invokeRoute("mcp/events/update", { id, patch: { recurrence: { frequency: "weekly", interval: 2, until, weekdays: ["tuesday"] } } }))
+      .resolves.toMatchObject({ ok: false, error: "INVALID_EVENT" });
+    await h.transport.invokeRoute("mcp/events/exception/remove", { eventId: id, recurrenceId: thursday });
+    await expect(h.transport.invokeRoute("mcp/events/update", { id, patch: { recurrence: { frequency: "weekly", interval: 2, until, weekdays: ["tuesday"] } } }))
+      .resolves.toMatchObject({ ok: true });
+    expect(await h.inspect.storage.get("calendar_cancellations", `${id}#${thursday}`)).toMatchObject({ eventId: id });
+    expect(mcpTools.createEvent.input.safeParse({ title: "Invalid", start: from, end: from, allDay: true, recurrence: { frequency: "weekly", until, weekdays: ["tuesday", "tuesday"] } }).success).toBe(false);
+  }, 15000);
+
   it("validates and retains recurrence intervals and monthly days across unrelated MCP edits", async () => {
     const h = await seed();
     const create = (recurrence: unknown) => h.transport.invokeRoute("mcp/events/create", {
@@ -46,6 +83,7 @@ describe("occurrence editor and MCP", () => {
       occurrences: [expect.objectContaining({ recurrenceId: "2026-10-06T18:00" }), expect.objectContaining({ recurrenceId: "2026-10-07T18:00" })],
     });
     await expect(call({ id: "practice", limit: 101 })).resolves.toMatchObject({ ok: false, error: "VALIDATION_ERROR" });
+    await expect(call({ id: "practice", from: ["2026-10-06"] })).resolves.toMatchObject({ ok: false, error: "VALIDATION_ERROR" });
     await expect(call({ id: "practice", from: "2026-01-01", through: "2027-01-02" })).resolves.toMatchObject({ ok: false, error: "INVALID_DATE_RANGE" });
     await expect(call({ id: "missing" })).resolves.toMatchObject({ ok: false, error: "NOT_FOUND" });
   });

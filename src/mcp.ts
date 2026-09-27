@@ -4,7 +4,7 @@ import { normalizeCategories } from "./domain/category";
 import { isDateOnly, isValidTimeZone } from "./domain/date-time";
 import { eventToDraft, prepareEventData } from "./domain/event-data";
 import type { EventDraft, EventException, EventRecord, EventRecurrence, VenueFields, VenueRecord } from "./domain/event";
-import { exceptionIdsMatchRecurrence, expandEventsInDateRange } from "./domain/recurrence";
+import { exceptionIdsMatchRecurrence, expandEventsInDateRange, scheduledOccurrence } from "./domain/recurrence";
 import { safeHttpUrl } from "./domain/venue";
 import {
 	deleteEvent,
@@ -110,6 +110,7 @@ function draftFromFields(fields: McpEventInput, base?: EventRecord): EventDraft 
 		repeatFrequency: recurrence?.frequency ?? "none",
 		recurrenceUntil: recurrence?.until ?? "",
 		recurrenceInterval: recurrence?.interval ?? 1,
+		weeklyWeekdays: recurrence?.frequency === "weekly" ? recurrence.weekdays : undefined,
 		monthlyDayOfMonth: recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth" ? recurrence.pattern.dayOfMonth : undefined,
 		monthlyPattern: recurrence?.frequency === "monthly" ? recurrence.pattern.type : "dayOfMonth",
 		missingDayBehavior: recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth" ? recurrence.pattern.missingDayBehavior : "skip",
@@ -226,8 +227,7 @@ export const mcpRoutes = {
 		const day = input.recurrenceId.slice(0, 10);
 		const timedId = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 		if (!isDateOnly(day) || (event.allDay ? input.recurrenceId !== day : !timedId.test(input.recurrenceId))) return { ok: false, error: "INVALID_RECURRENCE_ID" };
-		const scheduled = expandEventsInDateRange([{ ...event, exceptions: [] }], day, day);
-		if (!scheduled.some((item) => item.id === `${event.id}#${input.recurrenceId}`)) return { ok: false, error: "OCCURRENCE_NOT_FOUND" };
+		if (!scheduledOccurrence(event, input.recurrenceId)) return { ok: false, error: "OCCURRENCE_NOT_FOUND" };
 		let exception: EventException;
 		if (input.status === "cancelled") exception = { recurrenceId: input.recurrenceId, status: "cancelled" };
 		else {

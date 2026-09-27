@@ -9,7 +9,7 @@ import type {
   WeekdayName,
 } from "./event";
 import { safeHttpUrl } from "./venue";
-import { validRecurrence } from "./recurrence-rule";
+import { normalizeWeekdays, validRecurrence } from "./recurrence-rule";
 
 const WEEKDAYS: WeekdayName[] = [
   "sunday",
@@ -45,7 +45,8 @@ export function recurrenceForDraft(draft: EventDraft): EventRecurrence | undefin
   if (draft.repeatFrequency === "none") return undefined;
   const schedule = { until: draft.recurrenceUntil, ...(draft.recurrenceInterval !== undefined && draft.recurrenceInterval !== 1 ? { interval: draft.recurrenceInterval } : {}) };
   if (draft.repeatFrequency === "daily" || draft.repeatFrequency === "weekly") {
-    return { frequency: draft.repeatFrequency, ...schedule };
+    return { frequency: draft.repeatFrequency, ...schedule, ...(draft.repeatFrequency === "weekly" && draft.weeklyWeekdays?.length
+      ? { weekdays: normalizeWeekdays(draft.weeklyWeekdays) } : {}) };
   }
   return {
     frequency: "monthly",
@@ -89,6 +90,9 @@ export function prepareEventData(
   const startDate = draft.start.slice(0, 10);
   const recurrence = recurrenceForDraft(draft);
   if (recurrence && !validRecurrence(recurrence)) return { error: "Choose a valid repeat pattern and an integer interval from 1 through 52." };
+  if (recurrence?.frequency === "weekly" && recurrence.weekdays && !recurrence.weekdays.includes(weekdayForDate(startDate))) {
+    return { error: "The first event must fall on one of the selected weekly days." };
+  }
   if (recurrence && (!isDateOnly(recurrence.until) || recurrence.until < startDate)) {
     return { error: "Choose a recurrence end date on or after the first event." };
   }
@@ -158,6 +162,7 @@ export function eventToDraft(event: EventRecord): EventDraft {
     repeatFrequency: recurrence?.frequency ?? "none",
     recurrenceUntil: recurrence?.until ?? "",
     recurrenceInterval: recurrence?.interval ?? 1,
+    weeklyWeekdays: recurrence?.frequency === "weekly" ? recurrence.weekdays : undefined,
     monthlyDayOfMonth: recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth" ? recurrence.pattern.dayOfMonth : Number(start.slice(8, 10)),
     monthlyPattern:
       recurrence?.frequency === "monthly" ? recurrence.pattern.type : "dayOfMonth",

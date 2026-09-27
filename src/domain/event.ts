@@ -10,7 +10,8 @@ export type WeekdayName =
 export type MonthlyPosition = 1 | 2 | 3 | 4 | 5 | "last";
 
 export type EventRecurrence = (
-  | { frequency: "daily" | "weekly"; until: string }
+  | { frequency: "daily"; until: string }
+  | { frequency: "weekly"; until: string; weekdays?: WeekdayName[] }
   | {
       frequency: "monthly";
       until: string;
@@ -97,6 +98,7 @@ export interface EventDraft {
   repeatFrequency: "none" | "daily" | "weekly" | "monthly";
   recurrenceUntil: string;
   recurrenceInterval?: number;
+  weeklyWeekdays?: WeekdayName[];
   monthlyDayOfMonth?: number;
   monthlyPattern: "dayOfMonth" | "weekdayOfMonth";
   missingDayBehavior: "skip" | "lastDay";
