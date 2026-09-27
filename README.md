@@ -23,9 +23,10 @@ A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.co
   window or enter an exception manually.
 - A compact EmDash dashboard widget lists the next published events with local
   date/time, venue or location, an empty state, and a link to the Events page.
-- A dependency-free Astro frontend example offers compact list, timeline,
+- The [Astro frontend example](./examples/astro-events/README.md) offers compact list, timeline,
   card grid, daily schedule, date strip, month calendar, and location views.
-  It stays in the consuming site and adds nothing to the sandbox backend bundle.
+  It also includes event detail pages and individual iCalendar downloads. It
+  stays in the consuming site and adds nothing to the sandbox backend bundle.
 - MCP tools let authorized agents manage event series, publication, occurrence
   exceptions, saved venues, and the default timezone.
 - Plugin-owned EmDash storage for events and venues; assigned venues cannot be
