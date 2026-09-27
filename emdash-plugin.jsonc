@@ -8,7 +8,7 @@
 	"author": { "name": "Jaap Vermeulen", "email": "jaap.vermeulen@gmail.com" },
 	"security": { "email": "jaap.vermeulen@gmail.com" },
 	"name": "Eventual",
-	"description": "Manage one-off and recurring events, saved venues, and public JSON/iCalendar feeds in EmDash.",
+	"description": "Manage one-off and recurring events, saved venues, and public feeds, with a companion Astro frontend example.",
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
 		"installation": { "file": "./docs/registry-installation.md" }

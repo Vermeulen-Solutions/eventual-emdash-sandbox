@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { formatICalendar } from "../../lib/calendar";
+import { eventIdFromRoute, formatICalendar } from "../../lib/calendar";
 import { eventRange } from "../../lib/event-range";
 import { fetchPublicFeed } from "../../lib/feed";
 
@@ -11,8 +11,9 @@ export const GET: APIRoute = async ({ params, url }) => {
 
 	try {
 		const apiOrigin = process.env.EVENTUAL_API_ORIGIN || url.origin;
+		const eventId = eventIdFromRoute(params.id);
 		const event = (await fetchPublicFeed(apiOrigin, range.from, range.through)).events
-			.find((item) => item.id === (params.id ?? ""));
+			.find((item) => item.id === eventId);
 		if (!event) return new Response("Event not found.", { status: 404 });
 
 		const body = formatICalendar(event, url.host);

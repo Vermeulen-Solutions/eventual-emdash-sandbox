@@ -3,12 +3,20 @@ export interface EventBrowserMessages {
 	skipToContent: string;
 	viewLabel: string;
 	listView: string;
+	timelineView: string;
+	cardsView: string;
+	scheduleView: string;
+	datesView: string;
 	monthView: string;
+	locationsView: string;
+	browseIntro: string;
 	previousMonth: string;
 	nextMonth: string;
 	filterLabel: string;
 	allCategories: string;
 	applyFilter: string;
+	clearFilter: string;
+	filteredBy: (category: string) => string;
 	upcomingEvents: string;
 	monthEvents: string;
 	loading: string;
@@ -31,6 +39,9 @@ export interface EventBrowserMessages {
 	next: string;
 	backToToday: string;
 	feedErrorDetail: string;
+	locationToConfirm: string;
+	eventsAtLocation: (location: string) => string;
+	jumpToDate: string;
 }
 
 const messages: Record<string, EventBrowserMessages> = {
@@ -39,12 +50,20 @@ const messages: Record<string, EventBrowserMessages> = {
 		skipToContent: "Skip to event content",
 		viewLabel: "View",
 		listView: "List",
+		timelineView: "Timeline",
+		cardsView: "Cards",
+		scheduleView: "Schedule",
+		datesView: "Date strip",
 		monthView: "Month",
+		locationsView: "Locations",
+		browseIntro: "Browse the month in the format that suits you.",
 		previousMonth: "Previous month",
 		nextMonth: "Next month",
 		filterLabel: "Category",
 		allCategories: "All categories",
 		applyFilter: "Apply filter",
+		clearFilter: "Clear filter",
+		filteredBy: (category) => `Filtered by ${category}`,
 		upcomingEvents: "Upcoming events",
 		monthEvents: "Events this month",
 		loading: "Loading events…",
@@ -67,18 +86,29 @@ const messages: Record<string, EventBrowserMessages> = {
 		next: "Next",
 		backToToday: "This month",
 		feedErrorDetail: "The event feed could not be loaded. Please try again later.",
+		locationToConfirm: "Location to be confirmed",
+		eventsAtLocation: (location) => `Events at ${location}`,
+		jumpToDate: "Jump to a date",
 	},
 	nl: {
 		title: "Evenementen",
 		skipToContent: "Ga naar de evenementen",
 		viewLabel: "Weergave",
 		listView: "Lijst",
+		timelineView: "Tijdlijn",
+		cardsView: "Kaarten",
+		scheduleView: "Programma",
+		datesView: "Datumstrip",
 		monthView: "Maand",
+		locationsView: "Locaties",
+		browseIntro: "Bekijk de maand in de vorm die bij u past.",
 		previousMonth: "Vorige maand",
 		nextMonth: "Volgende maand",
 		filterLabel: "Categorie",
 		allCategories: "Alle categorieën",
 		applyFilter: "Filter toepassen",
+		clearFilter: "Filter wissen",
+		filteredBy: (category) => `Gefilterd op ${category}`,
 		upcomingEvents: "Aankomende evenementen",
 		monthEvents: "Evenementen deze maand",
 		loading: "Evenementen laden…",
@@ -101,18 +131,29 @@ const messages: Record<string, EventBrowserMessages> = {
 		next: "Volgende",
 		backToToday: "Deze maand",
 		feedErrorDetail: "De evenementenkalender kon niet worden geladen. Probeer het later opnieuw.",
+		locationToConfirm: "Locatie wordt nog bevestigd",
+		eventsAtLocation: (location) => `Evenementen bij ${location}`,
+		jumpToDate: "Ga naar een datum",
 	},
 	fr: {
 		title: "Événements",
 		skipToContent: "Aller au contenu des événements",
 		viewLabel: "Affichage",
 		listView: "Liste",
+		timelineView: "Chronologie",
+		cardsView: "Cartes",
+		scheduleView: "Programme",
+		datesView: "Dates",
 		monthView: "Mois",
+		locationsView: "Lieux",
+		browseIntro: "Parcourez le mois dans le format qui vous convient.",
 		previousMonth: "Mois précédent",
 		nextMonth: "Mois suivant",
 		filterLabel: "Catégorie",
 		allCategories: "Toutes les catégories",
 		applyFilter: "Appliquer le filtre",
+		clearFilter: "Effacer le filtre",
+		filteredBy: (category) => `Filtré par ${category}`,
 		upcomingEvents: "Événements à venir",
 		monthEvents: "Événements du mois",
 		loading: "Chargement des événements…",
@@ -135,6 +176,9 @@ const messages: Record<string, EventBrowserMessages> = {
 		next: "Suivant",
 		backToToday: "Ce mois-ci",
 		feedErrorDetail: "Impossible de charger les événements. Veuillez réessayer plus tard.",
+		locationToConfirm: "Lieu à confirmer",
+		eventsAtLocation: (location) => `Événements à ${location}`,
+		jumpToDate: "Aller à une date",
 	},
 };
 

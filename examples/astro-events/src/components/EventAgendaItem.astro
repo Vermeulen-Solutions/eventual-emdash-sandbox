@@ -1,0 +1,44 @@
+---
+import { eventDetailsUrl, eventStartDate, eventTimeRange, safeHttpUrl, safeImageUrl } from "../lib/calendar";
+import type { PublicEvent } from "../lib/feed";
+import type { EventBrowserMessages } from "../lib/messages";
+import EventDescription from "./EventDescription.astro";
+
+interface Props {
+	event: PublicEvent;
+	locale: string;
+	labels: EventBrowserMessages;
+	apiOrigin?: string;
+	showDate?: boolean;
+	compact?: boolean;
+}
+
+const { event, locale, labels, apiOrigin, showDate = true, compact = false } = Astro.props;
+const dateKey = eventStartDate(event);
+const date = new Date(`${dateKey}T12:00:00Z`);
+const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(date);
+const day = new Intl.DateTimeFormat(locale, { day: "2-digit", timeZone: "UTC" }).format(date);
+const month = new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(date);
+const fullDate = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }).format(date);
+const imageUrl = apiOrigin ? safeImageUrl(event.imageUrl, apiOrigin) : "";
+const directionsUrl = safeHttpUrl(event.directionsUrl);
+---
+
+<article class:list={["agenda-item", compact && "agenda-item--compact", !showDate && "agenda-item--without-date"]}>
+	{showDate && (
+		<time class="date-block" datetime={dateKey} aria-label={fullDate}>
+			<span>{weekday}</span>
+			<strong>{day}</strong>
+			<span>{month}</span>
+		</time>
+	)}
+	{imageUrl && !compact && <img class="agenda-item__image" src={imageUrl} alt="" loading="lazy" decoding="async" />}
+	<div class="agenda-item__body">
+		<p class="agenda-item__time">{event.allDay ? labels.allDay : eventTimeRange(event, locale)}</p>
+		<h3><a href={eventDetailsUrl(event)}>{event.title}</a></h3>
+		{event.location && (
+			<p class="agenda-item__location">{event.location}{directionsUrl && <> · <a href={directionsUrl} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>
+		)}
+		{event.description && !compact && <EventDescription source={event.description} compact />}
+	</div>
+</article>

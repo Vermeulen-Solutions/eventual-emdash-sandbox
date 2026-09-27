@@ -2,15 +2,17 @@
 import { displayDate, eventDetailsUrl, eventEndDate, eventStartDate, eventTimeRange, safeHttpUrl, safeImageUrl } from "../lib/calendar";
 import type { PublicEvent } from "../lib/feed";
 import type { EventBrowserMessages } from "../lib/messages";
+import EventDescription from "./EventDescription.astro";
 
 interface Props {
 	event: PublicEvent;
 	locale: string;
 	labels: EventBrowserMessages;
 	apiOrigin?: string;
+	variant?: "list" | "grid" | "timeline";
 }
 
-const { event, locale, labels, apiOrigin } = Astro.props;
+const { event, locale, labels, apiOrigin, variant = "list" } = Astro.props;
 const externalUrl = safeHttpUrl(event.externalUrl);
 const detailsUrl = eventDetailsUrl(event);
 const directionsUrl = safeHttpUrl(event.directionsUrl);
@@ -21,8 +23,8 @@ const sameCalendarDate = eventStartDate(event) === eventEndDate(event);
 const timeRange = eventTimeRange(event, locale);
 ---
 
-<article class="event-card">
-	{imageUrl && <img class="event-card__image" src={imageUrl} alt="" loading="lazy" />}
+<article class:list={["event-card", `event-card--${variant}`]}>
+	{imageUrl && <img class="event-card__image" src={imageUrl} alt="" loading="lazy" decoding="async" />}
 	<div class="event-card__body">
 		<div class="event-card__heading">
 			<div>
@@ -37,7 +39,12 @@ const timeRange = eventTimeRange(event, locale);
 		</div>
 		{event.location && <p class="event-card__location">{event.location}{directionsUrl && <> · <a href={directionsUrl} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>}
 		{externalUrl && <p class="event-card__external"><a href={externalUrl} target="_blank" rel="noopener noreferrer">{labels.externalWebsite}</a></p>}
-		{event.description && <p class="event-card__description">{event.description}</p>}
-		{event.categories.length > 0 && <p class="event-card__categories"><span>{labels.categories}:</span> {event.categories.join(", ")}</p>}
+		{event.description && <EventDescription source={event.description} compact />}
+		{event.categories.length > 0 && (
+			<ul class="event-card__categories" aria-label={labels.categories}>
+				{event.categories.map((category) => <li>{category}</li>)}
+			</ul>
+		)}
+		<p class="event-card__action"><a href={detailsUrl}>{labels.openEvent} <span aria-hidden="true">→</span></a></p>
 	</div>
 </article>

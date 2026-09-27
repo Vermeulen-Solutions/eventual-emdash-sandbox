@@ -1,0 +1,18 @@
+---
+import { descriptionExcerpt, renderDescriptionMarkdown } from "../lib/markdown";
+
+interface Props {
+	source: string;
+	compact?: boolean;
+	headingBase?: number;
+}
+
+const { source, compact = false, headingBase = 2 } = Astro.props;
+const html = compact ? "" : renderDescriptionMarkdown(source, headingBase);
+const excerpt = compact ? descriptionExcerpt(source) : "";
+---
+
+{compact
+	? <p class="event-description event-description--compact">{excerpt}</p>
+	: <div class="event-description" set:html={html} />
+}

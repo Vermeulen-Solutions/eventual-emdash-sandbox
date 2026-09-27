@@ -1,10 +1,17 @@
 # Eventual Astro event browser
 
 This is a site-owned Astro example for a sandboxed Eventual installation. It
-renders a public event list and a responsive month view from Eventual's JSON
-route. Event titles link to site-owned detail pages, which include a
+renders seven public views from Eventual's JSON route: compact list, timeline,
+card grid, collapsible daily schedule, horizontal date strip, responsive month
+calendar, and events grouped by location. Event titles link to site-owned detail pages, which include a
 single-event iCalendar download. The EmDash plugin itself stores and returns
 data; it does not add visitor pages or a calendar to an Astro site.
+
+Switch views with the `view` query parameter, for example
+`/events?month=2026-10&view=timeline`. Supported values are `list`, `timeline`,
+`cards`, `schedule`, `dates`, `month`, and `locations`. Every view is rendered
+on the server with Astro and uses ordinary links, forms, and native disclosures;
+there is no visitor JavaScript or calendar dependency.
 
 ## Run it locally
 
@@ -38,9 +45,9 @@ timezone.
 
 ## Interaction and accessibility
 
-- The API is queried for the exact selected month. The visual grid pads that
-  range with adjacent dates to make complete locale-aligned weeks.
-- List and month views, month navigation, retry, and category filtering work
+- The API is queried for the selected month. The visual grid also requests the
+  adjacent dates needed to make complete locale-aligned weeks.
+- All seven views, month navigation, retry, and category filtering work
   as ordinary links and GET forms without browser JavaScript.
 - The category filter accepts a free-form label for categories not present in
   the current month; browser suggestions show labels used by the visible month.
@@ -69,7 +76,8 @@ timezone.
   This is a download, not a live subscription. The separate plugin-owned
   iCalendar subscription feed carries cancellation tombstones for published
   event occurrences.
-- The event description is rendered as text. External event/directions links
+- Event descriptions render the documented Markdown subset (headings, emphasis,
+  lists, and HTTP(S) links) with raw HTML escaped. External event/directions links
   accept HTTP(S) only. External images must use HTTPS; relative EmDash media
   links use the configured CMS origin. Eventual supplies directions links but
   does not provide map embeds.

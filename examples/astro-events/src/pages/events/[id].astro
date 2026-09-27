@@ -1,15 +1,16 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import { displayDate, eventDetailsUrl, eventEndDate, eventStartDate, eventTimeRange, normalizeLocale, safeHttpUrl, safeImageUrl } from "../../lib/calendar";
+import { displayDate, eventDetailsUrl, eventEndDate, eventIdFromRoute, eventStartDate, eventTimeRange, normalizeLocale, safeHttpUrl, safeImageUrl } from "../../lib/calendar";
 import { fetchPublicFeed, type PublicEvent } from "../../lib/feed";
 import { eventRange } from "../../lib/event-range";
 import { messagesForLocale } from "../../lib/messages";
+import EventDescription from "../../components/EventDescription.astro";
 
 export const prerender = false;
 
 const locale = normalizeLocale(process.env.EVENTUAL_LOCALE || "en-GB");
 const labels = messagesForLocale(locale);
-const eventId = Astro.params.id ?? "";
+const eventId = eventIdFromRoute(Astro.params.id);
 const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
 const range = eventRange(Astro.url.searchParams);
 let event: PublicEvent | undefined;
@@ -48,16 +49,18 @@ const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : tru
 					{eventWebsite && <li><a href={eventWebsite} target="_blank" rel="noopener noreferrer">{labels.externalWebsite}</a></li>}
 				</ul>
 				<article class="event-detail-card">
-					{eventImageUrl && <img class="event-card__image" src={eventImageUrl} alt="" />}
-					<p class="event-card__date">
-						<time datetime={event.start}>{displayDate(event.start, locale, event.timezone, event.allDay)}</time>
-						{!eventSameDay && <> – <time datetime={event.end}>{displayDate(event.end, locale, event.timezone, event.allDay)}</time></>}
-						{event.allDay ? ` · ${labels.allDay}` : ` · ${eventTimeRange(event, locale)} · ${event.timezone}`}
-					</p>
-					{event.organizer && <p class="event-card__organizer">{labels.organizer} {event.organizer}</p>}
-					{event.location && <p class="event-card__location">{event.location}{eventDirections && <> · <a href={eventDirections} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>}
-					{event.description && <div class="event-card__description">{event.description}</div>}
-					{event.categories.length > 0 && <p class="event-card__categories"><span>{labels.categories}:</span> {event.categories.join(", ")}</p>}
+					<div class="event-detail-card__meta">
+						<p class="event-card__date">
+							<time datetime={event.start}>{displayDate(event.start, locale, event.timezone, event.allDay)}</time>
+							{!eventSameDay && <> – <time datetime={event.end}>{displayDate(event.end, locale, event.timezone, event.allDay)}</time></>}
+							{event.allDay ? ` · ${labels.allDay}` : ` · ${eventTimeRange(event, locale)} · ${event.timezone}`}
+						</p>
+						{event.organizer && <p class="event-card__organizer">{labels.organizer} {event.organizer}</p>}
+						{event.location && <p class="event-card__location">{event.location}{eventDirections && <> · <a href={eventDirections} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>}
+					</div>
+					{eventImageUrl && <img class="event-card__image" src={eventImageUrl} alt="" decoding="async" />}
+					{event.description && <EventDescription source={event.description} />}
+					{event.categories.length > 0 && <ul class="event-card__categories" aria-label={labels.categories}>{event.categories.map((category) => <li>{category}</li>)}</ul>}
 				</article>
 			</>
 		) : (

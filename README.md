@@ -23,6 +23,9 @@ A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.co
   window or enter an exception manually.
 - A compact EmDash dashboard widget lists the next published events with local
   date/time, venue or location, an empty state, and a link to the Events page.
+- A dependency-free Astro frontend example offers compact list, timeline,
+  card grid, daily schedule, date strip, month calendar, and location views.
+  It stays in the consuming site and adds nothing to the sandbox backend bundle.
 - MCP tools let authorized agents manage event series, publication, occurrence
   exceptions, saved venues, and the default timezone.
 - Plugin-owned EmDash storage for events and venues; assigned venues cannot be
@@ -41,8 +44,8 @@ A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.co
 
 The sandboxed plugin returns event data; it does not render a visitor calendar.
 To attach an image, upload it from EmDash Media first, then find it by filename
-in the event form. An Astro site can build its own list or month view by
-consuming the public route.
+in the event form. An Astro site can build its own visitor views by consuming
+the public route.
 
 The plugin manages events and returns public feed data; the visitor calendar
 remains in the consuming Astro site. Bulk CSV/iCalendar imports are not
@@ -261,12 +264,15 @@ documents the route path and response envelope.
 ### Astro event browser example
 
 [`examples/astro-events/`](examples/astro-events/) is a runnable Astro site
-integration. It provides a custom event list and responsive locale-aware month
-view, month navigation, category filter, busy-day disclosures, error/empty
-states, keyboard-accessible controls, shareable event detail pages, and a
-single-event iCalendar download. It uses
+integration. It provides seven responsive views: a compact date-block list,
+visual timeline, image card grid, collapsible daily schedule, horizontal date
+strip, locale-aware month calendar, and events grouped by location. The views
+share month navigation, category filtering, safe lightweight Markdown rendering,
+error and empty states, keyboard-accessible controls, shareable event detail
+pages, and a single-event iCalendar download. It uses
 ordinary Astro code in the consuming site; it is not shipped as part of the
-sandboxed plugin and does not add pages to EmDash.
+sandboxed plugin, does not add pages to EmDash, and does not count toward the
+registry's backend or package size limits.
 
 Follow [`examples/astro-events/README.md`](examples/astro-events/README.md) to
 run or adapt it. The example uses Astro's Node standalone adapter and requests
@@ -278,8 +284,9 @@ output otherwise snapshots feed data at build time. See Astro's
 [on-demand rendering guide](https://docs.astro.build/en/guides/on-demand-rendering/)
 and [data fetching guide](https://docs.astro.build/en/guides/data-fetching/).
 
-The example requests the selected month from the API and pads the visual month
-grid to 35 or 42 dates according to the locale. The API allows up to 366
+The example requests the selected month from the API. Its month view also
+requests the adjacent dates needed to pad the grid to 35 or 42 locale-aligned
+dates, so events in those visible cells remain accurate. The API allows up to 366
 inclusive dates and expands recurrence into occurrences, omitting
 cancelled instances and applying modified-instance overrides. The example
 keeps labels centralized for localization, uses the occurrence's own IANA

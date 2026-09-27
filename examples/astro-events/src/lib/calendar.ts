@@ -155,6 +155,15 @@ export function eventDetailsUrl(event: PublicEvent, originPath = "/events", exte
 	return `${url.pathname}${url.search}`;
 }
 
+export function eventIdFromRoute(value: string | undefined): string {
+	if (!value) return "";
+	try {
+		return decodeURIComponent(value);
+	} catch {
+		return "";
+	}
+}
+
 export function addCalendarDay(value: string): string {
 	const date = new Date(`${value}T00:00:00Z`);
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(date.getTime())) return "";

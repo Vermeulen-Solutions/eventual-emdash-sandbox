@@ -1,6 +1,8 @@
 import { addMonths, isMonthKey } from "./calendar";
 
-export type EventBrowserView = "list" | "month";
+export const EVENT_BROWSER_VIEWS = ["list", "timeline", "cards", "schedule", "dates", "month", "locations"] as const;
+
+export type EventBrowserView = typeof EVENT_BROWSER_VIEWS[number];
 
 export interface EventBrowserState {
 	month: string;
@@ -10,9 +12,10 @@ export interface EventBrowserState {
 
 export function eventBrowserState(params: URLSearchParams, currentMonth: string): EventBrowserState {
 	const requestedMonth = params.get("month");
+	const requestedView = params.get("view");
 	return {
 		month: isMonthKey(requestedMonth) ? requestedMonth : currentMonth,
-		view: params.get("view") === "month" ? "month" : "list",
+		view: EVENT_BROWSER_VIEWS.includes(requestedView as EventBrowserView) ? requestedView as EventBrowserView : "list",
 		category: (params.get("category") ?? "").trim(),
 	};
 }

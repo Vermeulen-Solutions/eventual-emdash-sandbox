@@ -2,7 +2,10 @@
 import { fetchPublicFeed, type PublicEvent } from "../lib/feed";
 import {
 	buildCalendar,
+	calendarRange,
 	eventDetailsUrl,
+	eventEndDate,
+	eventStartDate,
 	eventTimeRange,
 	fullWeekdayHeadings,
 	monthDateRange,
@@ -12,62 +15,113 @@ import {
 	safeHttpUrl,
 	weekdayHeadings,
 } from "../lib/calendar";
-import { adjacentMonth, eventBrowserState, eventBrowserUrl } from "../lib/browser-state";
+import { adjacentMonth, eventBrowserState, eventBrowserUrl, type EventBrowserView } from "../lib/browser-state";
 import { messagesForLocale } from "../lib/messages";
+import EventAgendaItem from "../components/EventAgendaItem.astro";
 import EventCard from "../components/EventCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
 
 const locale = normalizeLocale(process.env.EVENTUAL_LOCALE || "en-GB");
 const timeZone = normalizeTimeZone(process.env.EVENTUAL_DISPLAY_TIMEZONE || "UTC");
+const now = new Date();
 const dateParts = new Intl.DateTimeFormat("en", {
 	timeZone,
 	year: "numeric",
 	month: "2-digit",
-}).formatToParts(new Date());
+}).formatToParts(now);
 const currentMonth = `${dateParts.find((part) => part.type === "year")?.value}-${dateParts.find((part) => part.type === "month")?.value}`;
 const state = eventBrowserState(Astro.url.searchParams, currentMonth);
 const { month, view, category } = state;
 const labels = messagesForLocale(locale);
-const range = monthDateRange(month);
+const visibleRange = monthDateRange(month);
+const requestRange = view === "month" ? calendarRange(month, locale) : visibleRange;
 const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
-let events: PublicEvent[] = [];
+let feedEvents: PublicEvent[] = [];
 let feedError = false;
 try {
-	const feed = await fetchPublicFeed(apiOrigin, range.from, range.through, category);
-	events = feed.events;
+	const feed = await fetchPublicFeed(apiOrigin, requestRange.from, requestRange.through, category);
+	feedEvents = feed.events;
 } catch {
 	feedError = true;
 }
 
+const events = feedEvents.filter((event) => eventStartDate(event) <= visibleRange.through && eventEndDate(event) >= visibleRange.from);
 const eventCategories = [...new Set(events.flatMap((event) => event.categories))]
 	.sort((left, right) => left.localeCompare(right, locale));
-const weeks = buildCalendar(month, locale, events);
+const weeks = buildCalendar(month, locale, feedEvents);
 const headings = weekdayHeadings(locale);
 const fullHeadings = fullWeekdayHeadings(locale);
 const monthTitle = monthLabel(month, locale);
 const fullDateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
+const weekdayFormatter = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+const dayFormatter = new Intl.DateTimeFormat(locale, { day: "2-digit", timeZone: "UTC" });
 const todayMonth = currentMonth;
 const externalBase = safeHttpUrl(apiOrigin);
+
+const viewOptions: Array<{ value: EventBrowserView; label: string }> = [
+	{ value: "list", label: labels.listView },
+	{ value: "timeline", label: labels.timelineView },
+	{ value: "cards", label: labels.cardsView },
+	{ value: "schedule", label: labels.scheduleView },
+	{ value: "dates", label: labels.datesView },
+	{ value: "month", label: labels.monthView },
+	{ value: "locations", label: labels.locationsView },
+];
+
+const groupedByDate = new Map<string, PublicEvent[]>();
+for (const event of events) {
+	const date = eventStartDate(event);
+	groupedByDate.set(date, [...(groupedByDate.get(date) ?? []), event]);
+}
+const dateGroups = [...groupedByDate].map(([date, groupedEvents]) => {
+	const value = new Date(`${date}T12:00:00Z`);
+	return {
+		date,
+		id: `events-${date}`,
+		label: fullDateFormatter.format(value),
+		weekday: weekdayFormatter.format(value),
+		day: dayFormatter.format(value),
+		events: groupedEvents,
+	};
+});
+
+const groupedByLocation = new Map<string, PublicEvent[]>();
+for (const event of events) {
+	const location = event.location.trim() || labels.locationToConfirm;
+	groupedByLocation.set(location, [...(groupedByLocation.get(location) ?? []), event]);
+}
+const locationGroups = [...groupedByLocation].map(([location, groupedEvents]) => ({
+	location,
+	directionsUrl: groupedEvents.map((event) => safeHttpUrl(event.directionsUrl)).find(Boolean) ?? "",
+	events: groupedEvents,
+}));
+
+const clearFilterUrl = eventBrowserUrl({ ...state, category: "" });
 ---
 
 <SiteLayout title={`${labels.title} · ${monthTitle}`} locale={locale}>
 	<main class="event-browser" id="main-content" tabindex="-1">
 		<header class="page-heading">
 			<div>
-				<p class="eyebrow">{labels.title}</p>
 				<h1>{monthTitle}</h1>
+				<p>{labels.browseIntro}</p>
 			</div>
 			<nav class="view-switch" aria-label={labels.viewLabel}>
-				<a href={eventBrowserUrl(state, "list")} aria-current={view === "list" ? "page" : undefined}>{labels.listView}</a>
-				<a href={eventBrowserUrl(state, "month")} aria-current={view === "month" ? "page" : undefined}>{labels.monthView}</a>
+				{viewOptions.map((option) => (
+					<a href={eventBrowserUrl(state, option.value)} aria-current={view === option.value ? "page" : undefined}>{option.label}</a>
+				))}
 			</nav>
 		</header>
 
 		<div class="browser-toolbar">
 			<nav class="month-navigation" aria-label={labels.title}>
-				<a class="icon-link" href={eventBrowserUrl(state, view, adjacentMonth(state, -1))} aria-label={labels.previousMonth}>‹</a>
+				<a class="icon-link" href={eventBrowserUrl(state, view, adjacentMonth(state, -1))} aria-label={labels.previousMonth}>
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+				</a>
 				<a class="today-link" href={eventBrowserUrl(state, view, todayMonth)}>{labels.backToToday}</a>
-				<a class="icon-link" href={eventBrowserUrl(state, view, adjacentMonth(state, 1))} aria-label={labels.nextMonth}>›</a>
+				<a class="icon-link" href={eventBrowserUrl(state, view, adjacentMonth(state, 1))} aria-label={labels.nextMonth}>
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+				</a>
 			</nav>
 			<form method="get" class="category-filter">
 				<input type="hidden" name="month" value={month} />
@@ -81,6 +135,11 @@ const externalBase = safeHttpUrl(apiOrigin);
 			</form>
 		</div>
 
+		<div class="result-bar" aria-live="polite">
+			<p>{labels.eventCount(events.length)} · {monthTitle}</p>
+			{category && <p><span>{labels.filteredBy(category)}</span> <a href={clearFilterUrl}>{labels.clearFilter}</a></p>}
+		</div>
+
 		{feedError ? (
 			<section class="notice notice--error" role="status" aria-live="polite">
 				<h2>{labels.feedUnavailable}</h2>
@@ -90,67 +149,115 @@ const externalBase = safeHttpUrl(apiOrigin);
 		) : events.length === 0 ? (
 			<section class="notice notice--empty" role="status">
 				<h2>{labels.empty}</h2>
+				{category && <p><a href={clearFilterUrl}>{labels.clearFilter}</a></p>}
 			</section>
 		) : view === "list" ? (
 			<section aria-labelledby="events-heading">
 				<h2 class="section-heading" id="events-heading">{labels.monthEvents}</h2>
-				<ul class="event-list">
-					{events.map((event) => <li><EventCard event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} /></li>)}
+				<ul class="agenda-list">
+					{events.map((event) => <li><EventAgendaItem event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} /></li>)}
 				</ul>
+			</section>
+		) : view === "timeline" ? (
+			<section aria-labelledby="timeline-heading" class="timeline-section">
+				<h2 class="section-heading" id="timeline-heading">{labels.timelineView}: {monthTitle}</h2>
+				<div class="timeline-month" aria-hidden="true"><span>{monthTitle}</span></div>
+				<ol class="timeline-list">
+					{events.map((event) => <li><EventCard event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} variant="timeline" /></li>)}
+				</ol>
+			</section>
+		) : view === "cards" ? (
+			<section aria-labelledby="cards-heading">
+				<h2 class="section-heading" id="cards-heading">{labels.monthEvents}</h2>
+				<ul class="card-grid">
+					{events.map((event) => <li><EventCard event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} variant="grid" /></li>)}
+				</ul>
+			</section>
+		) : view === "schedule" ? (
+			<section aria-labelledby="schedule-heading">
+				<h2 class="section-heading" id="schedule-heading">{labels.scheduleView}: {monthTitle}</h2>
+				<ol class="schedule-list">
+					{dateGroups.map((group, index) => (
+						<li>
+							<details class="schedule-day" open={index === 0}>
+								<summary><span>{group.label}</span><span>{labels.eventCount(group.events.length)}</span></summary>
+								<ul>
+									{group.events.map((event) => <li><EventAgendaItem event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} showDate={false} compact /></li>)}
+								</ul>
+							</details>
+						</li>
+					))}
+				</ol>
+			</section>
+		) : view === "dates" ? (
+			<section aria-labelledby="dates-heading">
+				<h2 class="section-heading" id="dates-heading">{labels.monthEvents}</h2>
+				<nav class="date-strip" aria-label={labels.jumpToDate}>
+					<ul>
+						{dateGroups.map((group) => (
+							<li><a href={`#${group.id}`}><span>{group.weekday}</span><strong>{group.day}</strong></a></li>
+						))}
+					</ul>
+				</nav>
+				<div class="date-sections">
+					{dateGroups.map((group) => (
+						<section class="date-section" id={group.id} tabindex="-1" aria-labelledby={`${group.id}-heading`}>
+							<h3 id={`${group.id}-heading`}>{group.label}</h3>
+							<ul>
+								{group.events.map((event) => <li><EventAgendaItem event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} showDate={false} compact /></li>)}
+							</ul>
+						</section>
+					))}
+				</div>
+			</section>
+		) : view === "locations" ? (
+			<section aria-labelledby="locations-heading">
+				<h2 class="section-heading" id="locations-heading">{labels.locationsView}: {monthTitle}</h2>
+				<div class="location-groups">
+					{locationGroups.map((group) => (
+						<section class="location-group" aria-label={labels.eventsAtLocation(group.location)}>
+							<header>
+								<h3>{group.location}</h3>
+								{group.directionsUrl && <a href={group.directionsUrl} target="_blank" rel="noopener noreferrer">{labels.directions}</a>}
+							</header>
+							<ul>
+								{group.events.map((event) => <li><EventAgendaItem event={event} locale={locale} labels={labels} apiOrigin={externalBase || undefined} compact /></li>)}
+							</ul>
+						</section>
+					))}
+				</div>
 			</section>
 		) : (
 			<section aria-labelledby="month-heading" class="month-section">
 				<h2 class="section-heading" id="month-heading">{labels.monthEvents}: {monthTitle}</h2>
 				<table class="calendar-table">
 					<caption class="visually-hidden">{labels.monthEvents}: {monthTitle}</caption>
-					<thead>
-						<tr>
-							{headings.map((day, index) => (
-								<th scope="col" aria-label={fullHeadings[index]}>{day}</th>
-							))}
-						</tr>
-					</thead>
+					<thead><tr>{headings.map((day, index) => <th scope="col" aria-label={fullHeadings[index]}>{day}</th>)}</tr></thead>
 					<tbody>
 						{weeks.map((week) => (
 							<tr>
 								{week.map((cell, index) => {
 									const fullDate = fullDateFormatter.format(new Date(`${cell.date}T12:00:00Z`));
-									const shortWeekday = headings[index];
 									return (
-										<td class:list={["calendar-day", !cell.inMonth && "calendar-day--outside"]}>
+										<td class:list={["calendar-day", !cell.inMonth && "calendar-day--outside", cell.events.length === 0 && "calendar-day--empty"]}>
 											<div class="calendar-day__head">
-												<span class="calendar-day__weekday" aria-hidden="true">{shortWeekday}</span>
+												<span class="calendar-day__weekday" aria-hidden="true">{headings[index]}</span>
 												<time class="calendar-day__date" datetime={cell.date} aria-label={fullDate}>{cell.dayNumber}</time>
 											</div>
 											{cell.events.length > 0 ? (
 												<details class="calendar-day__events">
 													<summary aria-label={`${fullDate}: ${labels.eventCount(cell.events.length)}`}>{labels.eventCount(cell.events.length)}</summary>
-													<ul>
-														{cell.events.map((event) => {
-															return (
-																<li>
-																	<span class="calendar-day__time">
-																		{event.allDay ? labels.allDay : eventTimeRange(event, locale)}
-																	</span>
-																<span>
-																	<a href={eventDetailsUrl(event)}>{event.title}</a>
-																</span>
-																</li>
-															);
-														})}
-													</ul>
+													<ul>{cell.events.map((event) => <li><span class="calendar-day__time">{event.allDay ? labels.allDay : eventTimeRange(event, locale)}</span><a href={eventDetailsUrl(event)}>{event.title}</a></li>)}</ul>
 												</details>
-											) : (
-												<span class="calendar-day__empty" aria-hidden="true">—</span>
-											)}
-									</td>
-								);
-							})}
+											) : <span class="calendar-day__empty" aria-hidden="true">—</span>}
+										</td>
+									);
+								})}
 							</tr>
 						))}
 					</tbody>
 				</table>
-				<p class="calendar-hint">{labels.monthEvents} · {labels.eventCount(events.length)}</p>
+				<p class="calendar-hint">{labels.eventCount(events.length)} · {monthTitle}</p>
 			</section>
 		)}
 	</main>
