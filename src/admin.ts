@@ -76,7 +76,8 @@ interface EventFormValues {
 	monthlyPosition: MonthlyPosition;
 }
 
-const DESCRIPTION_HELP = "Description formatting is optional. Write normally, or use Markdown: **bold**, _italic_, ## heading, - list item, and [link text](https://example.com). Leave a blank line between paragraphs.";
+const DESCRIPTION_LABEL = "Description (Markdown optional; drag corner to resize)";
+const DESCRIPTION_PLACEHOLDER = "Plain text is fine. Markdown: **bold**, _italic_, ## heading, - list item, [link](https://example.com). Leave a blank line between paragraphs.";
 
 interface ExceptionFormValues {
 	recurrenceDate?: string;
@@ -324,27 +325,9 @@ function eventFormBlocks(
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
 		{ type: "header", text: id ? "Edit event" : "Add event" },
-		{ type: "context", text: `Choose dates from the date picker. For timed events, enter local time such as 18:30 or 6:30 PM. The selected timezone applies to both times.` },
 	];
 	if (duplicate) blocks.push({ type: "context", text: "This is an unpublished copy. Dates, times, recurrence, venue, and event details were copied; review the schedule before saving. Occurrence exceptions were not copied." });
-	if (id) {
-		const preview = schedulePreview(draft);
-		if (preview) blocks.push({ type: "section", text: preview });
-	}
 	if (error) blocks.push({ type: "banner", title: "Event not saved", description: error, variant: "error" });
-	if (id) {
-		blocks.push({
-			type: "actions",
-			elements: [{
-				type: "button",
-				action_id: "delete-event",
-				label: "Delete event",
-				style: "danger",
-				value: id,
-				confirm: { title: "Delete event?", text: "This permanently removes the event and its occurrence exceptions.", confirm: "Delete", deny: "Cancel", style: "danger" },
-			}],
-		});
-	}
 	const selectedImage = images.items.find((image) => image.id === draft.imageMediaId);
 	if (selectedImage) {
 		blocks.push({
@@ -360,15 +343,13 @@ function eventFormBlocks(
 		description: "You can leave the existing HTML unchanged, or replace it with plain text or Markdown.",
 		variant: "alert",
 	});
-	blocks.push({ type: "context", text: DESCRIPTION_HELP });
-	blocks.push({ type: "context", text: "Tip: drag the lower-right corner to make the description area taller while you write." });
-	blocks.push({ type: "context", text: "Agent access: You can add and edit events with MCP. Enable Eventual's tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. This is useful for migrating event data and Markdown rich text from another CMS." });
+	blocks.push({ type: "context", text: "Agent access: Eventual events can be added and edited with MCP. Enable tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. Useful for CMS migrations with Markdown rich text." });
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
 		fields: [
-			textField("description", "Description", draft.description, true, "Write the event description. Plain text is fine; Markdown formatting is optional."),
 			textField("title", "Title", draft.title),
+			textField("description", DESCRIPTION_LABEL, draft.description, true, DESCRIPTION_PLACEHOLDER),
 			{ type: "date_input", action_id: "startDate", label: "Start date", initial_value: draft.start.slice(0, 10) },
 			{ ...textField("startTime", "Start time", draft.allDay ? "" : draftTime(draft.start)), placeholder: "18:30 or 6:30 PM", condition: { field: "allDay", eq: false } },
 			{ type: "date_input", action_id: "endDate", label: "End date (inclusive for all-day events)", initial_value: draft.end.slice(0, 10) },
@@ -416,6 +397,21 @@ function eventFormBlocks(
 		],
 		submit: { label: "Save event", action_id: "save-event" },
 	});
+	if (id) {
+		const preview = schedulePreview(draft);
+		if (preview) blocks.push({ type: "section", text: preview });
+		blocks.push({
+			type: "actions",
+			elements: [{
+				type: "button",
+				action_id: "delete-event",
+				label: "Delete event",
+				style: "danger",
+				value: id,
+				confirm: { title: "Delete event?", text: "This permanently removes the event and its occurrence exceptions.", confirm: "Delete", deny: "Cancel", style: "danger" },
+			}],
+		});
+	}
 	blocks.push({ type: "context", text: "For a library image, upload it first from EmDash Media, then search for its filename. External image URLs remain available as a fallback." });
 	if (images.hasMore) blocks.push({ type: "context", text: "Showing the latest 100 media library images. Upload or find other images in the EmDash Media page." });
 	if (draft.repeatFrequency !== "none") {
