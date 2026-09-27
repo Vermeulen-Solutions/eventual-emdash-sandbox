@@ -48,17 +48,17 @@ i Bundle size: 155.9 KB across 3 files
 
 | Package entry | Bytes |
 | --- | ---: |
-| backend.js | 107,276 |
+| backend.js | 107,306 |
 | manifest.json | 35,287 |
 | README.md | 17,068 |
-| Total decompressed | **159,631** |
+| Total decompressed | **159,661** |
 
 Backend limit: 131,072 bytes. Complete package limit: 262,144 bytes.
-Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,399 bytes** compressed.
+Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,420 bytes** compressed.
 SHA-256:
 
 ```text
-620f4e3430a95222823df80e46f605123b0946a48b9ad21b4a0e39e0cc148cb5
+fc006b377a1ea96e81e69d16e3b4843a8c4434af09170eef784eb86a700b99fc
 ```
 
 The publish command rebuilds the archive, so its final checksum must be recorded

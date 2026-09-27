@@ -364,13 +364,13 @@ function eventFormBlocks(
 			], draft.venueId, "Search saved venues"),
 			textField("organizer", "Organizer", draft.organizer),
 			textField("externalUrl", "External URL", draft.externalUrl),
-			comboboxField("imageMediaId", "Image from EmDash media library", [
-				{ label: "No library image", value: "" },
+			comboboxField("imageMediaId", "Featured image", [
+				{ label: "No featured image", value: "" },
 				...images.items.map((image) => ({
 					label: `${image.filename}${image.width && image.height ? ` (${image.width} × ${image.height})` : ""}`,
 					value: image.id,
 				})),
-			], draft.imageMediaId, "Search media library"),
+			], draft.imageMediaId, "Search EmDash media library"),
 			{ ...textField("imageUrl", "External image URL (optional)", draft.imageUrl), condition: { field: "imageMediaId", eq: "" } },
 			textField("categories", "Categories (one per line or comma-separated)", draft.categories, true),
 			{ type: "toggle", action_id: "published", label: "Published on the public events route", initial_value: draft.published },
@@ -413,7 +413,7 @@ function eventFormBlocks(
 			}],
 		});
 	}
-	blocks.push({ type: "context", text: "For a library image, upload it first from EmDash Media, then search for its filename. External image URLs remain available as a fallback." });
+	blocks.push({ type: "context", text: "Featured image: upload it first from EmDash Media, then search the library. A thumbnail preview appears above when selected. External image URLs remain available as a fallback." });
 	if (images.hasMore) blocks.push({ type: "context", text: "Showing the latest 100 media library images. Upload or find other images in the EmDash Media page." });
 	if (draft.repeatFrequency !== "none") {
 		blocks.push({

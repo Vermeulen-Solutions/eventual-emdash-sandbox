@@ -681,6 +681,8 @@ describe("sandboxed Eventual plugin", () => {
 		if (form?.type !== "form") throw new Error("Expected an event form");
 		expect(form.fields.find((field) => field.action_id === "imageMediaId")).toMatchObject({
 			type: "combobox",
+			label: "Featured image",
+			placeholder: "Search EmDash media library",
 			options: expect.arrayContaining([
 				expect.objectContaining({ label: "fundraiser-poster.png (800 × 1200)", value: image.id }),
 			]),
