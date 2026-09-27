@@ -1,7 +1,7 @@
 # Beacon-inspired Eventual improvements
 
-Status: proposed implementation plan, 2026-09-27. No runtime changes or release
-are included in this planning task.
+Status: implementation completed on `feature/eventual-occurrence-recurrence`.
+See `release-notes-0.7.0.md` for checks, measurements, and release status.
 
 ## Recommendation
 
@@ -97,6 +97,11 @@ by authorized users. Public feeds, publication rules, and tombstones retain
 their existing semantics.
 
 Backend growth allocation: 6 KiB, including the MCP tool and Block Kit controls.
+
+Implementation adjustment: occurrence management opens from the saved editor
+in a separate view. Host validation found that combining the complete event
+form with occurrence/exception actions exceeded Block Kit's 2,000-node limit
+for large series. All three editor views now pass with 500 exceptions.
 
 ## Milestone 2: recurrence intervals
 

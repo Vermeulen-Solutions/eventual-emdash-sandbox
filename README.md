@@ -11,10 +11,16 @@ A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.co
 - Timed and inclusive all-day events with an IANA timezone, one-off location,
   organizer, links, image-library selection (with an optional external image
   URL fallback), categories, and publication state.
-- Daily, weekly, and monthly recurrence with cancellation or modified-instance
-  exceptions. One-off events stay non-recurring.
+- Daily, weekly, and monthly recurrence with intervals from 1 through 52;
+  weekly series can select multiple weekdays. Cancellation and modified-instance
+  exceptions keep individual dates independent. One-off events stay non-recurring.
 - The saved event editor shows a timezone-aware schedule summary and up to
   three sample dates for a recurring series.
+- Select **Manage occurrence dates** in a saved recurring event to see ten
+  occurrences at a time in a 90-day window, including cancellations and moved
+  dates. Change, Cancel, and Restore
+  actions select the exact original occurrence; editors can choose another
+  window or enter an exception manually.
 - A compact EmDash dashboard widget lists the next published events with local
   date/time, venue or location, an empty state, and a link to the Events page.
 - MCP tools let authorized agents manage event series, publication, occurrence
@@ -57,10 +63,10 @@ Eventual is licensed under the MIT License. See [LICENSE](./LICENSE).
 
 ## MCP tools
 
-The plugin exposes 15 MCP tools under the `eventual__` namespace: list and get
+The plugin exposes 16 MCP tools under the `eventual__` namespace: list and get
 events; create, update, publish, unpublish, and delete events; set or remove a
 recurrence occurrence exception; list, create, update, and delete saved venues;
-and read or update the default timezone. Create starts with an unpublished
+inspect saved occurrences; and read or update the default timezone. Create starts with an unpublished
 event. Deletion preserves calendar cancellation tombstones, assigned venues
 cannot be removed, and schedule edits that orphan saved exceptions are
 rejected. Timed MCP values use local `YYYY-MM-DDTHH:mm` wall times with an IANA
@@ -70,6 +76,43 @@ All MCP routes require the `plugins:manage` permission. An administrator must
 enable the desired tools in the EmDash MCP settings before agents can call
 them. Read tools are marked non-destructive; changes and exception operations
 are marked destructive for host approval handling.
+
+After upgrading to 0.7.0, enable `eventual__listOccurrences` in EmDash MCP
+settings to make the new read-only tool available to agents. It accepts an event
+`id`, optional `from`/`through` dates, and `limit` (1–100, default 50). It includes
+drafts and cancelled dates. The default window starts today in UTC and contains
+90 inclusive dates; the maximum requested range is 366 inclusive dates.
+Results include `recurrenceId`, original and effective local start/end values,
+timezone, state (`scheduled`, `cancelled`, or `modified`), `total`, and
+`truncated`. One-off events have a null `recurrenceId`. Use the returned original
+ID with the existing exception tools; limit or narrow the date range when
+`truncated` is true. Moved occurrences are selected by their effective dates.
+
+### Recurrence options
+
+Recurrence keeps an inclusive `until` date. The optional `interval` is an
+integer from 1 through 52; omission means 1. Weekly recurrence can also contain
+a nonempty, unique `weekdays` array using lowercase weekday names. For example:
+
+```json
+{
+  "frequency": "weekly",
+  "interval": 2,
+  "weekdays": ["tuesday", "thursday"],
+  "until": "2026-12-31"
+}
+```
+
+Weeks start Monday. The first event anchors its containing week and must fall
+on a selected weekday. Without `weekdays`, weekly events keep the first event's
+weekday. In the admin, leaving the weekday boxes empty selects that default.
+Daily intervals use local calendar dates; monthly intervals count calendar
+months from the first event. Local start time stays fixed through DST, and
+nonexistent local occurrences are skipped. Existing monthly skip/last-day and
+weekday-position policies still apply. The monthly day is retained when editing
+through admin or MCP, including a series starting on February's last day with
+a day-of-month rule of 31. Schedule edits that orphan exceptions are rejected;
+remove or revise those exceptions before changing the rule.
 
 ## Public events API
 

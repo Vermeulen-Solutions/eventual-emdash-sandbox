@@ -6,6 +6,11 @@ sandbox runner configured. The plugin adds **Events**, **Venues**, and
 publish one-off or recurring events, and the Venues page to manage reusable
 addresses.
 
+Recurring events support an interval and multiple weekly days. Select **Manage
+occurrence dates** in the saved editor for Change, Cancel, and Restore actions. To let agents
+inspect those dates, enable `eventual__listOccurrences` in EmDash MCP settings
+after updating to 0.7.0. Other enabled Eventual tools keep working.
+
 The plugin exposes a public JSON events route and an iCalendar subscription
 route. These provide event data; they do not render a calendar or add pages to
 the site.
