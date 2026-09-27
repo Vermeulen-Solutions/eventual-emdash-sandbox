@@ -9,7 +9,7 @@ export type WeekdayName =
 
 export type MonthlyPosition = 1 | 2 | 3 | 4 | 5 | "last";
 
-export type EventRecurrence =
+export type EventRecurrence = (
   | { frequency: "daily" | "weekly"; until: string }
   | {
       frequency: "monthly";
@@ -25,7 +25,7 @@ export type EventRecurrence =
             weekday: WeekdayName;
             position: MonthlyPosition;
           };
-    };
+    }) & { interval?: number };
 
 export interface EventFields {
   title: string;
@@ -96,6 +96,8 @@ export interface EventDraft {
   published: boolean;
   repeatFrequency: "none" | "daily" | "weekly" | "monthly";
   recurrenceUntil: string;
+  recurrenceInterval?: number;
+  monthlyDayOfMonth?: number;
   monthlyPattern: "dayOfMonth" | "weekdayOfMonth";
   missingDayBehavior: "skip" | "lastDay";
   monthlyWeekday: WeekdayName;
@@ -136,6 +138,7 @@ export const EMPTY_EVENT_DRAFT: EventDraft = {
   published: false,
   repeatFrequency: "none",
   recurrenceUntil: "",
+  recurrenceInterval: 1,
   monthlyPattern: "dayOfMonth",
   missingDayBehavior: "skip",
   monthlyWeekday: "monday",

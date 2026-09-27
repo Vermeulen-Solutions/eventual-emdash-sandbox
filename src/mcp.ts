@@ -22,6 +22,7 @@ import {
 import { normalizeEventDates } from "./domain/date-time";
 import { isUsableEventImage } from "./media";
 import { inspectOccurrences, validOccurrenceRange } from "./domain/occurrences";
+import { validRecurrence } from "./domain/recurrence-rule";
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -29,15 +30,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function validText(value: unknown, max: number, min = 0): value is string {
 	return typeof value === "string" && value.length >= min && value.length <= max;
-}
-
-function validRecurrence(value: unknown): value is EventRecurrence {
-	if (!isObject(value) || !isDateOnly(String(value.until ?? ""))) return false;
-	if (value.frequency === "daily" || value.frequency === "weekly") return true;
-	if (value.frequency !== "monthly" || !isObject(value.pattern)) return false;
-	const pattern = value.pattern;
-	if (pattern.type === "dayOfMonth") return Number.isInteger(pattern.dayOfMonth) && Number(pattern.dayOfMonth) >= 1 && Number(pattern.dayOfMonth) <= 31 && (pattern.missingDayBehavior === "skip" || pattern.missingDayBehavior === "lastDay");
-	return pattern.type === "weekdayOfMonth" && ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].includes(String(pattern.weekday)) && ([1, 2, 3, 4, 5].includes(Number(pattern.position)) || pattern.position === "last");
 }
 
 function validEventInput(value: unknown, patch = false): boolean {
@@ -117,6 +109,8 @@ function draftFromFields(fields: McpEventInput, base?: EventRecord): EventDraft 
 		imageMediaId: fields.imageMediaId ?? draft.imageMediaId,
 		repeatFrequency: recurrence?.frequency ?? "none",
 		recurrenceUntil: recurrence?.until ?? "",
+		recurrenceInterval: recurrence?.interval ?? 1,
+		monthlyDayOfMonth: recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth" ? recurrence.pattern.dayOfMonth : undefined,
 		monthlyPattern: recurrence?.frequency === "monthly" ? recurrence.pattern.type : "dayOfMonth",
 		missingDayBehavior: recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth" ? recurrence.pattern.missingDayBehavior : "skip",
 		monthlyWeekday: recurrence?.frequency === "monthly" && recurrence.pattern.type === "weekdayOfMonth" ? recurrence.pattern.weekday : "monday",

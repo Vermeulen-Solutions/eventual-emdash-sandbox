@@ -78,9 +78,17 @@ function matchesRecurrenceDate(event: EventRecord, date: string): boolean {
   const recurrence = event.recurrence;
   const first = recurrenceStartDate(event);
   if (!recurrence || date < first || date > recurrence.until) return false;
-  return recurrence.frequency === "daily" || (recurrence.frequency === "weekly"
-    ? dateFromKey(date).getUTCDay() === dateFromKey(first).getUTCDay()
-    : matchesMonthlyPattern(date, recurrence));
+  const interval = recurrence.interval ?? 1;
+  const days = dayDifference(first, date);
+  if (recurrence.frequency === "daily") return days % interval === 0;
+  if (recurrence.frequency === "weekly") {
+    const week = Math.floor((days + (dateFromKey(first).getUTCDay() + 6) % 7) / 7);
+    return week % interval === 0 && dateFromKey(date).getUTCDay() === dateFromKey(first).getUTCDay();
+  }
+  const current = dateFromKey(date);
+  const start = dateFromKey(first);
+  const months = (current.getUTCFullYear() - start.getUTCFullYear()) * 12 + current.getUTCMonth() - start.getUTCMonth();
+  return months % interval === 0 && matchesMonthlyPattern(date, recurrence);
 }
 
 /** Resolve the original schedule directly, including membership and DST validation. */

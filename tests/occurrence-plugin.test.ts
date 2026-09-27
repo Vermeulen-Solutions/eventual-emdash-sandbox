@@ -18,6 +18,24 @@ async function seed() {
 }
 
 describe("occurrence editor and MCP", () => {
+  it("validates and retains recurrence intervals and monthly days across unrelated MCP edits", async () => {
+    const h = await seed();
+    const create = (recurrence: unknown) => h.transport.invokeRoute("mcp/events/create", {
+      title: "Month end", start: "2026-02-28", end: "2026-02-28", allDay: true, timezone: "Europe/Paris", recurrence,
+    });
+    await expect(create({ frequency: "monthly", until: "2026-12-31", interval: 0, pattern: { type: "dayOfMonth", dayOfMonth: 31, missingDayBehavior: "lastDay" } }))
+      .resolves.toMatchObject({ ok: false, error: "VALIDATION_ERROR" });
+    const rule = { frequency: "monthly", until: "2026-12-31", interval: 2, pattern: { type: "dayOfMonth", dayOfMonth: 31, missingDayBehavior: "lastDay" } };
+    const created = await create(rule) as { event: EventRecord };
+    expect(created.event.recurrence).toEqual(rule);
+    await expect(h.transport.invokeRoute("mcp/events/update", { id: created.event.id, patch: { title: "Updated title" } }))
+      .resolves.toMatchObject({ ok: true, event: { recurrence: rule } });
+    const form = await h.admin.act("/events", "edit-event", { value: created.event.id });
+    expect(JSON.stringify(form)).toContain("every 2 months");
+    const eventForm = form.blocks.find((block) => block.type === "form" && block.block_id === `event-form:${created.event.id}`);
+    expect(eventForm?.type === "form" && eventForm.fields.find((field) => field.action_id === "recurrenceInterval")).toMatchObject({ type: "number_input", initial_value: 2 });
+    expect(eventForm?.type === "form" && eventForm.fields.find((field) => field.action_id === "monthlyDayOfMonth")).toMatchObject({ initial_value: 31 });
+  }, 15000);
   it("validates MCP dates and limits and inspects drafts with explicit truncation", async () => {
     const h = await seed();
     expect(mcpTools.listOccurrences.destructive).toBe(false);

@@ -9,10 +9,11 @@ const optional = (schema: any) => z.optional(schema);
 const date = z.string().check(z.refine(isDateOnly, { error: "Use a valid YYYY-MM-DD date." }));
 const weekday = z.enum(["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]);
 const monthlyPosition = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal("last")]);
+const interval = optional(z.number().check(z.int(), z.minimum(1), z.maximum(52)));
 const recurrence = z.discriminatedUnion("frequency", [
-	z.object({ frequency: z.enum(["daily", "weekly"]), until: date }),
+	z.object({ frequency: z.enum(["daily", "weekly"]), until: date, interval }),
 	z.object({
-		frequency: z.literal("monthly"), until: date,
+		frequency: z.literal("monthly"), until: date, interval,
 		pattern: z.discriminatedUnion("type", [
 			z.object({ type: z.literal("dayOfMonth"), dayOfMonth: z.number().check(z.int(), z.minimum(1), z.maximum(31)), missingDayBehavior: z.enum(["skip", "lastDay"]) }),
 			z.object({ type: z.literal("weekdayOfMonth"), weekday, position: monthlyPosition }),

@@ -23,6 +23,7 @@ import {
 } from "./domain/date-time";
 import { addDays, exceptionIdsMatchRecurrence, expandEventsInDateRange, expandRecurringEvent, scheduledOccurrence } from "./domain/recurrence";
 import { validOccurrenceRange } from "./domain/occurrences";
+import { recurrenceSummary } from "./domain/recurrence-rule";
 import { occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
 import { eventLocation } from "./domain/venue";
 import {
@@ -65,6 +66,8 @@ interface EventFormValues {
 	published: boolean;
 	repeatFrequency: "none" | "daily" | "weekly" | "monthly";
 	recurrenceUntil: string;
+	recurrenceInterval?: number;
+	monthlyDayOfMonth?: number;
 	monthlyPattern: "dayOfMonth" | "weekdayOfMonth";
 	missingDayBehavior: "skip" | "lastDay";
 	monthlyWeekday: WeekdayName;
@@ -151,6 +154,7 @@ function parseEventValues(value: unknown): EventFormValues | null {
 	const optionalStrings = ["startTime", "endTime", "imageUrl", "imageMediaId"];
 	if (requiredStrings.some((key) => typeof value[key] !== "string") || !hasOptionalStringFields(value, optionalStrings)) return null;
 	if (typeof value.allDay !== "boolean" || typeof value.published !== "boolean") return null;
+	if (["recurrenceInterval", "monthlyDayOfMonth"].some((key) => value[key] !== undefined && typeof value[key] !== "number")) return null;
 	if (!isOneOf(value.repeatFrequency, ["none", "daily", "weekly", "monthly"])) return null;
 	if (!isOneOf(value.monthlyPattern, ["dayOfMonth", "weekdayOfMonth"])) return null;
 	if (!isOneOf(value.missingDayBehavior, ["skip", "lastDay"])) return null;
@@ -268,7 +272,7 @@ function schedulePreview(draft: EventDraft): string | null {
 	const dates = upcoming.map((event) => event.allDay
 		? event.start.slice(0, 10)
 		: instantToLocalDateTime(event.start, event.timezone).replace("T", " "));
-	return `${preview} Repeats ${prepared.data.recurrence.frequency} through ${prepared.data.recurrence.until}. Sample occurrences: ${dates.join(", ")}${upcoming.length === 3 ? " (showing up to 3)" : ""}.`;
+	return `${preview} Repeats ${recurrenceSummary(prepared.data.recurrence)} through ${prepared.data.recurrence.until}. Sample occurrences: ${dates.join(", ")}${upcoming.length === 3 ? " (showing up to 3)" : ""}.`;
 }
 
 function timeZoneField(
@@ -375,6 +379,7 @@ function eventFormBlocks(
 			textField("categories", "Categories (one per line or comma-separated)", draft.categories, true),
 			{ type: "toggle", action_id: "published", label: "Published on the public events route", initial_value: draft.published },
 			selectField("repeatFrequency", "Repeat", recurrenceOptions, draft.repeatFrequency),
+			{ type: "number_input", action_id: "recurrenceInterval", label: "Every N days, weeks, or months (1–52)", initial_value: draft.recurrenceInterval ?? 1, min: 1, max: 52, condition: { field: "repeatFrequency", neq: "none" } },
 			{ type: "date_input", action_id: "recurrenceUntil", label: "Repeat through (inclusive)", initial_value: draft.recurrenceUntil, condition: { field: "repeatFrequency", neq: "none" } },
 			selectField("monthlyPattern", "Monthly pattern", [
 				{ label: "Same day of the month", value: "dayOfMonth" },
@@ -384,6 +389,7 @@ function eventFormBlocks(
 				{ label: "Skip that month", value: "skip" },
 				{ label: "Use the last day of the month", value: "lastDay" },
 			], draft.missingDayBehavior, { field: "monthlyPattern", eq: "dayOfMonth" }),
+			{ type: "number_input", action_id: "monthlyDayOfMonth", label: "Monthly day (1–31, for the same-day pattern)", initial_value: draft.monthlyDayOfMonth ?? (Number(draft.start.slice(8, 10)) || 1), min: 1, max: 31, condition: { field: "repeatFrequency", eq: "monthly" } },
 			selectField("monthlyWeekday", "Weekday", [
 				"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
 			].map((value) => ({ label: value[0]!.toUpperCase() + value.slice(1), value })), draft.monthlyWeekday, { field: "monthlyPattern", eq: "weekdayOfMonth" }),
@@ -896,6 +902,8 @@ function valuesToDraft(values: Record<string, unknown>): { draft: EventDraft | n
 		published: value.published,
 		repeatFrequency: value.repeatFrequency,
 		recurrenceUntil: value.recurrenceUntil,
+		recurrenceInterval: value.recurrenceInterval ?? 1,
+		monthlyDayOfMonth: value.monthlyDayOfMonth,
 		monthlyPattern: value.monthlyPattern,
 		missingDayBehavior: value.missingDayBehavior,
 		monthlyWeekday: value.monthlyWeekday as WeekdayName,

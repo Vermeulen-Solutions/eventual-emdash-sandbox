@@ -9,6 +9,7 @@ import type {
   WeekdayName,
 } from "./event";
 import { safeHttpUrl } from "./venue";
+import { validRecurrence } from "./recurrence-rule";
 
 const WEEKDAYS: WeekdayName[] = [
   "sunday",
@@ -42,17 +43,18 @@ function isLastWeekdayOfMonth(value: string): boolean {
 
 export function recurrenceForDraft(draft: EventDraft): EventRecurrence | undefined {
   if (draft.repeatFrequency === "none") return undefined;
+  const schedule = { until: draft.recurrenceUntil, ...(draft.recurrenceInterval !== undefined && draft.recurrenceInterval !== 1 ? { interval: draft.recurrenceInterval } : {}) };
   if (draft.repeatFrequency === "daily" || draft.repeatFrequency === "weekly") {
-    return { frequency: draft.repeatFrequency, until: draft.recurrenceUntil };
+    return { frequency: draft.repeatFrequency, ...schedule };
   }
   return {
     frequency: "monthly",
-    until: draft.recurrenceUntil,
+    ...schedule,
     pattern:
       draft.monthlyPattern === "dayOfMonth"
         ? {
             type: "dayOfMonth",
-            dayOfMonth: Number(draft.start.slice(8, 10)),
+            dayOfMonth: draft.monthlyDayOfMonth ?? Number(draft.start.slice(8, 10)),
             missingDayBehavior: draft.missingDayBehavior,
           }
         : {
@@ -86,6 +88,7 @@ export function prepareEventData(
 
   const startDate = draft.start.slice(0, 10);
   const recurrence = recurrenceForDraft(draft);
+  if (recurrence && !validRecurrence(recurrence)) return { error: "Choose a valid repeat pattern and an integer interval from 1 through 52." };
   if (recurrence && (!isDateOnly(recurrence.until) || recurrence.until < startDate)) {
     return { error: "Choose a recurrence end date on or after the first event." };
   }
@@ -98,6 +101,12 @@ export function prepareEventData(
 			: monthlyPositionForDate(startDate) !== recurrence.pattern.position))
   ) {
     return { error: "The first event must match the selected monthly weekday pattern." };
+  }
+  if (recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth") {
+    const [year, month, day] = dateParts(startDate);
+    const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const target = recurrence.pattern.missingDayBehavior === "lastDay" ? Math.min(recurrence.pattern.dayOfMonth, last) : recurrence.pattern.dayOfMonth;
+    if (day !== target) return { error: "The first event must match the selected monthly day and missing-day policy." };
   }
 
   const categories = normalizeCategories(draft.categories);
@@ -148,6 +157,8 @@ export function eventToDraft(event: EventRecord): EventDraft {
     published: event.published,
     repeatFrequency: recurrence?.frequency ?? "none",
     recurrenceUntil: recurrence?.until ?? "",
+    recurrenceInterval: recurrence?.interval ?? 1,
+    monthlyDayOfMonth: recurrence?.frequency === "monthly" && recurrence.pattern.type === "dayOfMonth" ? recurrence.pattern.dayOfMonth : Number(start.slice(8, 10)),
     monthlyPattern:
       recurrence?.frequency === "monthly" ? recurrence.pattern.type : "dayOfMonth",
     missingDayBehavior:

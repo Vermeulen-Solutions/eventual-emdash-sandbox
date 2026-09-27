@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { EventRecord } from "../src/domain/event";
 import { inspectOccurrences } from "../src/domain/occurrences";
-import { expandRecurringEvent, scheduledOccurrence } from "../src/domain/recurrence";
+import { exceptionIdsMatchRecurrence, expandRecurringEvent, scheduledOccurrence } from "../src/domain/recurrence";
+import { eventToDraft, prepareEventData } from "../src/domain/event-data";
+import { validRecurrence } from "../src/domain/recurrence-rule";
 
 const event: EventRecord = {
   id: "practice", title: "Practice", description: "", start: "2026-10-06T16:00:00.000Z", end: "2026-10-06T17:00:00.000Z",
@@ -43,5 +45,33 @@ describe("saved occurrence inspection", () => {
     });
     expect(scheduledOccurrence(event, "2026-10-07T18:00")).toBeNull();
     expect(scheduledOccurrence(event, "2026-10-06T19:00")).toBeNull();
+  });
+});
+
+describe("recurrence intervals", () => {
+  it("retains legacy schedules and weekly wall time through DST", () => {
+    const everyWeek = expandRecurringEvent(event, "2026-10-01", "2026-11-30");
+    expect(expandRecurringEvent({ ...event, recurrence: { ...event.recurrence!, interval: 1 } }, "2026-10-01", "2026-11-30")).toEqual(everyWeek);
+    const alternate: EventRecord = { ...event, recurrence: { frequency: "weekly", interval: 2, until: "2026-11-10" } };
+    expect(inspectOccurrences(alternate, "2026-10-01", "2026-11-30").occurrences.map((row) => row.localStart))
+      .toEqual(["2026-10-06T18:00", "2026-10-20T18:00", "2026-11-03T18:00"]);
+    expect(expandRecurringEvent(alternate, "2026-11-01", "2026-11-10")[0]?.start).toBe("2026-11-03T17:00:00.000Z");
+    expect(exceptionIdsMatchRecurrence({ ...alternate, exceptions: [{ recurrenceId: "2026-10-13T18:00", status: "cancelled" }] })).toBe(false);
+  });
+
+  it("anchors daily and monthly intervals to local dates and preserves the monthly day", () => {
+    const daily: EventRecord = { ...event, recurrence: { frequency: "daily", interval: 3, until: "2026-10-15" } };
+    expect(inspectOccurrences(daily, "2026-10-01", "2026-10-15").occurrences.map((row) => row.localStart.slice(0, 10)))
+      .toEqual(["2026-10-06", "2026-10-09", "2026-10-12", "2026-10-15"]);
+    const monthEnd: EventRecord = { ...event, allDay: true, start: "2026-02-28", end: "2026-03-01", recurrence: {
+      frequency: "monthly", interval: 2, until: "2026-08-31", pattern: { type: "dayOfMonth", dayOfMonth: 31, missingDayBehavior: "lastDay" },
+    } };
+    expect(expandRecurringEvent(monthEnd, "2026-02-01", "2026-08-31").map((row) => [row.start, row.end]))
+      .toEqual([["2026-02-28", "2026-03-01"], ["2026-04-30", "2026-05-01"], ["2026-06-30", "2026-07-01"], ["2026-08-31", "2026-09-01"]]);
+    expect(prepareEventData(eventToDraft(monthEnd)).data?.recurrence).toEqual(monthEnd.recurrence);
+    expect(validRecurrence({ ...daily.recurrence, interval: 0 })).toBe(false);
+    expect(validRecurrence({ ...daily.recurrence, interval: 1.5 })).toBe(false);
+    expect(validRecurrence({ ...daily.recurrence, interval: 53 })).toBe(false);
+    expect(validRecurrence({ ...daily.recurrence, interval: "2" })).toBe(false);
   });
 });
