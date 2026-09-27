@@ -24,7 +24,7 @@ import {
 import { addDays, exceptionIdsMatchRecurrence, expandEventsInDateRange, expandRecurringEvent, scheduledOccurrence } from "./domain/recurrence";
 import { validOccurrenceRange } from "./domain/occurrences";
 import { recurrenceSummary, WEEKDAYS } from "./domain/recurrence-rule";
-import { occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
+import { defaultOccurrenceWindow, occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
 import { eventLocation } from "./domain/venue";
 import {
 	deleteEvent,
@@ -565,17 +565,24 @@ function eventEditorBlocks(
 			{ type: "header", text: event.title },
 			{ type: "context", text: "Edit the occurrence exception below. Close the exception editor to return to the event details." },
 		]
-		: eventFormBlocks(draft, venues, event.id, eventError, images);
+		: window ? [
+			...pageNav(), { type: "header", text: event.title },
+			{ type: "actions", elements: [{ type: "button", action_id: "edit-event", label: "Back to event details", value: event.id }] },
+		] : eventFormBlocks(draft, venues, event.id, eventError, images);
 	blocks.push({ type: "divider" });
-	if (event.recurrence && !exceptionEditor) blocks.push(...occurrenceBlocks(event, window), { type: "divider" });
+	if (event.recurrence && window && !exceptionEditor) blocks.push(...occurrenceBlocks(event, window), { type: "divider" });
 	blocks.push({ type: "header", text: "Occurrence exceptions" });
 	if (!event.recurrence) {
 		blocks.push({ type: "context", text: "Set a repeat pattern and save this event before managing occurrence exceptions." });
 		return blocks;
 	}
 	blocks.push({ type: "context", text: "Cancel or change individual dates without changing the recurring series. Exceptions are saved separately from the event details above." });
+	if (!window && !exceptionEditor) blocks.push(
+		{ type: "context", text: `${event.exceptions.length} saved occurrence exceptions. Save any event edits before managing dates.` },
+		{ type: "actions", elements: [{ type: "button", label: "Manage occurrence dates", action_id: "occurrences-page", value: JSON.stringify({ eventId: event.id, ...defaultOccurrenceWindow(event) }) }] },
+	);
 	if (!event.exceptions.length) blocks.push({ type: "context", text: "No occurrence exceptions yet." });
-	for (const exception of event.exceptions.slice(0, 25)) {
+	for (const exception of event.exceptions.slice(0, window && !exceptionEditor ? 25 : 0)) {
 		const occurrenceLabel = exception.recurrenceId.replace("T", " at ");
 		blocks.push(
 			{ type: "section", text: `${occurrenceLabel} · ${exception.status === "cancelled" ? "Cancelled" : "Changed"}` },
@@ -592,7 +599,7 @@ function eventEditorBlocks(
 			},
 		);
 	}
-	if (event.exceptions.length > 25) blocks.push({ type: "context", text: "Showing the first 25 exceptions. Use the occurrence date window to find and edit other dates." });
+	if (window && !exceptionEditor && event.exceptions.length > 25) blocks.push({ type: "context", text: "Showing the first 25 exceptions. Use the occurrence date window to find and edit other dates." });
 	blocks.push({ type: "actions", elements: [{ type: "button", action_id: "add-exception", label: "Add occurrence exception", value: event.id, style: "primary" }] });
 	if (exceptionEditor) {
 		blocks.push(...exceptionFormBlocks(event, exceptionEditor.draft, exceptionEditor.originalRecurrenceId, exceptionEditor.error));
@@ -617,8 +624,8 @@ async function renderEventEditor(
 	exceptionEditor?: { draft: ExceptionFormDraft; originalRecurrenceId?: string; error?: string },
 	window?: OccurrenceWindow,
 ): Promise<BlockResponse> {
-	if (exceptionEditor) {
-		return { blocks: eventEditorBlocks(event, [], draft, eventError, exceptionEditor) };
+	if (exceptionEditor || window) {
+		return { blocks: eventEditorBlocks(event, [], draft, eventError, exceptionEditor, undefined, window) };
 	}
 	const [venues, images] = await Promise.all([
 		listVenues(ctx),
@@ -1077,7 +1084,11 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		});
 		const updated: EventRecord = { ...event, exceptions, updatedAt: new Date().toISOString() };
 		await putEvent(ctx, updated);
-		return { ...(await renderEventEditor(ctx, updated)), toast: { message: "Occurrence exception saved", type: "success" } };
+		const replacement = result.exception.overrides;
+		const from = replacement?.start ? (replacement.allDay ?? event.allDay) ? replacement.start.slice(0, 10)
+			: instantToLocalDateTime(replacement.start, replacement.timezone ?? event.timezone).slice(0, 10)
+			: result.exception.recurrenceId.slice(0, 10);
+		return { ...(await renderEventEditor(ctx, updated, eventToDraft(updated), undefined, undefined, { from, offset: 0 })), toast: { message: "Occurrence exception saved", type: "success" } };
 	}
 
 	if (interaction.action_id === "save-event") {

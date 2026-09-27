@@ -19,6 +19,25 @@ async function seed() {
 }
 
 describe("occurrence editor and MCP", () => {
+  it("keeps an event with 500 exceptions within the host's Block Kit response limits", async () => {
+    const h = await seed();
+    const previous = (await h.inspect.storage.get<EventRecord>("events", "practice"))!;
+    const from = addDays(new Date().toISOString().slice(0, 10), 1);
+    await h.fixtures.plugin.storage("events", "practice", {
+      ...previous, start: from, end: from, allDay: true,
+      recurrence: { frequency: "daily", until: addDays(from, 499) },
+      exceptions: Array.from({ length: 500 }, (_, i) => ({ recurrenceId: addDays(from, i), status: "cancelled" })),
+    });
+    const details = await h.admin.act("/events", "edit-event", { value: "practice" });
+    expect(JSON.stringify(details)).toContain("500 saved occurrence exceptions");
+    const manage = details.blocks.flatMap((block) => block.type === "actions" ? block.elements : []).find((button) => button.type === "button" && button.label === "Manage occurrence dates");
+    const editor = await h.admin.act("/events", "occurrences-page", { value: manage?.type === "button" ? manage.value : undefined });
+    expect(JSON.stringify(editor)).toContain("Showing the first 25 exceptions");
+    expect(editor.blocks.filter((block) => block.type === "section")).toHaveLength(35);
+    const exception = await h.admin.act("/events", "edit-exception", { value: JSON.stringify({ eventId: "practice", recurrenceId: from }) });
+    expect(exception.blocks.some((block) => block.type === "form" && block.block_id?.startsWith("exception-form:"))).toBe(true);
+  }, 15000);
+
   it("shares multi-day rules across admin, MCP, public routes, and calendar cancellations", async () => {
     const h = await seed();
     let from = addDays(new Date().toISOString().slice(0, 10), 1);

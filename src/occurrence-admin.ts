@@ -6,6 +6,10 @@ import { addDays } from "./domain/recurrence";
 
 export interface OccurrenceWindow { from: string; offset: number }
 
+export function defaultOccurrenceWindow(event: EventRecord): OccurrenceWindow {
+  return { from: instantToLocalDateTime(new Date().toISOString(), event.timezone).slice(0, 10), offset: 0 };
+}
+
 export function occurrenceWindowValue(value: unknown): (OccurrenceWindow & { eventId: string }) | null {
   if (typeof value !== "string") return null;
   try {
@@ -17,7 +21,7 @@ export function occurrenceWindowValue(value: unknown): (OccurrenceWindow & { eve
 }
 
 export function occurrenceBlocks(event: EventRecord, window?: OccurrenceWindow): BlockResponse["blocks"] {
-  const from = window?.from ?? instantToLocalDateTime(new Date().toISOString(), event.timezone).slice(0, 10);
+  const from = window?.from ?? defaultOccurrenceWindow(event).from;
   const offset = window?.offset ?? 0;
   const through = addDays(from, 89);
   const result = inspectOccurrences(event, from, through, 10, offset);
