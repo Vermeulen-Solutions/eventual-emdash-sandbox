@@ -57,16 +57,16 @@ daylight-saving transition are rejected. Saved event forms show a schedule
 preview with local start/end values and the selected timezone; all-day previews
 identify the end date as inclusive.
 
-Descriptions can be entered as ordinary text on the event form. After saving,
-choose **Edit description** for an overview with **Add paragraph**, **Add heading**,
-and **Add list** controls. Edit one section at a time; a whole list uses one text
-box with one item per line. Paragraphs can be normal, bold, or italic. Sections
-can be moved or removed, and Cancel leaves the saved description alone.
-Descriptions support up to 12 sections; there are no empty slots to fill in.
-No HTML or Markdown is required. Imported HTML outside the editor's supported
-format remains intact until you explicitly save a replacement. Convert such
-content before entering it here. The sandboxed Block Kit UI does not support
-selecting and styling individual words inside a paragraph.
+Descriptions are edited directly in the main event form as one multiline field.
+Plain text works without any formatting knowledge. Editors who need formatting
+can use lightweight Markdown: `**bold**`, `_italic_`, `## Heading`, `- list item`,
+and `[link text](https://example.com)`. Blank lines separate paragraphs.
+
+Eventual stores the description source unchanged and returns it through MCP and
+the public JSON route. The visitor-facing Astro site decides how to render it;
+render Markdown with raw HTML disabled and safe link handling. Existing imported
+HTML is preserved unless an editor replaces it. The form identifies those legacy
+descriptions so editors do not mistake HTML tags for the recommended format.
 
 ## License
 
@@ -141,7 +141,7 @@ The public `GET` route is mounted at
       "id": "event-id",
       "updatedAt": "2026-10-01T10:20:30.000Z",
       "title": "Community meetup",
-      "description": "",
+      "description": "Join us for a **community meetup**.\n\n- Everyone is welcome\n- No registration required",
       "start": "2026-10-10T16:00:00.000Z",
       "end": "2026-10-10T17:00:00.000Z",
       "allDay": false,
@@ -168,6 +168,11 @@ the event has a location; it works without a Google Maps API key.
 
 `updatedAt` is the source event's last update timestamp. Occurrences expanded
 from one series share the series timestamp.
+
+`description` contains the saved description source. New descriptions use plain
+text or Markdown. Existing imported events may still contain HTML until they are
+converted by an editor, so consuming sites should select their rendering path
+deliberately and sanitize any rendered markup.
 
 `imageUrl` contains an externally hosted URL when one is configured, or a
 same-origin Eventual image route for media-library selections. That public

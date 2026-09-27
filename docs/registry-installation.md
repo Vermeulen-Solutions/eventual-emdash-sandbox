@@ -6,6 +6,11 @@ sandbox runner configured. The plugin adds **Events**, **Venues**, and
 publish one-off or recurring events, and the Venues page to manage reusable
 addresses.
 
+The event form includes one multiline description field. Plain text works as-is;
+optional Markdown adds headings, emphasis, lists, and links without opening a
+separate section editor. Existing imported HTML remains unchanged until an
+editor replaces it.
+
 Recurring events support an interval and multiple weekly days. Select **Manage
 occurrence dates** in the saved editor for Change, Cancel, and Restore actions. To let agents
 inspect those dates, enable `eventual__listOccurrences` in EmDash MCP settings

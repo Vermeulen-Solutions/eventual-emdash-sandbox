@@ -6,30 +6,22 @@ but this does not approve the current package profile.
 
 ## Description editor
 
-- Saved events have a separate description overview with Add paragraph, Add
-  heading, and Add list actions. Editors write ordinary text without HTML or
-  Markdown. Only the section being edited opens a form.
-- A complete bullet list is one section, with one item per line. Paragraphs
-  support normal, bold, or italic text. Sections can be edited, reordered, or
-  removed with confirmation. Changes save on submission; Cancel discards the
-  current edit.
-- Validation retains submitted text. Stale edits are rejected when the event
-  has changed since the editor was opened.
-- Saving other event details and duplicating an event preserve the description.
-  Unsupported existing HTML remains untouched unless the editor explicitly
-  saves a replacement. There is no import or automatic HTML conversion feature.
-- Domain parsing and serialization live in `src/domain/description.ts`;
-  description admin rendering and actions live in `src/description-admin.ts`.
-  Existing storage, public routes, and MCP description strings remain compatible.
+- The description now lives directly in the main event form as one multiline
+  field. Editors no longer add, reorder, and save separate description sections.
+- Plain text remains the default. Optional Markdown supports bold, italics,
+  headings, bullet lists, and links, with a compact syntax guide beside the form.
+- Saving event details and duplicating an event preserve the complete description.
+  Existing imported HTML remains untouched unless an editor replaces it, and the
+  form clearly identifies those legacy descriptions.
+- Eventual stores description source unchanged. MCP and the public JSON route
+  continue to use the same string field, so no storage migration is required.
 
 ## Limits
 
-Descriptions support 12 sections, 5,000 characters per section, up to 100 items
-per list, and 60,000 UTF-8 bytes of serialized HTML. Overview excerpts limit the
-Block Kit response size. Formatting applies to a complete paragraph; there is
-no word-selection toolbar, arbitrary HTML editor, embedded image editor, or
-visitor calendar UI. No dependencies, capabilities, or storage migrations were
-added.
+Block Kit does not provide a browser rich-text control or live Markdown preview,
+so formatting remains visible as lightweight Markdown while editing. There is no
+embedded image editor or visitor calendar UI. No dependencies, capabilities, or
+storage migrations were added.
 
 ## Validation and bundle
 
@@ -43,30 +35,30 @@ npm run bundle
 npm exec emdash-plugin -- bundle --validate-only
 ```
 
-All passed; **77 tests in 10 files**. Focused coverage includes serialization,
-validation, grouped lists, section actions, retained drafts, stale edits,
-unsupported HTML preservation, duplication, and host response limits.
+All passed; **77 tests in 10 files**. Focused coverage includes inline
+descriptions, Markdown source preservation, imported HTML preservation,
+duplication, validation, recurrence actions, and host response limits.
 
 Exact final inspection output:
 
 ```text
-i Bundle size: 155.2 KB across 3 files
+i Bundle size: 155.7 KB across 3 files
 √ Validation passed
 ```
 
 | Package entry | Bytes |
 | --- | ---: |
-| backend.js | 106,940 |
+| backend.js | 107,061 |
 | manifest.json | 35,287 |
-| README.md | 16,746 |
-| Total decompressed | **158,973** |
+| README.md | 17,068 |
+| Total decompressed | **159,416** |
 
 Backend limit: 131,072 bytes. Complete package limit: 262,144 bytes.
-Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,058 bytes** compressed.
+Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,287 bytes** compressed.
 SHA-256:
 
 ```text
-7b072d68d2a7d5e9af2e29904b8723578853d4b483236c6d2b993d13caa11872
+2469dd7ec8ec0a0fe4476e20ca02f5945b3f31a80545bc60275f12f997c1897d
 ```
 
 The publish command rebuilds the archive, so its final checksum must be recorded

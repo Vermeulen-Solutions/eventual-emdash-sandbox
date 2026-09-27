@@ -873,24 +873,19 @@ describe("sandboxed Eventual plugin", () => {
 		expect(validateBlockResponse(stale, {})).toEqual({ valid: true, errors: [] });
 	});
 
-	it("preserves existing HTML when saving event details, duplicating, and cancelling replacement", async () => {
+	it("shows and preserves existing HTML in the inline description field", async () => {
 		host = await createPluginTestHost();
 		const description = "<p>Les <strong>ateliers gratuits</strong> reviennent !</p>";
 		const eventId = await createEventThroughAdmin(host, { description });
 		const page = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: eventId });
 		const form = adminForm(page);
-		expect(form.fields.some((field) => field.action_id === "description")).toBe(false);
+		expect(form.fields.find((field) => field.action_id === "description")).toMatchObject({ initial_value: description, multiline: true });
 		const values = Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined]));
 		await host.invokeRoute("admin", { type: "form_submit", action_id: "save-event", block_id: form.block_id, values: { ...values, title: "Updated title" } });
 		expect((await host.storage("events").list())[0]?.data).toMatchObject({ title: "Updated title", description });
-		const overview = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-description", value: eventId });
-		expect(JSON.stringify(overview)).not.toContain("<strong>");
-		const replacement = await host.invokeRoute("admin", { type: "block_action", action_id: "description-replace", value: descriptionButton(overview, "description-replace").value });
-		await host.invokeRoute("admin", { type: "block_action", action_id: "edit-description", value: descriptionButton(replacement, "edit-description").value });
-		expect((await host.storage("events").list())[0]?.data).toMatchObject({ description });
 		const copy = await host.invokeRoute("admin", { type: "block_action", action_id: "duplicate-event", value: eventId });
 		const copyForm = adminForm(copy);
-		expect(copyForm.fields.some((field) => field.action_id === "description")).toBe(false);
+		expect(copyForm.fields.find((field) => field.action_id === "description")).toMatchObject({ initial_value: description, multiline: true });
 		await host.invokeRoute("admin", { type: "form_submit", action_id: "save-event", block_id: copyForm.block_id,
 			values: Object.fromEntries(copyForm.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined])),
 		});

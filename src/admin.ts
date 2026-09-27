@@ -200,13 +200,14 @@ function pageNav(): BlockResponse["blocks"] {
 	];
 }
 
-function textField(actionId: string, label: string, initialValue = "", multiline = false) {
+function textField(actionId: string, label: string, initialValue = "", multiline = false, placeholder?: string) {
 	return {
 		type: "text_input" as const,
 		action_id: actionId,
 		label,
 		initial_value: initialValue,
 		...(multiline ? { multiline: true } : {}),
+		...(placeholder ? { placeholder } : {}),
 	};
 }
 
@@ -351,18 +352,19 @@ function eventFormBlocks(
 			title: `Selected image: ${selectedImage.filename}`,
 		});
 	}
-	blocks.push({ type: "context", text: "For a library image, upload it first from EmDash Media, then search for its filename here. External image URLs remain available as a fallback." });
-	if (id) blocks.push(
-		{ type: "context", text: "Save changes to event details before opening the description editor." },
-		{ type: "actions", elements: [{ type: "button", action_id: "edit-description", label: draft.description ? "Edit description" : "Add description", value: id }] },
-	);
-	else blocks.push({ type: "context", text: duplicate ? "The description is copied from the original event. Save this copy, then choose Edit description to change it." : "Write a description in ordinary text. After saving, you can add headings, lists, and emphasis with Edit description." });
+	blocks.push({ type: "context", text: "Description formatting is optional. Write normally, or use Markdown: **bold**, _italic_, ## heading, - list item, and [link text](https://example.com). Leave a blank line between paragraphs." });
+	if (/<\/?[a-z!][^>]*>/i.test(draft.description)) blocks.push({
+		type: "banner",
+		title: "Imported HTML description",
+		description: "You can leave the existing HTML unchanged, or replace it with plain text or Markdown.",
+		variant: "alert",
+	});
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
 		fields: [
 			textField("title", "Title", draft.title),
-			...(!id && !duplicate ? [textField("description", "Description", draft.description, true)] : []),
+			textField("description", "Description", draft.description, true, "Write the event description. Plain text is fine; Markdown formatting is optional."),
 			{ type: "date_input", action_id: "startDate", label: "Start date", initial_value: draft.start.slice(0, 10) },
 			{ ...textField("startTime", "Start time", draft.allDay ? "" : draftTime(draft.start)), placeholder: "18:30 or 6:30 PM", condition: { field: "allDay", eq: false } },
 			{ type: "date_input", action_id: "endDate", label: "End date (inclusive for all-day events)", initial_value: draft.end.slice(0, 10) },
@@ -410,6 +412,7 @@ function eventFormBlocks(
 		],
 		submit: { label: "Save event", action_id: "save-event" },
 	});
+	blocks.push({ type: "context", text: "For a library image, upload it first from EmDash Media, then search for its filename. External image URLs remain available as a fallback." });
 	if (images.hasMore) blocks.push({ type: "context", text: "Showing the latest 100 media library images. Upload or find other images in the EmDash Media page." });
 	if (draft.repeatFrequency !== "none") {
 		blocks.push({
@@ -533,7 +536,7 @@ function exceptionFormBlocks(
 				{ label: "Change this occurrence", value: "modified" },
 			], draft.status),
 			{ ...textField("overrideTitle", "Replacement title", draft.overrideTitle), condition: { field: "status", eq: "modified" } },
-			{ ...textField("overrideDescription", "Replacement description", draft.overrideDescription, true), condition: { field: "status", eq: "modified" } },
+			{ ...textField("overrideDescription", "Replacement description (Markdown supported)", draft.overrideDescription, true, "Write normally, or use Markdown for headings, emphasis, lists, and links."), condition: { field: "status", eq: "modified" } },
 			{ ...selectField("overrideAllDay", "Replacement event type", [
 				{ label: "All-day", value: "allDay" },
 				{ label: "Timed", value: "timed" },
