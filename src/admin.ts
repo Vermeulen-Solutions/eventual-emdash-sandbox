@@ -76,6 +76,8 @@ interface EventFormValues {
 	monthlyPosition: MonthlyPosition;
 }
 
+const DESCRIPTION_HELP = "Description formatting is optional. Write normally, or use Markdown: **bold**, _italic_, ## heading, - list item, and [link text](https://example.com). Leave a blank line between paragraphs.";
+
 interface ExceptionFormValues {
 	recurrenceDate?: string;
 	recurrenceTime?: string;
@@ -352,19 +354,19 @@ function eventFormBlocks(
 			title: `Selected image: ${selectedImage.filename}`,
 		});
 	}
-	blocks.push({ type: "context", text: "Description formatting is optional. Write normally, or use Markdown: **bold**, _italic_, ## heading, - list item, and [link text](https://example.com). Leave a blank line between paragraphs." });
 	if (/<\/?[a-z!][^>]*>/i.test(draft.description)) blocks.push({
 		type: "banner",
 		title: "Imported HTML description",
 		description: "You can leave the existing HTML unchanged, or replace it with plain text or Markdown.",
 		variant: "alert",
 	});
+	blocks.push({ type: "context", text: DESCRIPTION_HELP });
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
 		fields: [
-			textField("title", "Title", draft.title),
 			textField("description", "Description", draft.description, true, "Write the event description. Plain text is fine; Markdown formatting is optional."),
+			textField("title", "Title", draft.title),
 			{ type: "date_input", action_id: "startDate", label: "Start date", initial_value: draft.start.slice(0, 10) },
 			{ ...textField("startTime", "Start time", draft.allDay ? "" : draftTime(draft.start)), placeholder: "18:30 or 6:30 PM", condition: { field: "allDay", eq: false } },
 			{ type: "date_input", action_id: "endDate", label: "End date (inclusive for all-day events)", initial_value: draft.end.slice(0, 10) },

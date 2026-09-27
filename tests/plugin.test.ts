@@ -879,6 +879,7 @@ describe("sandboxed Eventual plugin", () => {
 		const eventId = await createEventThroughAdmin(host, { description });
 		const page = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: eventId });
 		const form = adminForm(page);
+		expect(form.fields[0]?.action_id).toBe("description");
 		expect(form.fields.find((field) => field.action_id === "description")).toMatchObject({ initial_value: description, multiline: true });
 		const values = Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined]));
 		await host.invokeRoute("admin", { type: "form_submit", action_id: "save-event", block_id: form.block_id, values: { ...values, title: "Updated title" } });

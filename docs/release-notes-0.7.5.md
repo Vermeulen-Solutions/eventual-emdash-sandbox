@@ -58,7 +58,7 @@ Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,287 bytes** compressed.
 SHA-256:
 
 ```text
-2469dd7ec8ec0a0fe4476e20ca02f5945b3f31a80545bc60275f12f997c1897d
+8f0762b08998c91ceed6f0fa1168fcec273d4cbee4cbb441a5644301341cf27a
 ```
 
 The publish command rebuilds the archive, so its final checksum must be recorded
