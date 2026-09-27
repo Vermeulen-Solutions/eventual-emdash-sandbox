@@ -54,11 +54,11 @@ i Bundle size: 155.9 KB across 3 files
 | Total decompressed | **159,661** |
 
 Backend limit: 131,072 bytes. Complete package limit: 262,144 bytes.
-Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,420 bytes** compressed.
+Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,421 bytes** compressed.
 SHA-256:
 
 ```text
-fc006b377a1ea96e81e69d16e3b4843a8c4434af09170eef784eb86a700b99fc
+30fd569665a25cd45b33c858d85a52414b930727a199d9aee4c26e623177afe1
 ```
 
 The publish command rebuilds the archive, so its final checksum must be recorded

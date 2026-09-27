@@ -687,6 +687,7 @@ describe("sandboxed Eventual plugin", () => {
 				expect.objectContaining({ label: "fundraiser-poster.png (800 × 1200)", value: image.id }),
 			]),
 		});
+		expect(form.fields.findIndex((field) => field.action_id === "imageMediaId")).toBe(1);
 
 		const savedPage = await runtimeHost.admin.submit("/events", "save-event", {
 			title: "Fundraiser",

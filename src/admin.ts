@@ -350,6 +350,14 @@ function eventFormBlocks(
 		block_id: formBlockId,
 		fields: [
 			textField("title", "Title", draft.title),
+			comboboxField("imageMediaId", "Featured image", [
+				{ label: "No featured image", value: "" },
+				...images.items.map((image) => ({
+					label: `${image.filename}${image.width && image.height ? ` (${image.width} × ${image.height})` : ""}`,
+					value: image.id,
+				})),
+			], draft.imageMediaId, "Search EmDash media library"),
+			{ ...textField("imageUrl", "External image URL (optional)", draft.imageUrl), condition: { field: "imageMediaId", eq: "" } },
 			textField("description", DESCRIPTION_LABEL, draft.description, true, DESCRIPTION_PLACEHOLDER),
 			{ type: "date_input", action_id: "startDate", label: "Start date", initial_value: draft.start.slice(0, 10) },
 			{ ...textField("startTime", "Start time", draft.allDay ? "" : draftTime(draft.start)), placeholder: "18:30 or 6:30 PM", condition: { field: "allDay", eq: false } },
@@ -364,14 +372,6 @@ function eventFormBlocks(
 			], draft.venueId, "Search saved venues"),
 			textField("organizer", "Organizer", draft.organizer),
 			textField("externalUrl", "External URL", draft.externalUrl),
-			comboboxField("imageMediaId", "Featured image", [
-				{ label: "No featured image", value: "" },
-				...images.items.map((image) => ({
-					label: `${image.filename}${image.width && image.height ? ` (${image.width} × ${image.height})` : ""}`,
-					value: image.id,
-				})),
-			], draft.imageMediaId, "Search EmDash media library"),
-			{ ...textField("imageUrl", "External image URL (optional)", draft.imageUrl), condition: { field: "imageMediaId", eq: "" } },
 			textField("categories", "Categories (one per line or comma-separated)", draft.categories, true),
 			{ type: "toggle", action_id: "published", label: "Published on the public events route", initial_value: draft.published },
 			selectField("repeatFrequency", "Repeat", recurrenceOptions, draft.repeatFrequency),
