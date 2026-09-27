@@ -42,23 +42,23 @@ duplication, validation, recurrence actions, and host response limits.
 Exact final inspection output:
 
 ```text
-i Bundle size: 155.7 KB across 3 files
+i Bundle size: 156.0 KB across 3 files
 √ Validation passed
 ```
 
 | Package entry | Bytes |
 | --- | ---: |
-| backend.js | 107,061 |
+| backend.js | 107,341 |
 | manifest.json | 35,287 |
 | README.md | 17,068 |
-| Total decompressed | **159,416** |
+| Total decompressed | **159,696** |
 
 Backend limit: 131,072 bytes. Complete package limit: 262,144 bytes.
-Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,287 bytes** compressed.
+Preparation archive: `dist/eventual-0.7.5.tar.gz`, **41,403 bytes** compressed.
 SHA-256:
 
 ```text
-8f0762b08998c91ceed6f0fa1168fcec273d4cbee4cbb441a5644301341cf27a
+6a2889a71baefcca3c9d81c3794a652e0765621faa3d42853245dc3849e08b70
 ```
 
 The publish command rebuilds the archive, so its final checksum must be recorded

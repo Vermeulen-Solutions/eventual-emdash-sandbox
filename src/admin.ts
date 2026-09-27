@@ -361,6 +361,7 @@ function eventFormBlocks(
 		variant: "alert",
 	});
 	blocks.push({ type: "context", text: DESCRIPTION_HELP });
+	blocks.push({ type: "context", text: "Agent access: You can add and edit events with MCP. Enable Eventual's tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. This is useful for migrating event data and Markdown rich text from another CMS." });
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
