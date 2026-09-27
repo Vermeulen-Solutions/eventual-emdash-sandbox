@@ -57,6 +57,17 @@ daylight-saving transition are rejected. Saved event forms show a schedule
 preview with local start/end values and the selected timezone; all-day previews
 identify the end date as inclusive.
 
+Descriptions can be entered as ordinary text on the event form. After saving,
+choose **Edit description** for an overview with **Add paragraph**, **Add heading**,
+and **Add list** controls. Edit one section at a time; a whole list uses one text
+box with one item per line. Paragraphs can be normal, bold, or italic. Sections
+can be moved or removed, and Cancel leaves the saved description alone.
+Descriptions support up to 12 sections; there are no empty slots to fill in.
+No HTML or Markdown is required. Imported HTML outside the editor's supported
+format remains intact until you explicitly save a replacement. Convert such
+content before entering it here. The sandboxed Block Kit UI does not support
+selecting and styling individual words inside a paragraph.
+
 ## License
 
 Eventual is licensed under the MIT License. See [LICENSE](./LICENSE).

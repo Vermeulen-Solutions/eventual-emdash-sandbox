@@ -26,6 +26,7 @@ import { validOccurrenceRange } from "./domain/occurrences";
 import { recurrenceSummary, WEEKDAYS } from "./domain/recurrence-rule";
 import { defaultOccurrenceWindow, occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
 import { eventLocation } from "./domain/venue";
+import { handleDescriptionAdmin } from "./description-admin";
 import {
 	deleteEvent,
 	deleteVenue,
@@ -49,7 +50,7 @@ type Interaction =
 
 interface EventFormValues {
 	title: string;
-	description: string;
+	description?: string;
 	startDate: string;
 	startTime?: string;
 	endDate: string;
@@ -151,8 +152,8 @@ function parseInteraction(input: unknown): Interaction | null {
 
 function parseEventValues(value: unknown): EventFormValues | null {
 	if (!isRecord(value)) return null;
-	const requiredStrings = ["title", "description", "startDate", "endDate", "timezone", "location", "organizer", "externalUrl", "categories", "venueId", "recurrenceUntil"];
-	const optionalStrings = ["startTime", "endTime", "imageUrl", "imageMediaId"];
+	const requiredStrings = ["title", "startDate", "endDate", "timezone", "location", "organizer", "externalUrl", "categories", "venueId", "recurrenceUntil"];
+	const optionalStrings = ["description", "startTime", "endTime", "imageUrl", "imageMediaId"];
 	if (requiredStrings.some((key) => typeof value[key] !== "string") || !hasOptionalStringFields(value, optionalStrings)) return null;
 	if (typeof value.allDay !== "boolean" || typeof value.published !== "boolean") return null;
 	if (["recurrenceInterval", "monthlyDayOfMonth"].some((key) => value[key] !== undefined && typeof value[key] !== "number")) return null;
@@ -308,7 +309,7 @@ function eventFormBlocks(
 	id: string,
 	error?: string,
 	images: EventImageOptions = { items: [], hasMore: false },
-	duplicate = false,
+	duplicate: boolean | string = false,
 ): BlockResponse["blocks"] {
 	const recurrenceOptions = [
 		{ label: "Does not repeat", value: "none" },
@@ -316,7 +317,7 @@ function eventFormBlocks(
 		{ label: "Weekly", value: "weekly" },
 		{ label: "Monthly", value: "monthly" },
 	];
-	const formBlockId = `event-form:${id || (duplicate ? "new:duplicate" : "new")}`;
+	const formBlockId = `event-form:${id || (duplicate ? `new:duplicate${typeof duplicate === "string" ? `:${duplicate}` : ""}` : "new")}`;
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
 		{ type: "header", text: id ? "Edit event" : "Add event" },
@@ -351,12 +352,17 @@ function eventFormBlocks(
 		});
 	}
 	blocks.push({ type: "context", text: "For a library image, upload it first from EmDash Media, then search for its filename here. External image URLs remain available as a fallback." });
+	if (id) blocks.push(
+		{ type: "context", text: "Save changes to event details before opening the description editor." },
+		{ type: "actions", elements: [{ type: "button", action_id: "edit-description", label: draft.description ? "Edit description" : "Add description", value: id }] },
+	);
+	else blocks.push({ type: "context", text: duplicate ? "The description is copied from the original event. Save this copy, then choose Edit description to change it." : "Write a description in ordinary text. After saving, you can add headings, lists, and emphasis with Edit description." });
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
 		fields: [
 			textField("title", "Title", draft.title),
-			textField("description", "Description", draft.description, true),
+			...(!id && !duplicate ? [textField("description", "Description", draft.description, true)] : []),
 			{ type: "date_input", action_id: "startDate", label: "Start date", initial_value: draft.start.slice(0, 10) },
 			{ ...textField("startTime", "Start time", draft.allDay ? "" : draftTime(draft.start)), placeholder: "18:30 or 6:30 PM", condition: { field: "allDay", eq: false } },
 			{ type: "date_input", action_id: "endDate", label: "End date (inclusive for all-day events)", initial_value: draft.end.slice(0, 10) },
@@ -608,7 +614,7 @@ function eventEditorBlocks(
 	return blocks;
 }
 
-async function renderEventForm(ctx: EventualContext, draft: EventDraft, id: string, error?: string, duplicate = false): Promise<BlockResponse> {
+async function renderEventForm(ctx: EventualContext, draft: EventDraft, id: string, error?: string, duplicate: boolean | string = false): Promise<BlockResponse> {
 	const [venues, images] = await Promise.all([
 		listVenues(ctx),
 		listEventImages(ctx, draft.imageMediaId),
@@ -862,11 +868,11 @@ async function renderSettings(ctx: EventualContext, error?: string): Promise<Blo
 function idFromBlock(blockId: string | undefined, prefix: string): string | null {
 	if (!blockId?.startsWith(prefix)) return null;
 	const id = blockId.slice(prefix.length);
-	return id === "new" || id === "new:duplicate" ? "" : id;
+	return id === "new" || id === "new:duplicate" || id.startsWith("new:duplicate:") ? "" : id;
 }
 
 function isDuplicateForm(blockId: string | undefined): boolean {
-	return blockId === "event-form:new:duplicate";
+	return blockId === "event-form:new:duplicate" || Boolean(blockId?.startsWith("event-form:new:duplicate:"));
 }
 
 function readString(value: unknown): string {
@@ -891,7 +897,7 @@ function valuesToDraft(values: Record<string, unknown>): { draft: EventDraft | n
 	const end = value.allDay ? value.endDate : `${value.endDate}T${endTime}`;
 	return { draft: {
 		title: value.title,
-		description: value.description,
+		description: value.description ?? "",
 		start,
 		end,
 		allDay: value.allDay,
@@ -941,6 +947,8 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		if (interaction.page === "/settings") return renderSettings(ctx);
 		return renderEvents(ctx);
 	}
+	const descriptionResponse = await handleDescriptionAdmin(interaction, ctx);
+	if (descriptionResponse) return descriptionResponse;
 
 	if (interaction.type === "block_action") {
 		if (interaction.action_id === "occurrences-page") {
@@ -984,7 +992,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		if (interaction.action_id === "duplicate-event" && typeof interaction.value === "string") {
 			const event = await getEvent(ctx, interaction.value);
 			return event
-				? renderEventForm(ctx, duplicateEventDraft(event), "", undefined, true)
+				? renderEventForm(ctx, duplicateEventDraft(event), "", undefined, event.id)
 				: { blocks: [{ type: "banner", title: "Event no longer exists", variant: "error" }] };
 		}
 		if (interaction.action_id === "add-exception" && typeof interaction.value === "string") {
@@ -1093,14 +1101,20 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 
 	if (interaction.action_id === "save-event") {
 		const id = idFromBlock(interaction.block_id, "event-form:");
-		const duplicate = isDuplicateForm(interaction.block_id);
+		const duplicate = interaction.block_id?.startsWith("event-form:new:duplicate:")
+			? interaction.block_id.slice("event-form:new:duplicate:".length) : isDuplicateForm(interaction.block_id);
 		if (id === null) return { blocks: [{ type: "banner", title: "Invalid event form", variant: "error" }] };
-		const { draft, error } = valuesToDraft(interaction.values);
+		const previous = id ? await getEvent(ctx, id) : null;
+		if (id && !previous) return { blocks: [{ type: "banner", title: "Event no longer exists", variant: "error" }] };
+		const source = typeof duplicate === "string" ? await getEvent(ctx, duplicate) : null;
+		if (typeof duplicate === "string" && !source) return { blocks: [{ type: "banner", title: "Original event no longer exists", description: "Start a new event to create this copy.", variant: "error" }] };
+		const { draft, error } = valuesToDraft({ ...interaction.values,
+			description: interaction.values.description === undefined ? previous?.description ?? source?.description ?? "" : interaction.values.description,
+		});
 		if (!draft) return renderEventForm(ctx, EMPTY_EVENT_DRAFT, id, error ?? "Check each event field and its date, time, and recurrence settings.", duplicate);
 		if (error) return renderEventForm(ctx, draft, id, error, duplicate);
 		const prepared = prepareEventData(draft);
 		if (!prepared.data) {
-			const previous = id ? await getEvent(ctx, id) : null;
 			return previous
 				? renderEventEditor(ctx, previous, draft, prepared.error)
 				: renderEventForm(ctx, draft, id, prepared.error, duplicate);
@@ -1113,7 +1127,6 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		if (draft.venueId && !(await getVenue(ctx, draft.venueId))) {
 			return renderEventForm(ctx, draft, id, "Choose a saved venue that still exists.", duplicate);
 		}
-		const previous = id ? await getEvent(ctx, id) : null;
 		const now = new Date().toISOString();
 		const event: EventRecord = {
 			...prepared.data,

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { randomBytes } from "node:crypto";
 import { env } from "node:process";
+import { validateBlockResponse, type BlockResponse, type ButtonElement, type FormBlock } from "@emdash-cms/blocks/server";
 
 import {
 	createPluginRuntimeTestHost,
@@ -24,6 +25,19 @@ afterEach(async () => {
 });
 
 type AdminEventValues = Record<string, unknown>;
+
+function descriptionButton(page: unknown, actionId: string, index = 0): ButtonElement {
+	const buttons = (page as BlockResponse).blocks.flatMap((block) => block.type === "actions" ? block.elements : [])
+		.filter((element): element is ButtonElement => element.type === "button" && element.action_id === actionId);
+	if (!buttons[index]) throw new Error(`Expected description action: ${actionId}`);
+	return buttons[index]!;
+}
+
+function adminForm(page: unknown): FormBlock {
+	const form = (page as BlockResponse).blocks.find((block) => block.type === "form");
+	if (!form || form.type !== "form") throw new Error("Expected an admin form");
+	return form;
+}
 
 async function createEventThroughAdmin(testHost: PluginTestHost, overrides: AdminEventValues): Promise<string> {
 	const values = {
@@ -113,7 +127,7 @@ describe("sandboxed Eventual plugin", () => {
 		const result = await host.invokeRoute("admin", { type: "block_action", action_id: "duplicate-event", value: originalId });
 		const blocks = (result as { blocks: Array<Record<string, unknown>> }).blocks;
 		const form = blocks.find((block) => block.type === "form") as { block_id: string; fields: Array<Record<string, unknown>> };
-		expect(form.block_id).toBe("event-form:new:duplicate");
+		expect(form.block_id).toBe(`event-form:new:duplicate:${originalId}`);
 		expect(JSON.stringify(blocks)).toContain("This is an unpublished copy");
 		expect(form.fields.find((field) => field.action_id === "title")).toMatchObject({ initial_value: "Copy of Summer concert" });
 		expect(form.fields.find((field) => field.action_id === "published")).toMatchObject({ initial_value: false });
@@ -124,7 +138,6 @@ describe("sandboxed Eventual plugin", () => {
 			block_id: form.block_id,
 			values: {
 				title: "Copy of Summer concert",
-				description: "Bring a picnic",
 				startDate: "2026-08-14",
 				startTime: "18:30",
 				endDate: "2026-08-14",
@@ -147,10 +160,10 @@ describe("sandboxed Eventual plugin", () => {
 			},
 		});
 
-		const events = (await host.storage("events").list()).map((row) => row.data as { id: string; title: string; published: boolean; recurrence?: unknown });
+		const events = (await host.storage("events").list()).map((row) => row.data as { id: string; title: string; description: string; published: boolean; recurrence?: unknown });
 		expect(events).toHaveLength(2);
 		expect(events.find((event) => event.id === originalId)).toMatchObject({ title: "Summer concert", published: true });
-		expect(events.find((event) => event.id !== originalId)).toMatchObject({ title: "Copy of Summer concert", published: false });
+		expect(events.find((event) => event.id !== originalId)).toMatchObject({ title: "Copy of Summer concert", description: "Bring a picnic", published: false });
 		expect(events.find((event) => event.id !== originalId)?.recurrence).toBeUndefined();
 	});
 
@@ -819,6 +832,78 @@ describe("sandboxed Eventual plugin", () => {
 		const deletedText = await deleted.text();
 		expect(deletedText.match(/STATUS:CANCELLED/g)).toHaveLength(3);
 		expect(deletedText).not.toContain("Secret description should not remain after cancellation");
+	});
+
+	it("edits descriptions one section at a time, retaining drafts and rejecting stale edits", async () => {
+		host = await createPluginTestHost();
+		const eventId = await createEventThroughAdmin(host, { title: "Atelier dessin", description: "Bienvenue à toutes et tous" });
+		const act = (action_id: string, value: unknown) => host!.invokeRoute("admin", { type: "block_action", action_id, value });
+		const submit = (page: unknown, values: Record<string, unknown>) => host!.invokeRoute("admin", {
+			type: "form_submit", action_id: "save-description-section", block_id: adminForm(page).block_id, values,
+		});
+		let page = await act("edit-description", eventId);
+		expect((page as BlockResponse).blocks.some((block) => block.type === "form")).toBe(false);
+		const listEditor = await act("description-add-list", descriptionButton(page, "description-add-list").value);
+		expect(adminForm(listEditor).fields).toHaveLength(3);
+		expect(adminForm(listEditor).fields.find((field) => field.action_id === "kind")).toMatchObject({ initial_value: "bullet" });
+		const text = "7 septembre 2026\n21 septembre 2026";
+		page = await submit(listEditor, { kind: "bullet", text, emphasis: "normal" });
+		const listEdit = await act("description-edit", descriptionButton(page, "description-edit", 1).value);
+		expect(adminForm(listEdit).fields.find((field) => field.action_id === "text")).toMatchObject({ initial_value: text });
+		const oversized = "x".repeat(5001);
+		const invalid = await submit(listEdit, { kind: "bullet", text: oversized, emphasis: "normal" });
+		expect(adminForm(invalid).fields.find((field) => field.action_id === "text")).toMatchObject({ initial_value: oversized });
+		expect(JSON.stringify(invalid)).toContain("5,000");
+		page = await act("edit-description", descriptionButton(invalid, "edit-description").value);
+		const heading = await act("description-add-heading", descriptionButton(page, "description-add-heading").value);
+		page = await submit(heading, { kind: "heading", text: "Les dates", emphasis: "normal" });
+		const stale = await submit(listEdit, { kind: "bullet", text: "Outdated draft", emphasis: "normal" });
+		expect(JSON.stringify(stale)).toContain("changed while you were editing");
+		expect(adminForm(stale).fields.find((field) => field.action_id === "text")).toMatchObject({ initial_value: "Outdated draft" });
+		page = await act("description-up", descriptionButton(page, "description-up", 1).value);
+		let event = (await host.storage("events").list())[0]?.data as { description: string };
+		expect(event.description).toBe("<p>Bienvenue à toutes et tous</p> <h3>Les dates</h3> <ul><li>7 septembre 2026</li><li>21 septembre 2026</li></ul>");
+		page = await act("description-remove", descriptionButton(page, "description-remove", 1).value);
+		page = await act("description-remove", descriptionButton(page, "description-remove", 1).value);
+		page = await act("description-remove", descriptionButton(page, "description-remove").value);
+		event = (await host.storage("events").list())[0]?.data as { description: string };
+		expect(event.description).toBe("");
+		expect(JSON.stringify(page)).toContain("Write your event description");
+		expect(validateBlockResponse(listEditor, {})).toEqual({ valid: true, errors: [] });
+		expect(validateBlockResponse(stale, {})).toEqual({ valid: true, errors: [] });
+	});
+
+	it("preserves existing HTML when saving event details, duplicating, and cancelling replacement", async () => {
+		host = await createPluginTestHost();
+		const description = "<p>Les <strong>ateliers gratuits</strong> reviennent !</p>";
+		const eventId = await createEventThroughAdmin(host, { description });
+		const page = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: eventId });
+		const form = adminForm(page);
+		expect(form.fields.some((field) => field.action_id === "description")).toBe(false);
+		const values = Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined]));
+		await host.invokeRoute("admin", { type: "form_submit", action_id: "save-event", block_id: form.block_id, values: { ...values, title: "Updated title" } });
+		expect((await host.storage("events").list())[0]?.data).toMatchObject({ title: "Updated title", description });
+		const overview = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-description", value: eventId });
+		expect(JSON.stringify(overview)).not.toContain("<strong>");
+		const replacement = await host.invokeRoute("admin", { type: "block_action", action_id: "description-replace", value: descriptionButton(overview, "description-replace").value });
+		await host.invokeRoute("admin", { type: "block_action", action_id: "edit-description", value: descriptionButton(replacement, "edit-description").value });
+		expect((await host.storage("events").list())[0]?.data).toMatchObject({ description });
+		const copy = await host.invokeRoute("admin", { type: "block_action", action_id: "duplicate-event", value: eventId });
+		const copyForm = adminForm(copy);
+		expect(copyForm.fields.some((field) => field.action_id === "description")).toBe(false);
+		await host.invokeRoute("admin", { type: "form_submit", action_id: "save-event", block_id: copyForm.block_id,
+			values: Object.fromEntries(copyForm.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined])),
+		});
+		expect((await host.storage("events").list()).map((row) => (row.data as { description: string }).description)).toEqual([description, description]);
+	});
+
+	it("keeps the largest description overview within Block Kit response limits", async () => {
+		host = await createPluginTestHost();
+		const description = Array(12).fill(`<ul>${Array.from({ length: 100 }, (_, index) => `<li>Date ${index + 1}</li>`).join("")}</ul>`).join(" ");
+		const eventId = await createEventThroughAdmin(host, { description });
+		const overview = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-description", value: eventId });
+		expect(validateBlockResponse(overview, {})).toEqual({ valid: true, errors: [] });
+		expect(JSON.stringify(overview)).toContain("94 more items");
 	});
 
 	it("validates MCP input and creates an ordinary timezone-aware one-off event", async () => {
