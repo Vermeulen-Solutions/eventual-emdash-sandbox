@@ -344,6 +344,7 @@ function eventFormBlocks(
 		variant: "alert",
 	});
 	blocks.push({ type: "context", text: "Agent access: Eventual events can be added and edited with MCP. Enable tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. Useful for CMS migrations with Markdown rich text." });
+	blocks.push({ type: "section", text: id ? "Review the details above, then use the primary Save event button at the bottom of this form." : "Complete the details above, then use the primary Create event button at the bottom of this form." });
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
@@ -395,7 +396,7 @@ function eventFormBlocks(
 				{ label: "Fifth", value: "5" }, { label: "Last", value: "last" },
 			], String(draft.monthlyPosition), { field: "monthlyPattern", eq: "weekdayOfMonth" }),
 		],
-		submit: { label: "Save event", action_id: "save-event" },
+		submit: { label: id ? "Save event →" : "Create event →", action_id: "save-event" },
 	});
 	if (id) {
 		const preview = schedulePreview(draft);

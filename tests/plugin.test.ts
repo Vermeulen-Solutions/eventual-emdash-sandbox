@@ -882,6 +882,7 @@ describe("sandboxed Eventual plugin", () => {
 		expect(JSON.stringify(page)).toContain("Agent access");
 		expect(form.fields[0]?.action_id).toBe("title");
 		expect(form.fields.find((field) => field.action_id === "description")).toMatchObject({ label: "Description (Markdown optional; drag corner to resize)", initial_value: description, multiline: true });
+		expect(form.submit).toMatchObject({ label: "Save event →", action_id: "save-event" });
 		const pageResponse = page as BlockResponse;
 		const formIndex = pageResponse.blocks.findIndex((block) => block.type === "form");
 		const deleteIndex = pageResponse.blocks.findIndex((block) => block.type === "actions" && JSON.stringify(block).includes("delete-event"));
