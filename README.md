@@ -115,8 +115,8 @@ enable the desired tools in the EmDash MCP settings before agents can call
 them. Read tools are marked non-destructive; changes and exception operations
 are marked destructive for host approval handling.
 
-After upgrading to 0.7.0, enable `eventual__listOccurrences` in EmDash MCP
-settings to make the new read-only tool available to agents. It accepts an event
+If your site is upgrading from 0.7.0, enable `eventual__listOccurrences` in
+EmDash MCP settings to make the read-only tool available to agents. It accepts an event
 `id`, optional `from`/`through` dates, and `limit` (1–100, default 50). It includes
 drafts and cancelled dates. The default window starts today in UTC and contains
 90 inclusive dates; the maximum requested range is 366 inclusive dates.
