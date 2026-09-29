@@ -2,7 +2,7 @@
 
 A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.com).
 
-Version 0.9.0 requires EmDash 1.0.1 or newer. The minimum is declared in both
+Version 0.9.1 requires EmDash 1.0.1 or newer. The minimum is declared in both
 the npm peer dependency and the plugin release requirements.
 
 ## Features
