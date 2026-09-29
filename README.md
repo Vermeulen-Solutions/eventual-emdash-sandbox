@@ -8,8 +8,10 @@ the npm peer dependency and the plugin release requirements.
 ## Features
 
 - Block Kit admin pages for events, saved venues, and settings.
-- Paged Block Kit tables for event and venue lists, with event row actions and
-  a compact occurrence management section in the event editor.
+- Paged Block Kit tables for event and venue lists. Event rows support editing,
+  duplication, and confirmed deletion; the event list can select up to 25
+  events on the current page for one confirmed bulk deletion. Saving an event
+  returns to the primary Events list.
 - Event list duplication starts a clearly marked unpublished draft, carrying
   event fields, dates, and recurrence forward while clearing occurrence
   exceptions for review before saving.

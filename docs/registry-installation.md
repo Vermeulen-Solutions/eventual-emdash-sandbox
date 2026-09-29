@@ -2,30 +2,32 @@
 
 Install the plugin from the EmDash **Registry** after configuring a supported
 sandbox runner. Eventual adds **Events**, **Venues**, and **Settings** pages to
-the admin. On EmDash 1.0.1 or newer, users with `plugins:manage` can create and
-publish one-off or recurring events, reuse saved venues, and write plain text or
-Markdown descriptions.
+the admin. EmDash 1.0.1 or newer is required. Users with `plugins:manage` can
+create and publish one-off or recurring events, reuse saved venues, and write
+plain text or Markdown descriptions.
+
+The Events page provides Edit, Duplicate, and Delete actions. Select up to 25
+events on the current page and choose **Delete selected** for a confirmed bulk
+delete. Saving returns to the Events list, and **Back to events** leaves the
+editor without saving.
 
 ## Manage events with agents
 
-Administrators can enable Eventual's MCP tools in EmDash under **Admin →
-Plugins → Plugin manager → Eventual → Agent access**. The tools manage events,
-recurrence exceptions, venues, and the default timezone. Updating to 0.7.0 or
-later adds the read-only `eventual__listOccurrences` tool; enable it separately
-in MCP settings.
+Enable Eventual's MCP tools in EmDash under **Admin → Plugins → Plugin manager
+→ Eventual → Agent access**. The tools manage events, recurrence exceptions,
+venues, and the default timezone. Updating to 0.7.0 or later adds the
+read-only `eventual__listOccurrences` tool; enable it separately in MCP
+settings.
 
 ## Show events to visitors
 
 Eventual provides public JSON and iCalendar feeds. The repository also includes
-a [server-rendered Astro frontend example](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/tree/main/examples/astro-events)
-with seven visitor views: list, timeline, cards, daily schedule, date strip,
-month calendar, and locations. It includes event details, individual calendar
-downloads, category filters, and safe Markdown rendering, without a calendar
-library. Copy and adapt the example in the site's Astro project; installing
-Eventual alone does not create visitor pages or install frontend code.
-For a smaller integration, the source package exports `eventual/astro` and
-`eventual/astro/EventList.astro`; install that package in the Astro project
-separately from the registry plugin.
+a [server-rendered Astro example](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/tree/main/examples/astro-events)
+with list, timeline, cards, daily schedule, date strip, month calendar,
+location, detail, and individual calendar-download views. Copy and adapt it in
+the site's Astro project; installing Eventual alone does not create visitor
+pages or frontend code. For a smaller integration, install the source package
+and import `eventual/astro` or `eventual/astro/EventList.astro`.
 
 The site-wide iCalendar subscription URL is
 `/_emdash/api/plugins/eventual/calendar`.

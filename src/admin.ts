@@ -190,6 +190,51 @@ function parseVenueValues(value: unknown): VenueFormValues | null {
 	return value as unknown as VenueFormValues;
 }
 
+function stringList(value: unknown): string[] {
+	if (!Array.isArray(value)) return [];
+	return [...new Set(value.filter((item): item is string => typeof item === "string" && item.trim().length > 0))];
+}
+
+function eventIdList(value: unknown): string[] {
+	if (typeof value !== "string") return [];
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return stringList(parsed);
+	} catch {
+		return [];
+	}
+}
+
+function deleteConfirmationBlocks(
+	title: string,
+	description: string,
+	confirmActionId: string,
+	confirmLabel: string,
+	confirmValue: string,
+	cancelActionId: string,
+	cancelValue?: string,
+): BlockResponse["blocks"] {
+	return [
+		...pageNav(),
+		{ type: "header", text: title },
+		{ type: "context", text: description },
+		{
+			type: "actions",
+			elements: [
+				{
+					type: "button",
+					action_id: confirmActionId,
+					label: confirmLabel,
+					style: "danger",
+					value: confirmValue,
+					confirm: { title: "Delete events?", text: "This permanently removes the selected events and their occurrence exceptions.", confirm: "Delete", deny: "Cancel", style: "danger" },
+				},
+				{ type: "button", action_id: cancelActionId, label: "Cancel", value: cancelValue },
+			],
+		},
+	];
+}
+
 function pageNav(): BlockResponse["blocks"] {
 	return [
 		{
@@ -325,6 +370,7 @@ function eventFormBlocks(
 	const formBlockId = `event-form:${id || (duplicate ? `new:duplicate${typeof duplicate === "string" ? `:${duplicate}` : ""}` : "new")}`;
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
+		{ type: "actions", elements: [{ type: "link", label: "Back to events", target: { kind: "plugin-page", path: "/events" } }] },
 		{ type: "header", text: id ? "Edit event" : "Add event" },
 	];
 	if (duplicate) blocks.push({ type: "context", text: "This is an unpublished copy. Dates, times, recurrence, venue, and event details were copied; review the schedule before saving. Occurrence exceptions were not copied." });
@@ -772,7 +818,7 @@ function venueFormBlocks(venue: VenueFields, id: string, error?: string): BlockR
 	return blocks;
 }
 
-async function renderEvents(ctx: EventualContext, cursor?: string): Promise<BlockResponse> {
+async function renderEvents(ctx: EventualContext, cursor?: string, error?: string): Promise<BlockResponse> {
 	const page = await (ctx.storage.events as import("emdash").StorageCollection<EventRecord>).query({
 		orderBy: { start: "desc" }, limit: 25, cursor,
 	});
@@ -781,10 +827,22 @@ async function renderEvents(ctx: EventualContext, cursor?: string): Promise<Bloc
 		{ type: "header", text: "Events" },
 		{ type: "actions", elements: [{ type: "button", action_id: "new-event", label: "Add event", style: "primary" }] },
 	];
+	if (error) blocks.push({ type: "banner", title: "Events not deleted", description: error, variant: "error" });
 	if (!page.items.length) {
 		blocks.push({ type: "empty", title: "No events yet", description: "Add a one-off event or create a recurring series." });
 		return { blocks };
 	}
+	blocks.push({
+		type: "form",
+		block_id: "events-bulk-delete",
+		fields: [{
+			type: "checkbox",
+			action_id: "eventIds",
+			label: "Select events to delete",
+			options: page.items.map(({ data: event }) => ({ label: event.title, value: event.id })),
+		}],
+		submit: { label: "Delete selected", action_id: "delete-selected-events" },
+	});
 	const rows = page.items.map(({ data: event }) => {
 		const dateLabel = event.allDay ? event.start : `${instantToLocalDateTime(event.start, event.timezone)} (${event.timezone})`;
 		return {
@@ -799,6 +857,7 @@ async function renderEvents(ctx: EventualContext, cursor?: string): Promise<Bloc
 				items: [
 					{ label: "Edit", value: `edit:${event.id}` },
 					{ label: "Duplicate", value: `duplicate:${event.id}` },
+					{ label: "Delete", value: `delete:${event.id}` },
 				],
 			},
 		};
@@ -1006,6 +1065,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 			if (id && (action === "edit" || action === "duplicate")) {
 				return handleAdmin({ ...interaction, action_id: `${action}-event`, value: id }, ctx);
 			}
+			if (id && action === "delete") return handleAdmin({ ...interaction, action_id: "confirm-delete-event", value: id }, ctx);
 			return { blocks: [{ type: "banner", title: "Invalid event action", variant: "error" }] };
 		}
 		if (interaction.action_id === "occurrences-page") {
@@ -1092,8 +1152,31 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 				: { blocks: [{ type: "banner", title: "Event no longer exists", variant: "error" }] };
 		}
 		if (interaction.action_id === "delete-event" && typeof interaction.value === "string") {
+			if (!(await getEvent(ctx, interaction.value))) return { ...(await renderEvents(ctx)), toast: { message: "Event no longer exists", type: "error" } };
 			await deleteEvent(ctx, interaction.value);
-			return { ...(await renderEvents(ctx)), toast: { message: "Event deleted", type: "success" } };
+			return { ...(await renderEvents(ctx)), toast: { message: "Event deleted", type: "success" }, navigate: { kind: "plugin-page", path: "/events" } };
+		}
+		if (interaction.action_id === "confirm-delete-event" && typeof interaction.value === "string") {
+			const event = await getEvent(ctx, interaction.value);
+			if (!event) return { ...(await renderEvents(ctx)), toast: { message: "Event no longer exists", type: "error" } };
+			return { blocks: deleteConfirmationBlocks(
+				"Delete event?",
+				`Delete “${event.title}” permanently, including its occurrence exceptions?`,
+				"delete-event",
+				"Delete event",
+				event.id,
+				"cancel-delete-event",
+				event.id,
+			) };
+		}
+		if (interaction.action_id === "cancel-delete-event") return renderEvents(ctx);
+		if (interaction.action_id === "confirm-delete-selected-events" && typeof interaction.value === "string") {
+			const ids = eventIdList(interaction.value);
+			if (!ids.length) return { ...(await renderEvents(ctx)), toast: { message: "No events selected", type: "error" } };
+			const events = await getEventsById(ctx, ids);
+			if (!events.size) return { ...(await renderEvents(ctx)), toast: { message: "The selected events no longer exist", type: "error" } };
+			for (const id of events.keys()) await deleteEvent(ctx, id);
+			return { ...(await renderEvents(ctx)), toast: { message: `${events.size} event${events.size === 1 ? "" : "s"} deleted`, type: "success" }, navigate: { kind: "plugin-page", path: "/events" } };
 		}
 		if (interaction.action_id === "new-venue") return { blocks: venueFormBlocks(blankVenue(), "") };
 		if (interaction.action_id === "edit-venue" && typeof interaction.value === "string") {
@@ -1197,8 +1280,26 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 			return renderEventEditor(ctx, previous!, draft, "Changing this recurrence would invalidate saved occurrence exceptions. Remove or update those exceptions first.");
 		}
 		await putEvent(ctx, event);
-		return { ...(await renderEventEditor(ctx, event)), toast: { message: previous ? "Event updated" : "Event created", type: "success" } };
+		return { ...(await renderEvents(ctx)), toast: { message: previous ? "Event updated" : "Event created", type: "success" }, navigate: { kind: "plugin-page", path: "/events" } };
 	}
+
+	if (interaction.action_id === "delete-selected-events") {
+		const ids = stringList(interaction.values.eventIds);
+		if (!ids.length) return { ...(await renderEvents(ctx)), toast: { message: "Select at least one event to delete", type: "error" } };
+		if (ids.length > 25) return { ...(await renderEvents(ctx)), toast: { message: "Select no more than 25 events at a time", type: "error" } };
+		const events = await getEventsById(ctx, ids);
+		if (!events.size) return { ...(await renderEvents(ctx)), toast: { message: "The selected events no longer exist", type: "error" } };
+		return { blocks: deleteConfirmationBlocks(
+			"Delete selected events?",
+			`Delete ${events.size} selected event${events.size === 1 ? "" : "s"} permanently, including occurrence exceptions?`,
+			"confirm-delete-selected-events",
+			"Delete selected events",
+			JSON.stringify([...events.keys()]),
+			"cancel-delete-selected-events",
+		) };
+	}
+
+	if (interaction.action_id === "cancel-delete-selected-events") return renderEvents(ctx);
 
 	if (interaction.action_id === "save-venue") {
 		const id = idFromBlock(interaction.block_id, "venue-form:");

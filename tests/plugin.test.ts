@@ -104,8 +104,23 @@ describe("sandboxed Eventual plugin", () => {
 			page_action_id: "events-next",
 			rows: [expect.objectContaining({
 				title: "Table event",
-				action: expect.objectContaining({ type: "menu", action_id: "event-row" }),
+				action: expect.objectContaining({
+					type: "menu",
+					action_id: "event-row",
+					items: expect.arrayContaining([{ label: "Delete", value: `delete:${eventId}` }]),
+				}),
 			})],
+		});
+		const bulkForm = events.blocks.find((block) => block.type === "form");
+		expect(bulkForm).toMatchObject({
+			type: "form",
+			block_id: "events-bulk-delete",
+			submit: { action_id: "delete-selected-events" },
+		});
+		expect(bulkForm?.type === "form" && bulkForm.fields[0]).toMatchObject({
+			type: "checkbox",
+			action_id: "eventIds",
+			options: [{ value: eventId }],
 		});
 		const edit = await host.invokeRoute("admin", { type: "block_action", action_id: "event-row", value: `edit:${eventId}` }) as BlockResponse;
 		expect(edit.blocks.some((block) => block.type === "form" && block.block_id === `event-form:${eventId}`)).toBe(true);
@@ -122,6 +137,38 @@ describe("sandboxed Eventual plugin", () => {
 				action: expect.objectContaining({ action_id: "edit-venue", value: venueId }),
 			})],
 		});
+	});
+
+	it("returns to the event list after saving and supports confirmed single and bulk deletion", async () => {
+		host = await createPluginTestHost();
+		const firstId = await createEventThroughAdmin(host, { title: "Delete one" });
+		const secondId = await createEventThroughAdmin(host, { title: "Delete two", startDate: "2026-10-11", endDate: "2026-10-11" });
+		const edit = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: firstId }) as BlockResponse;
+		const form = adminForm(edit);
+		const values = Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined]));
+		const saved = await host.invokeRoute("admin", {
+			type: "form_submit", action_id: "save-event", block_id: form.block_id,
+			values: { ...values, title: "Delete one updated" },
+		}) as BlockResponse;
+		expect(saved.navigate).toEqual({ kind: "plugin-page", path: "/events" });
+		expect(saved.blocks.some((block) => block.type === "table")).toBe(true);
+
+		const singlePrompt = await host.invokeRoute("admin", { type: "block_action", action_id: "event-row", value: `delete:${firstId}` }) as BlockResponse;
+		const singleConfirm = singlePrompt.blocks.flatMap((block) => block.type === "actions" ? block.elements : [])
+			.find((element) => element.type === "button" && element.action_id === "delete-event");
+		expect(singleConfirm).toMatchObject({ type: "button", confirm: expect.objectContaining({ style: "danger" }), value: firstId });
+		await host.invokeRoute("admin", { type: "block_action", action_id: "delete-event", value: firstId });
+		expect((await host.storage("events").list()).map((row) => row.id)).toEqual([secondId]);
+
+		const thirdId = await createEventThroughAdmin(host, { title: "Delete three", startDate: "2026-10-12", endDate: "2026-10-12" });
+		const bulkPrompt = await host.invokeRoute("admin", {
+			type: "form_submit", action_id: "delete-selected-events", block_id: "events-bulk-delete", values: { eventIds: [secondId, thirdId] },
+		}) as BlockResponse;
+		const bulkConfirm = bulkPrompt.blocks.flatMap((block) => block.type === "actions" ? block.elements : [])
+			.find((element) => element.type === "button" && element.action_id === "confirm-delete-selected-events");
+		expect(bulkConfirm).toMatchObject({ type: "button", confirm: expect.objectContaining({ style: "danger" }) });
+		await host.invokeRoute("admin", { type: "block_action", action_id: "confirm-delete-selected-events", value: bulkConfirm?.type === "button" ? bulkConfirm.value : "" });
+		expect(await host.storage("events").list()).toHaveLength(0);
 	});
 
 	it("keeps the registry MVP admin focused on event management", async () => {
@@ -716,6 +763,10 @@ describe("sandboxed Eventual plugin", () => {
 			type: "actions",
 			elements: [{ type: "link", label: "Open visual Markdown editor", target: { kind: "external", url: "https://onlinemarkdowneditor.dev/" } }],
 		});
+		expect(newEvent.blocks).toContainEqual({
+			type: "actions",
+			elements: [{ type: "link", label: "Back to events", target: { kind: "plugin-page", path: "/events" } }],
+		});
 		expect(form.fields.findIndex((field) => field.action_id === "description")).toBe(1);
 		expect(form.fields.find((field) => field.action_id === "imageMediaId")).toMatchObject({
 			type: "combobox",
@@ -748,9 +799,8 @@ describe("sandboxed Eventual plugin", () => {
 			monthlyWeekday: "monday",
 			monthlyPosition: "1",
 		}, { blockId: "event-form:new" });
-		expect(savedPage.blocks.some((block) => block.type === "image" && block.title === "Selected image: fundraiser-poster.png")).toBe(true);
-		expect(savedPage.blocks.findIndex((block) => block.type === "image" && block.title === "Selected image: fundraiser-poster.png"))
-			.toBeGreaterThan(savedPage.blocks.findIndex((block) => block.type === "form"));
+		expect(savedPage.navigate).toEqual({ kind: "plugin-page", path: "/events" });
+		expect(savedPage.blocks.some((block) => block.type === "table")).toBe(true);
 
 		const [event] = await runtimeHost.inspect.storage.list<{
 			id: string;

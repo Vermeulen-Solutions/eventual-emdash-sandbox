@@ -11,8 +11,9 @@ is required.
 ## Changes
 
 - Event and venue admin lists use paged Block Kit tables. The event table has
-  Edit and Duplicate row actions. Recurring event details group occurrence
-  controls in an accordion.
+  Edit, Duplicate, and confirmed Delete row actions, plus current-page bulk
+  deletion for up to 25 selected events. Saving an event returns to the Events
+  list. Recurring event details group occurrence controls in an accordion.
 - Public JSON, calendar, MCP event lists, and the dashboard no longer return a
   silently truncated event scan. A scan above 10,000 matching records fails
   explicitly. Date-window feeds use the existing published/start index to
