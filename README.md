@@ -12,7 +12,7 @@ the npm peer dependency and the plugin release requirements.
   12-hour times instead. This affects Eventual's EmDash admin displays only;
   public feeds and the consuming site's frontend are unchanged.
 - Paged Block Kit tables for event and venue lists. Event rows support editing,
-  duplication, and confirmed deletion; the event list can select up to 25
+  clickable title editing, duplication, and confirmed deletion; the event list can select up to 25
   events on the current page for one confirmed bulk deletion. Saving an event
   returns to the primary Events list.
 - Event list duplication starts a clearly marked unpublished draft, carrying

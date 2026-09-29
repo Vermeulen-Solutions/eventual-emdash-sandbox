@@ -103,7 +103,7 @@ describe("sandboxed Eventual plugin", () => {
 			type: "table",
 			page_action_id: "events-next",
 			rows: [expect.objectContaining({
-				title: "Table event",
+				title: { type: "button", action_id: "edit-event", label: "Table event", value: eventId },
 				date: expect.stringContaining("(all day)"),
 				action: expect.objectContaining({
 					type: "menu",
@@ -112,6 +112,10 @@ describe("sandboxed Eventual plugin", () => {
 				}),
 			})],
 		});
+		const titleButton = (eventTable as { rows?: Array<Record<string, unknown>> }).rows?.[0]?.title;
+		expect(titleButton).toMatchObject({ type: "button", action_id: "edit-event", value: eventId });
+		const titleEdit = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: eventId }) as BlockResponse;
+		expect(titleEdit.blocks.some((block) => block.type === "form" && block.block_id === `event-form:${eventId}`)).toBe(true);
 		const bulkForm = events.blocks.find((block) => block.type === "form");
 		expect(bulkForm).toMatchObject({
 			type: "form",

@@ -8,7 +8,7 @@ manage one-off and recurring events.
 The Events page provides Edit, Duplicate, and Delete actions. Select up to 25
 events on the current page and choose **Delete selected** for a confirmed bulk
 delete. Saving returns to the Events list, and **Back to events** leaves the
-editor without saving.
+editor without saving. Event titles are also clickable shortcuts to the editor.
 
 Settings default admin time displays to 24-hour. The 12-hour option affects the
 admin event list and dashboard widget only; stored values, public feeds, MCP,

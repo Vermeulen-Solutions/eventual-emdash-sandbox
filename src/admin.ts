@@ -862,7 +862,12 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 	}
 	const rows = page.items.map(({ data: event }) => {
 		return {
-			title: event.title,
+			title: {
+				type: "button" as const,
+				action_id: "edit-event",
+				label: event.title,
+				value: event.id,
+			},
 			date: eventStartLabel(event, timeFormat),
 			status: event.published ? "Published" : "Draft",
 			recurrence: event.recurrence?.frequency ?? "One-off",
@@ -881,7 +886,7 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 	blocks.push({
 		type: "table",
 		columns: [
-			{ key: "title", label: "Event" },
+			{ key: "title", label: "Event", format: "element" },
 			{ key: "date", label: "Start" },
 			{ key: "status", label: "Status", format: "badge" },
 			{ key: "recurrence", label: "Repeats" },
