@@ -679,6 +679,12 @@ describe("sandboxed Eventual plugin", () => {
 		const form = newEvent.blocks.find((block) => block.type === "form" && block.block_id === "event-form:new");
 		expect(form?.type).toBe("form");
 		if (form?.type !== "form") throw new Error("Expected an event form");
+		expect(JSON.stringify(newEvent.blocks)).not.toContain("Complete the details above");
+		expect(newEvent.blocks).toContainEqual({
+			type: "actions",
+			elements: [{ type: "link", label: "Open visual Markdown editor", target: { kind: "external", url: "https://onlinemarkdowneditor.dev/" } }],
+		});
+		expect(form.fields.findIndex((field) => field.action_id === "description")).toBe(1);
 		expect(form.fields.find((field) => field.action_id === "imageMediaId")).toMatchObject({
 			type: "combobox",
 			label: "Featured image",
@@ -687,7 +693,7 @@ describe("sandboxed Eventual plugin", () => {
 				expect.objectContaining({ label: "fundraiser-poster.png (800 × 1200)", value: image.id }),
 			]),
 		});
-		expect(form.fields.findIndex((field) => field.action_id === "imageMediaId")).toBe(1);
+		expect(form.fields.findIndex((field) => field.action_id === "imageMediaId")).toBe(2);
 
 		const savedPage = await runtimeHost.admin.submit("/events", "save-event", {
 			title: "Fundraiser",
@@ -711,6 +717,8 @@ describe("sandboxed Eventual plugin", () => {
 			monthlyPosition: "1",
 		}, { blockId: "event-form:new" });
 		expect(savedPage.blocks.some((block) => block.type === "image" && block.title === "Selected image: fundraiser-poster.png")).toBe(true);
+		expect(savedPage.blocks.findIndex((block) => block.type === "image" && block.title === "Selected image: fundraiser-poster.png"))
+			.toBeGreaterThan(savedPage.blocks.findIndex((block) => block.type === "form"));
 
 		const [event] = await runtimeHost.inspect.storage.list<{
 			id: string;
@@ -889,7 +897,8 @@ describe("sandboxed Eventual plugin", () => {
 		const pageResponse = page as BlockResponse;
 		const formIndex = pageResponse.blocks.findIndex((block) => block.type === "form");
 		const deleteIndex = pageResponse.blocks.findIndex((block) => block.type === "actions" && JSON.stringify(block).includes("delete-event"));
-		expect(deleteIndex).toBeGreaterThan(formIndex);
+		expect(deleteIndex).toBeLessThan(formIndex);
+		expect(JSON.stringify(pageResponse.blocks)).not.toContain("Review the details above");
 		const values = Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined]));
 		await host.invokeRoute("admin", { type: "form_submit", action_id: "save-event", block_id: form.block_id, values: { ...values, title: "Updated title" } });
 		expect((await host.storage("events").list())[0]?.data).toMatchObject({ title: "Updated title", description });

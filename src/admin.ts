@@ -329,27 +329,30 @@ function eventFormBlocks(
 	if (duplicate) blocks.push({ type: "context", text: "This is an unpublished copy. Dates, times, recurrence, venue, and event details were copied; review the schedule before saving. Occurrence exceptions were not copied." });
 	if (error) blocks.push({ type: "banner", title: "Event not saved", description: error, variant: "error" });
 	const selectedImage = images.items.find((image) => image.id === draft.imageMediaId);
-	if (selectedImage) {
-		blocks.push({
-			type: "image",
-			url: selectedImage.url,
-			alt: selectedImage.alt || selectedImage.filename,
-			title: `Selected image: ${selectedImage.filename}`,
-		});
-	}
 	if (/<\/?[a-z!][^>]*>/i.test(draft.description)) blocks.push({
 		type: "banner",
 		title: "Imported HTML description",
 		description: "You can leave the existing HTML unchanged, or replace it with plain text or Markdown.",
 		variant: "alert",
 	});
-	blocks.push({ type: "context", text: "Agent access: Eventual events can be added and edited with MCP. Enable tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. Useful for CMS migrations with Markdown rich text." });
-	blocks.push({ type: "section", text: id ? "Review the details above, then use the primary Save event button at the bottom of this form." : "Complete the details above, then use the primary Create event button at the bottom of this form." });
+	blocks.push({ type: "actions", elements: [{ type: "link", label: "Open visual Markdown editor", target: { kind: "external", url: "https://onlinemarkdowneditor.dev/" } }] });
+	if (id) blocks.push({
+		type: "actions",
+		elements: [{
+			type: "button",
+			action_id: "delete-event",
+			label: "Delete event",
+			style: "danger",
+			value: id,
+			confirm: { title: "Delete event?", text: "This permanently removes the event and its occurrence exceptions.", confirm: "Delete", deny: "Cancel", style: "danger" },
+		}],
+	});
 	blocks.push({
 		type: "form",
 		block_id: formBlockId,
 		fields: [
 			textField("title", "Title", draft.title),
+			textField("description", DESCRIPTION_LABEL, draft.description, true, DESCRIPTION_PLACEHOLDER),
 			comboboxField("imageMediaId", "Featured image", [
 				{ label: "No featured image", value: "" },
 				...images.items.map((image) => ({
@@ -358,7 +361,6 @@ function eventFormBlocks(
 				})),
 			], draft.imageMediaId, "Search EmDash media library"),
 			{ ...textField("imageUrl", "External image URL (optional)", draft.imageUrl), condition: { field: "imageMediaId", eq: "" } },
-			textField("description", DESCRIPTION_LABEL, draft.description, true, DESCRIPTION_PLACEHOLDER),
 			{ type: "date_input", action_id: "startDate", label: "Start date", initial_value: draft.start.slice(0, 10) },
 			{ ...textField("startTime", "Start time", draft.allDay ? "" : draftTime(draft.start)), placeholder: "18:30 or 6:30 PM", condition: { field: "allDay", eq: false } },
 			{ type: "date_input", action_id: "endDate", label: "End date (inclusive for all-day events)", initial_value: draft.end.slice(0, 10) },
@@ -398,22 +400,18 @@ function eventFormBlocks(
 		],
 		submit: { label: id ? "Save event →" : "Create event →", action_id: "save-event" },
 	});
+	if (selectedImage) blocks.push({
+		type: "image",
+		url: selectedImage.url,
+		alt: selectedImage.alt || selectedImage.filename,
+		title: `Selected image: ${selectedImage.filename}`,
+	});
 	if (id) {
 		const preview = schedulePreview(draft);
 		if (preview) blocks.push({ type: "section", text: preview });
-		blocks.push({
-			type: "actions",
-			elements: [{
-				type: "button",
-				action_id: "delete-event",
-				label: "Delete event",
-				style: "danger",
-				value: id,
-				confirm: { title: "Delete event?", text: "This permanently removes the event and its occurrence exceptions.", confirm: "Delete", deny: "Cancel", style: "danger" },
-			}],
-		});
 	}
-	blocks.push({ type: "context", text: "Featured image: upload it first from EmDash Media, then search the library. A thumbnail preview appears above when selected. External image URLs remain available as a fallback." });
+	blocks.push({ type: "context", text: "Agent access: Eventual events can be added and edited with MCP. Enable tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. Useful for CMS migrations with Markdown rich text." });
+	blocks.push({ type: "context", text: "Featured image: upload it first from EmDash Media, then search the library. The selected image appears below the form. External image URLs remain available as a fallback." });
 	if (images.hasMore) blocks.push({ type: "context", text: "Showing the latest 100 media library images. Upload or find other images in the EmDash Media page." });
 	if (draft.repeatFrequency !== "none") {
 		blocks.push({
