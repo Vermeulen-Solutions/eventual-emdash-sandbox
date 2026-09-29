@@ -484,7 +484,7 @@ function eventFormBlocks(
 		const preview = schedulePreview(draft);
 		if (preview) blocks.push({ type: "section", text: preview });
 	}
-	blocks.push({ type: "context", text: "Agent access: Eventual events can be added and edited with MCP. Enable tools in Admin → Plugins → Plugins manager → Eventual → Expand details → Agent access. Useful for CMS migrations with Markdown rich text." });
+	blocks.push({ type: "context", text: "Agent access: Eventual events can be added and edited with MCP. In Admin → Plugins, click the arrow next to Eventual to expand its details, then toggle the Agent access switch. Useful for CMS migrations with Markdown rich text." });
 	blocks.push({ type: "context", text: "Featured image: upload it first from EmDash Media, then search the library. The selected image appears below the form. External image URLs remain available as a fallback." });
 	if (images.hasMore) blocks.push({ type: "context", text: "Showing the latest 100 media library images. Upload or find other images in the EmDash Media page." });
 	if (draft.repeatFrequency !== "none") {

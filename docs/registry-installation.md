@@ -16,10 +16,10 @@ and the consuming site's frontend are unchanged.
 
 ## Manage events with agents
 
-Enable Eventual's MCP tools in EmDash under **Admin → Plugins → Plugin manager
-→ Eventual → Agent access**. They manage events, exceptions, venues, and the
-default timezone. Enable `eventual__listOccurrences` separately in MCP
-settings.
+Enable Eventual's MCP tools in EmDash under **Admin → Plugins**. Click the
+arrow next to **Eventual** to expand its details, then toggle the **Agent
+access** switch. The tools manage events, exceptions, venues, and the default
+timezone. Enable `eventual__listOccurrences` separately in MCP settings.
 
 ## Show events to visitors
 
