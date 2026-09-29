@@ -30,6 +30,7 @@ import { handleDescriptionAdmin } from "./description-admin";
 import {
 	deleteEvent,
 	deleteVenue,
+	EventScanLimitError,
 	getEvent,
 	getEventsById,
 	getVenue,
@@ -584,6 +585,7 @@ function eventEditorBlocks(
 		blocks.push({ type: "context", text: "Set a repeat pattern and save this event before managing occurrence exceptions." });
 		return blocks;
 	}
+	const exceptionSectionStart = blocks.length;
 	blocks.push({ type: "context", text: "Cancel or change individual dates without changing the recurring series. Exceptions are saved separately from the event details above." });
 	if (!window && !exceptionEditor) blocks.push(
 		{ type: "context", text: `${event.exceptions.length} saved occurrence exceptions. Save any event edits before managing dates.` },
@@ -612,6 +614,13 @@ function eventEditorBlocks(
 	if (exceptionEditor) {
 		blocks.push(...exceptionFormBlocks(event, exceptionEditor.draft, exceptionEditor.originalRecurrenceId, exceptionEditor.error));
 		blocks.push({ type: "actions", elements: [{ type: "button", action_id: "cancel-exception-edit", label: "Close exception editor", value: event.id }] });
+	}
+	if (!window && !exceptionEditor) {
+		blocks.push({
+			type: "accordion",
+			label: `Manage occurrence dates and exceptions (${event.exceptions.length})`,
+			blocks: blocks.splice(exceptionSectionStart),
+		});
 	}
 	return blocks;
 }
@@ -767,27 +776,45 @@ async function renderEvents(ctx: EventualContext, cursor?: string): Promise<Bloc
 	const page = await (ctx.storage.events as import("emdash").StorageCollection<EventRecord>).query({
 		orderBy: { start: "desc" }, limit: 25, cursor,
 	});
-	const blocks = [
+	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
-		{ type: "header" as const, text: "Events" },
-		{ type: "actions" as const, elements: [{ type: "button" as const, action_id: "new-event", label: "Add event", style: "primary" as const }] },
+		{ type: "header", text: "Events" },
+		{ type: "actions", elements: [{ type: "button", action_id: "new-event", label: "Add event", style: "primary" }] },
 	];
-	if (!page.items.length) blocks.push({ type: "context" as const, text: "No events yet. Add a one-off event or create a recurring series." });
-	for (const { data: event } of page.items) {
-		const dateLabel = event.allDay ? event.start : `${instantToLocalDateTime(event.start, event.timezone)} (${event.timezone})`;
-		blocks.push({
-			type: "section" as const,
-			text: `${event.title}\n${dateLabel} · ${event.published ? "Published" : "Draft"}${event.recurrence ? ` · ${event.recurrence.frequency}` : ""}`,
-			accessory: { type: "button" as const, action_id: "edit-event", label: "Edit", value: event.id },
-		});
-		blocks.push({
-			type: "actions" as const,
-			elements: [{ type: "button" as const, action_id: "duplicate-event", label: "Duplicate", value: event.id }],
-		});
+	if (!page.items.length) {
+		blocks.push({ type: "empty", title: "No events yet", description: "Add a one-off event or create a recurring series." });
+		return { blocks };
 	}
-	if (page.hasMore && page.cursor) blocks.push({
-		type: "actions" as const,
-		elements: [{ type: "button" as const, action_id: "events-next", label: "Load more", value: page.cursor }],
+	const rows = page.items.map(({ data: event }) => {
+		const dateLabel = event.allDay ? event.start : `${instantToLocalDateTime(event.start, event.timezone)} (${event.timezone})`;
+		return {
+			title: event.title,
+			date: dateLabel,
+			status: event.published ? "Published" : "Draft",
+			recurrence: event.recurrence?.frequency ?? "One-off",
+			action: {
+				type: "menu" as const,
+				action_id: "event-row",
+				label: "Actions",
+				items: [
+					{ label: "Edit", value: `edit:${event.id}` },
+					{ label: "Duplicate", value: `duplicate:${event.id}` },
+				],
+			},
+		};
+	});
+	blocks.push({
+		type: "table",
+		columns: [
+			{ key: "title", label: "Event" },
+			{ key: "date", label: "Start" },
+			{ key: "status", label: "Status", format: "badge" },
+			{ key: "recurrence", label: "Repeats" },
+			{ key: "action", label: "", format: "element" },
+		],
+		rows,
+		page_action_id: "events-next",
+		...(page.hasMore && page.cursor ? { next_cursor: page.cursor } : {}),
 	});
 	return { blocks };
 }
@@ -797,7 +824,15 @@ async function renderUpcomingWidget(ctx: EventualContext): Promise<BlockResponse
 	const throughDate = new Date(`${today}T00:00:00.000Z`);
 	throughDate.setUTCDate(throughDate.getUTCDate() + 90);
 	const through = throughDate.toISOString().slice(0, 10);
-	const events = await listEvents(ctx, { published: true, order: "asc", maxItems: 5000 });
+	let events: EventRecord[];
+	try {
+		events = await listEvents(ctx, { published: true, through, order: "asc" });
+	} catch (error) {
+		if (error instanceof EventScanLimitError) return {
+			blocks: [{ type: "banner", title: "Upcoming events unavailable", description: error.message, variant: "error" }],
+		};
+		throw error;
+	}
 	const upcoming = expandEventsInDateRange(events, today, through).slice(0, 4);
 	const venues = await listVenuesById(ctx, upcoming.flatMap((event) => event.venueId ? [event.venueId] : []));
 	const blocks: BlockResponse["blocks"] = [];
@@ -824,22 +859,34 @@ async function renderUpcomingWidget(ctx: EventualContext): Promise<BlockResponse
 	return { blocks };
 }
 
-async function renderVenues(ctx: EventualContext): Promise<BlockResponse> {
-	const venues = await listVenues(ctx);
+async function renderVenues(ctx: EventualContext, cursor?: string): Promise<BlockResponse> {
+	const page = await (ctx.storage.venues as import("emdash").StorageCollection<VenueRecord>).query({
+		orderBy: { name: "asc" }, limit: 25, cursor,
+	});
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
 		{ type: "header", text: "Saved venues" },
 		{ type: "actions", elements: [{ type: "button", action_id: "new-venue", label: "Add venue", style: "primary" }] },
 	];
-	if (!venues.length) blocks.push({ type: "context", text: "No saved venues yet." });
-	for (const venue of venues.slice(0, 100)) {
-		blocks.push({
-			type: "section",
-			text: `${venue.name}\n${[venue.street, venue.locality, venue.region, venue.postalCode, venue.country].filter(Boolean).join(", ")}`,
-			accessory: { type: "button", action_id: "edit-venue", label: "Edit", value: venue.id },
-		});
+	if (!page.items.length) {
+		blocks.push({ type: "empty", title: "No saved venues yet" });
+		return { blocks };
 	}
-	if (venues.length > 100) blocks.push({ type: "context", text: "Showing the first 100 saved venues." });
+	blocks.push({
+		type: "table",
+		columns: [
+			{ key: "name", label: "Venue" },
+			{ key: "address", label: "Address" },
+			{ key: "action", label: "", format: "element" },
+		],
+		rows: page.items.map(({ data: venue }) => ({
+			name: venue.name,
+			address: [venue.street, venue.locality, venue.region, venue.postalCode, venue.country].filter(Boolean).join(", "),
+			action: { type: "button", action_id: "edit-venue", label: "Edit", value: venue.id },
+		})),
+		page_action_id: "venues-next",
+		...(page.hasMore && page.cursor ? { next_cursor: page.cursor } : {}),
+	});
 	return { blocks };
 }
 
@@ -953,6 +1000,14 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 	if (descriptionResponse) return descriptionResponse;
 
 	if (interaction.type === "block_action") {
+		if (interaction.action_id === "event-row" && typeof interaction.value === "string") {
+			const [action, ...idParts] = interaction.value.split(":");
+			const id = idParts.join(":");
+			if (id && (action === "edit" || action === "duplicate")) {
+				return handleAdmin({ ...interaction, action_id: `${action}-event`, value: id }, ctx);
+			}
+			return { blocks: [{ type: "banner", title: "Invalid event action", variant: "error" }] };
+		}
 		if (interaction.action_id === "occurrences-page") {
 			const window = occurrenceWindowValue(interaction.value);
 			const event = window ? await getEvent(ctx, window.eventId) : null;
@@ -1055,6 +1110,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 			return { ...(await renderVenues(ctx)), toast: { message: "Venue deleted", type: "success" } };
 		}
 		if (interaction.action_id === "events-next" && typeof interaction.value === "string") return renderEvents(ctx, interaction.value);
+		if (interaction.action_id === "venues-next" && typeof interaction.value === "string") return renderVenues(ctx, interaction.value);
 		return { blocks: [{ type: "context", text: "No action was taken." }] };
 	}
 

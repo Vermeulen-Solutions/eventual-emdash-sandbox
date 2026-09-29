@@ -6,6 +6,15 @@ import { expandEventsInDateRange } from "./domain/recurrence";
 
 export type EventualContext = PluginContext;
 
+export const MAX_EVENT_SCAN = 10_000;
+
+export class EventScanLimitError extends Error {
+	constructor(readonly limit: number) {
+		super(`More than ${limit} events matched the request. Narrow the query or contact the site administrator.`);
+		this.name = "EventScanLimitError";
+	}
+}
+
 export interface CalendarCancellation {
 	id: string;
 	eventId: string;
@@ -114,21 +123,32 @@ export async function listEventsByVenueId(ctx: EventualContext, id: string): Pro
 
 export async function listEvents(
 	ctx: EventualContext,
-	options: { published?: boolean; order?: "asc" | "desc"; maxItems?: number } = {},
+	options: { published?: boolean; through?: string; order?: "asc" | "desc"; maxItems?: number } = {},
 ): Promise<EventRecord[]> {
 	const result: EventRecord[] = [];
-	const maxItems = options.maxItems ?? 5000;
+	const maxItems = options.maxItems ?? MAX_EVENT_SCAN;
+	if (!Number.isInteger(maxItems) || maxItems < 1 || maxItems > MAX_EVENT_SCAN) {
+		throw new RangeError(`maxItems must be between 1 and ${MAX_EVENT_SCAN}`);
+	}
 	let cursor: string | undefined;
+	// Timed events can fall on the following UTC date for a local date at the
+	// end of the requested window. Keep a one-day cushion for that offset.
+	const upperBound = options.through ? new Date(Date.parse(`${options.through}T00:00:00Z`) + 2 * 86_400_000).toISOString().slice(0, 10) : undefined;
 	do {
 		const page = await eventCollection(ctx).query({
-			where: options.published === undefined ? undefined : { published: options.published },
+			where: {
+				...(options.published === undefined ? {} : { published: options.published }),
+				...(upperBound ? { start: { lt: upperBound } } : {}),
+			},
 			orderBy: { start: options.order ?? "asc" },
 			limit: Math.min(100, maxItems - result.length),
 			cursor,
 		});
 		result.push(...page.items.map((item) => item.data));
-		cursor = page.cursor;
-	} while (cursor && result.length < maxItems);
+		if (page.hasMore && !page.cursor) throw new Error("Event storage returned an incomplete page without a cursor.");
+		cursor = page.hasMore ? page.cursor : undefined;
+		if (cursor && result.length >= maxItems) throw new EventScanLimitError(maxItems);
+	} while (cursor);
 	return result;
 }
 

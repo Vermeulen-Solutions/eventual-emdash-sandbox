@@ -11,6 +11,7 @@
 	},
 	"include": [
 		"src/**/*",
+		"astro/**/*.ts",
 		"tests/**/*",
 		"vitest.config.ts"
 	],

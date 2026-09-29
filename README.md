@@ -2,9 +2,14 @@
 
 A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.com).
 
+Version 1.0.0 requires EmDash 1.0.1 or newer. The minimum is declared in both
+the npm peer dependency and the plugin release requirements.
+
 ## Features
 
 - Block Kit admin pages for events, saved venues, and settings.
+- Paged Block Kit tables for event and venue lists, with event row actions and
+  a compact occurrence management section in the event editor.
 - Event list duplication starts a clearly marked unpublished draft, carrying
   event fields, dates, and recurrence forward while clearing occurrence
   exceptions for review before saving.
@@ -42,6 +47,24 @@ A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.co
 - Public iCalendar subscription at `/_emdash/api/plugins/eventual/calendar`.
   It expands published series into stable, dated event entries and retains
   cancellation tombstones when a published occurrence is removed.
+
+Public feeds and the dashboard select published events whose start is no later
+than the requested window, retaining older recurring series. Event scans stop
+with an explicit error if more than 10,000 records match; they never return a
+silently truncated feed. Narrowing the visible date range cannot eliminate the
+limit when more than 10,000 older recurring or historical records qualify.
+
+## Reuse the Astro feed client
+
+The source package exports `eventual/astro` with `fetchPublicFeed`, `FeedError`,
+and the public event types. It also exports an unstyled
+`eventual/astro/EventList.astro` component. Install this source checkout as a
+local dependency in an Astro site, then import those entry points. See the
+[`simple-list.astro` example](./examples/astro-events/src/pages/simple-list.astro).
+The richer seven-view example also uses the shared feed client.
+
+Registry installation installs the sandbox plugin in EmDash. The Astro files
+must be added to the site separately; the registry does not install site source.
 
 The sandboxed plugin returns event data; it does not render a visitor calendar.
 To attach an image, upload it from EmDash Media first, then find it by filename

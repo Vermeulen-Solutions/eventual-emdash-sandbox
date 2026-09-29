@@ -92,6 +92,38 @@ async function createVenueThroughAdmin(testHost: PluginTestHost, name: string, a
 }
 
 describe("sandboxed Eventual plugin", () => {
+	it("uses paged Block Kit tables with working event and venue row actions", async () => {
+		host = await createPluginTestHost();
+		const eventId = await createEventThroughAdmin(host, { title: "Table event" });
+		const venueId = await createVenueThroughAdmin(host, "Table venue", { locality: "Paris" });
+
+		const events = await host.invokeRoute("admin", { type: "page_load", page: "/events" }) as BlockResponse;
+		const eventTable = events.blocks.find((block) => block.type === "table");
+		expect(eventTable).toMatchObject({
+			type: "table",
+			page_action_id: "events-next",
+			rows: [expect.objectContaining({
+				title: "Table event",
+				action: expect.objectContaining({ type: "menu", action_id: "event-row" }),
+			})],
+		});
+		const edit = await host.invokeRoute("admin", { type: "block_action", action_id: "event-row", value: `edit:${eventId}` }) as BlockResponse;
+		expect(edit.blocks.some((block) => block.type === "form" && block.block_id === `event-form:${eventId}`)).toBe(true);
+		const duplicate = await host.invokeRoute("admin", { type: "block_action", action_id: "event-row", value: `duplicate:${eventId}` }) as BlockResponse;
+		expect(duplicate.blocks.some((block) => block.type === "form" && block.block_id === `event-form:new:duplicate:${eventId}`)).toBe(true);
+
+		const venues = await host.invokeRoute("admin", { type: "page_load", page: "/venues" }) as BlockResponse;
+		expect(venues.blocks.find((block) => block.type === "table")).toMatchObject({
+			type: "table",
+			page_action_id: "venues-next",
+			rows: [expect.objectContaining({
+				name: "Table venue",
+				address: expect.stringContaining("Paris"),
+				action: expect.objectContaining({ action_id: "edit-venue", value: venueId }),
+			})],
+		});
+	});
+
 	it("keeps the registry MVP admin focused on event management", async () => {
 		host = await createPluginTestHost();
 		const page = await host.invokeRoute("admin", { type: "page_load", page: "/events" });

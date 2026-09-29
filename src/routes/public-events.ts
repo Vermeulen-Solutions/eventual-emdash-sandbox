@@ -2,7 +2,7 @@ import { expandEventsInDateRange } from "../domain/recurrence";
 import { isDateOnly } from "../domain/date-time";
 import { categoryKey } from "../domain/category";
 import { formatPublicEvent } from "../public-event";
-import { listEvents, listVenuesById, type EventualContext } from "../storage";
+import { EventScanLimitError, listEvents, listVenuesById, type EventualContext } from "../storage";
 
 const MAX_PUBLIC_EVENT_RANGE_DAYS = 366;
 
@@ -31,7 +31,13 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 		return { ok: false, error: "DATE_RANGE_TOO_LARGE", maxDays: MAX_PUBLIC_EVENT_RANGE_DAYS };
 	}
 
-	const storedEvents = await listEvents(ctx, { published: true, maxItems: 5000 });
+	let storedEvents;
+	try {
+		storedEvents = await listEvents(ctx, { published: true, through });
+	} catch (error) {
+		if (error instanceof EventScanLimitError) return { ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: error.limit };
+		throw error;
+	}
 	const expanded = expandEventsInDateRange(storedEvents, from, through);
 	const category = input.category ? categoryKey(input.category as string) : "";
 	const visible = category

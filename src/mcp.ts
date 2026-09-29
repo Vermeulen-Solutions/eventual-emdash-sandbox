@@ -9,6 +9,7 @@ import { safeHttpUrl } from "./domain/venue";
 import {
 	deleteEvent,
 	deleteVenue,
+	EventScanLimitError,
 	getEvent,
 	getVenue,
 	listEvents,
@@ -162,7 +163,13 @@ export const mcpRoutes = {
 		const from = input.from ?? today;
 		const through = input.through ?? addDays(from, 180);
 		if (from > through || Date.parse(`${through}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`) > 365 * 86400000) return { ok: false, error: "INVALID_DATE_RANGE" };
-		const stored = await listEvents(ctx, { published: input.includeDrafts ? undefined : true, maxItems: 5000 });
+		let stored;
+		try {
+			stored = await listEvents(ctx, { published: input.includeDrafts ? undefined : true });
+		} catch (error) {
+			if (error instanceof EventScanLimitError) return { ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: error.limit };
+			throw error;
+		}
 		const occurrences = expandEventsInDateRange(stored, from, through).slice(0, input.limit ?? 50);
 		const venues = await listVenuesById(ctx, occurrences.flatMap((event) => event.venueId ? [event.venueId] : []));
 		return { ok: true, from, through, events: occurrences.map((event) => ({ ...event, venue: event.venueId ? venues.get(event.venueId) ?? null : null })) };

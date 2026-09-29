@@ -2,8 +2,9 @@
 
 Install the plugin from the EmDash **Registry** after configuring a supported
 sandbox runner. Eventual adds **Events**, **Venues**, and **Settings** pages to
-the admin. Editors can create and publish one-off or recurring events, reuse
-saved venues, and write plain text or Markdown descriptions.
+the admin. On EmDash 1.0.1 or newer, users with `plugins:manage` can create and
+publish one-off or recurring events, reuse saved venues, and write plain text or
+Markdown descriptions.
 
 ## Manage events with agents
 
@@ -22,6 +23,9 @@ month calendar, and locations. It includes event details, individual calendar
 downloads, category filters, and safe Markdown rendering, without a calendar
 library. Copy and adapt the example in the site's Astro project; installing
 Eventual alone does not create visitor pages or install frontend code.
+For a smaller integration, the source package exports `eventual/astro` and
+`eventual/astro/EventList.astro`; install that package in the Astro project
+separately from the registry plugin.
 
 The site-wide iCalendar subscription URL is
 `/_emdash/api/plugins/eventual/calendar`.

@@ -1,0 +1,21 @@
+---
+import EventList from "eventual/astro/EventList.astro";
+import { fetchPublicFeed } from "eventual/astro";
+
+const from = new Date().toISOString().slice(0, 10);
+const throughDate = new Date(`${from}T00:00:00Z`);
+throughDate.setUTCDate(throughDate.getUTCDate() + 30);
+const through = throughDate.toISOString().slice(0, 10);
+const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
+const { events } = await fetchPublicFeed(apiOrigin, from, through);
+---
+
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Upcoming events</title></head>
+  <body>
+    <main>
+      <h1>Upcoming events</h1>
+      <EventList events={events} />
+    </main>
+  </body>
+</html>

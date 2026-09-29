@@ -7,6 +7,12 @@ calendar, and events grouped by location. Event titles link to site-owned detail
 single-event iCalendar download. The EmDash plugin itself stores and returns
 data; it does not add visitor pages or a calendar to an Astro site.
 
+This example depends on the repository root package via `file:../..` and
+imports its shared `eventual/astro` feed client. The `simple-list.astro` page
+shows the reusable `eventual/astro/EventList.astro` component. When copying the
+example elsewhere, replace the local package path with the path to your
+Eventual source checkout.
+
 Switch views with the `view` query parameter, for example
 `/events?month=2026-10&view=timeline`. Supported values are `list`, `timeline`,
 `cards`, `schedule`, `dates`, `month`, and `locations`. Every view is rendered

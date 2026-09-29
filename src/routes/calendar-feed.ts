@@ -14,7 +14,7 @@ function addDays(date: string, count: number): string {
 export async function handleCalendarFeed(ctx: EventualContext, host: string): Promise<string> {
 	const from = new Date().toISOString().slice(0, 10);
 	const through = addDays(from, SUBSCRIPTION_WINDOW_DAYS - 1);
-	const storedEvents = await listEvents(ctx, { published: true, maxItems: 5000 });
+	const storedEvents = await listEvents(ctx, { published: true, through });
 	const occurrences = expandEventsInDateRange(storedEvents, from, through);
 	const venues = await listVenuesById(ctx, occurrences.flatMap((event) => event.venueId ? [event.venueId] : []));
 	const events = occurrences.map((event) => ({

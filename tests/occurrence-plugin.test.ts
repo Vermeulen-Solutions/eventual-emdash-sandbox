@@ -30,7 +30,9 @@ describe("occurrence editor and MCP", () => {
     });
     const details = await h.admin.act("/events", "edit-event", { value: "practice" });
     expect(JSON.stringify(details)).toContain("500 saved occurrence exceptions");
-    const manage = details.blocks.flatMap((block) => block.type === "actions" ? block.elements : []).find((button) => button.type === "button" && button.label === "Manage occurrence dates");
+    const manage = details.blocks.flatMap((block) => block.type === "accordion" ? block.blocks : [block])
+      .flatMap((block) => block.type === "actions" ? block.elements : [])
+      .find((button) => button.type === "button" && button.label === "Manage occurrence dates");
     const editor = await h.admin.act("/events", "occurrences-page", { value: manage?.type === "button" ? manage.value : undefined });
     expect(JSON.stringify(editor)).toContain("Showing the first 25 exceptions");
     expect(editor.blocks.filter((block) => block.type === "section")).toHaveLength(35);

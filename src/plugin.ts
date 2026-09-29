@@ -6,11 +6,13 @@ import { handlePublicEventImage } from "./routes/public-media";
 import { handleCalendarFeed } from "./routes/calendar-feed";
 import { mcpTools } from "./mcp-schemas";
 import { mcpRoutes } from "./mcp";
+import { EventScanLimitError } from "./storage";
 
 const plugin: SandboxedPlugin = {
 	routes: {
 		...mcpRoutes,
 		admin: {
+			permission: "plugins:manage",
 			handler: async (routeCtx, ctx) => handleAdmin(routeCtx.input, ctx),
 		},
 		publicEvents: pluginRoute({
@@ -34,11 +36,22 @@ const plugin: SandboxedPlugin = {
 			request: { body: "none" },
 			response: "raw",
 			cacheControl: "public, max-age=300",
-			handler: async (routeCtx, ctx) => pluginResponse({
-				status: 200,
-				headers: { "content-type": "text/calendar; charset=utf-8" },
-				body: { kind: "text", value: await handleCalendarFeed(ctx, new URL(routeCtx.request.url).host) },
-			}),
+			handler: async (routeCtx, ctx) => {
+				try {
+					return pluginResponse({
+						status: 200,
+						headers: { "content-type": "text/calendar; charset=utf-8" },
+						body: { kind: "text", value: await handleCalendarFeed(ctx, new URL(routeCtx.request.url).host) },
+					});
+				} catch (error) {
+					if (!(error instanceof EventScanLimitError)) throw error;
+					return pluginResponse({
+						status: 503,
+						headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+						body: { kind: "text", value: error.message },
+					});
+				}
+			},
 		}),
 	},
 	mcp: { tools: mcpTools },
