@@ -104,6 +104,7 @@ describe("sandboxed Eventual plugin", () => {
 			page_action_id: "events-next",
 			rows: [expect.objectContaining({
 				title: "Table event",
+				date: expect.stringContaining("(all day)"),
 				action: expect.objectContaining({
 					type: "menu",
 					action_id: "event-row",

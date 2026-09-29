@@ -328,6 +328,15 @@ function schedulePreview(draft: EventDraft): string | null {
 	return `${preview} Repeats ${recurrenceSummary(prepared.data.recurrence)} through ${prepared.data.recurrence.until}. Sample occurrences: ${dates.join(", ")}${upcoming.length === 3 ? " (showing up to 3)" : ""}.`;
 }
 
+function eventStartLabel(event: EventRecord): string {
+	if (event.allDay) {
+		const date = new Date(`${event.start.slice(0, 10)}T00:00:00.000Z`);
+		return `${date.toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })} (all day)`;
+	}
+	const start = new Date(event.start);
+	return `${start.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: event.timezone })} (${event.timezone})`;
+}
+
 function timeZoneField(
 	initialValue: string,
 	actionId = "timezone",
@@ -833,10 +842,9 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 		return { blocks };
 	}
 	const rows = page.items.map(({ data: event }) => {
-		const dateLabel = event.allDay ? event.start : `${instantToLocalDateTime(event.start, event.timezone)} (${event.timezone})`;
 		return {
 			title: event.title,
-			date: dateLabel,
+			date: eventStartLabel(event),
 			status: event.published ? "Published" : "Draft",
 			recurrence: event.recurrence?.frequency ?? "One-off",
 			action: {
