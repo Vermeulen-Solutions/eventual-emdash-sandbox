@@ -666,12 +666,14 @@ describe("sandboxed Eventual plugin", () => {
 		const settingsForm = settingsBlocks.find((block) => block.type === "form" && block.block_id === "settings-form") as { fields: Array<Record<string, unknown>> };
 		expect(settingsForm.fields.find((field) => field.action_id === "defaultTimezone"))
 			.toMatchObject({ type: "combobox", initial_value: "UTC", label: "Default timezone for new events" });
+		expect(settingsForm.fields.find((field) => field.action_id === "timeFormat"))
+			.toMatchObject({ type: "select", initial_value: "24-hour", label: "Admin time display" });
 
 		await host.invokeRoute("admin", {
 			type: "form_submit",
 			action_id: "save-settings",
 			block_id: "settings-form",
-			values: { defaultTimezone: "Europe/Amsterdam" },
+			values: { defaultTimezone: "Europe/Amsterdam", timeFormat: "12-hour" },
 		});
 
 		const newEvent = await host.invokeRoute("admin", { type: "block_action", action_id: "new-event" });
@@ -679,6 +681,27 @@ describe("sandboxed Eventual plugin", () => {
 		const eventForm = eventBlocks.find((block) => block.type === "form" && block.block_id === "event-form:new") as { fields: Array<Record<string, unknown>> };
 		expect(eventForm.fields.find((field) => field.action_id === "timezone"))
 			.toMatchObject({ type: "combobox", initial_value: "Europe/Amsterdam" });
+
+		await createEventThroughAdmin(host, {
+			title: "Time display event",
+			startDate: "2027-02-03",
+			startTime: "18:30",
+			endDate: "2027-02-03",
+			endTime: "19:30",
+			allDay: false,
+			timezone: "UTC",
+		});
+		const twelveHourEvents = await host.invokeRoute("admin", { type: "page_load", page: "/events" }) as BlockResponse;
+		expect(JSON.stringify(twelveHourEvents)).toMatch(/6:30\s*pm/i);
+
+		await host.invokeRoute("admin", {
+			type: "form_submit",
+			action_id: "save-settings",
+			block_id: "settings-form",
+			values: { defaultTimezone: "Europe/Amsterdam", timeFormat: "24-hour" },
+		});
+		const twentyFourHourEvents = await host.invokeRoute("admin", { type: "page_load", page: "/events" }) as BlockResponse;
+		expect(JSON.stringify(twentyFourHourEvents)).toContain("18:30");
 	});
 
 	it("renders host-validated Block Kit pages and saves the default timezone", async () => {

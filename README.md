@@ -8,6 +8,9 @@ the npm peer dependency and the plugin release requirements.
 ## Features
 
 - Block Kit admin pages for events, saved venues, and settings.
+- Settings include a default 24-hour admin time display, with an option to use
+  12-hour times instead. This affects Eventual's EmDash admin displays only;
+  public feeds and the consuming site's frontend are unchanged.
 - Paged Block Kit tables for event and venue lists. Event rows support editing,
   duplication, and confirmed deletion; the event list can select up to 25
   events on the current page for one confirmed bulk deletion. Saving an event
@@ -85,6 +88,11 @@ clock times remain text fields. Nonexistent local times during a
 daylight-saving transition are rejected. Saved event forms show a schedule
 preview with local start/end values and the selected timezone; all-day previews
 identify the end date as inclusive.
+
+The Settings page defaults admin time displays to 24-hour time and can switch
+them to 12-hour time. This preference is used by Eventual's admin event list
+and dashboard widget. It does not change stored event values, public JSON or
+iCalendar feeds, MCP responses, or any frontend code in the consuming site.
 
 Descriptions are edited directly in the main event form as one multiline field.
 Plain text works without any formatting knowledge. Editors who need formatting

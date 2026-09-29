@@ -128,6 +128,9 @@ interface VenueFormValues {
 	country: string;
 }
 
+type TimeDisplayFormat = "24-hour" | "12-hour";
+const DEFAULT_TIME_DISPLAY_FORMAT: TimeDisplayFormat = "24-hour";
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -328,13 +331,28 @@ function schedulePreview(draft: EventDraft): string | null {
 	return `${preview} Repeats ${recurrenceSummary(prepared.data.recurrence)} through ${prepared.data.recurrence.until}. Sample occurrences: ${dates.join(", ")}${upcoming.length === 3 ? " (showing up to 3)" : ""}.`;
 }
 
-function eventStartLabel(event: EventRecord): string {
+function normalizeTimeDisplayFormat(value: unknown): TimeDisplayFormat {
+	return value === "12-hour" ? "12-hour" : DEFAULT_TIME_DISPLAY_FORMAT;
+}
+
+function adminDateTime(value: string, timezone: string, timeFormat: TimeDisplayFormat): string {
+	const date = new Date(value);
+	const dateLabel = date.toLocaleDateString(undefined, { dateStyle: "medium", timeZone: timezone });
+	const timeLabel = date.toLocaleTimeString(undefined, {
+		hour: timeFormat === "12-hour" ? "numeric" : "2-digit",
+		minute: "2-digit",
+		timeZone: timezone,
+		hour12: timeFormat === "12-hour",
+	});
+	return `${dateLabel}, ${timeLabel}`;
+}
+
+function eventStartLabel(event: EventRecord, timeFormat: TimeDisplayFormat = DEFAULT_TIME_DISPLAY_FORMAT): string {
 	if (event.allDay) {
 		const date = new Date(`${event.start.slice(0, 10)}T00:00:00.000Z`);
 		return `${date.toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })} (all day)`;
 	}
-	const start = new Date(event.start);
-	return `${start.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: event.timezone })} (${event.timezone})`;
+	return `${adminDateTime(event.start, event.timezone, timeFormat)} (${event.timezone})`;
 }
 
 function timeZoneField(
@@ -828,6 +846,7 @@ function venueFormBlocks(venue: VenueFields, id: string, error?: string): BlockR
 }
 
 async function renderEvents(ctx: EventualContext, cursor?: string, error?: string): Promise<BlockResponse> {
+	const timeFormat = normalizeTimeDisplayFormat(await ctx.settings.get<string>("timeFormat"));
 	const page = await (ctx.storage.events as import("emdash").StorageCollection<EventRecord>).query({
 		orderBy: { start: "desc" }, limit: 25, cursor,
 	});
@@ -844,7 +863,7 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 	const rows = page.items.map(({ data: event }) => {
 		return {
 			title: event.title,
-			date: eventStartLabel(event),
+			date: eventStartLabel(event, timeFormat),
 			status: event.published ? "Published" : "Draft",
 			recurrence: event.recurrence?.frequency ?? "One-off",
 			action: {
@@ -892,6 +911,7 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 }
 
 async function renderUpcomingWidget(ctx: EventualContext): Promise<BlockResponse> {
+	const timeFormat = normalizeTimeDisplayFormat(await ctx.settings.get<string>("timeFormat"));
 	const today = new Date().toISOString().slice(0, 10);
 	const throughDate = new Date(`${today}T00:00:00.000Z`);
 	throughDate.setUTCDate(throughDate.getUTCDate() + 90);
@@ -914,7 +934,7 @@ async function renderUpcomingWidget(ctx: EventualContext): Promise<BlockResponse
 		for (const event of upcoming) {
 			const start = event.allDay
 				? new Date(`${event.start.slice(0, 10)}T00:00:00.000Z`).toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })
-				: new Date(event.start).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: event.timezone });
+				: adminDateTime(event.start, event.timezone, timeFormat);
 			const endDate = event.end.slice(0, 10);
 			const when = event.allDay && endDate !== event.start.slice(0, 10)
 				? `${start} – ${new Date(`${endDate}T00:00:00.000Z`).toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })} (inclusive)`
@@ -964,10 +984,12 @@ async function renderVenues(ctx: EventualContext, cursor?: string): Promise<Bloc
 
 async function renderSettings(ctx: EventualContext, error?: string): Promise<BlockResponse> {
 	const defaultTimezone = (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC";
+	const timeFormat = normalizeTimeDisplayFormat(await ctx.settings.get<string>("timeFormat"));
 	const blocks: BlockResponse["blocks"] = [
 			...pageNav(),
 			{ type: "header", text: "Event settings" },
 			{ type: "context", text: "Choose the timezone used for new events. Each event can still use a different timezone." },
+			{ type: "context", text: "Choose 12-hour or 24-hour time for Eventual's admin displays. This only changes the EmDash admin UI; public feeds and your site's frontend are unchanged." },
 			{ type: "context", text: "Calendar subscription URL: /_emdash/api/plugins/eventual/calendar. Add this URL to a calendar app that supports iCalendar subscriptions." },
 		];
 	if (error) blocks.push({ type: "banner", title: "Settings not saved", description: error, variant: "error" });
@@ -979,6 +1001,10 @@ async function renderSettings(ctx: EventualContext, error?: string): Promise<Blo
 				block_id: "settings-form",
 				fields: [
 					timeZoneField(defaultTimezone, "defaultTimezone", "Default timezone for new events"),
+					selectField("timeFormat", "Admin time display", [
+						{ label: "24-hour (18:30)", value: "24-hour" },
+						{ label: "12-hour (6:30 PM)", value: "12-hour" },
+					], timeFormat),
 				],
 				submit: { label: "Save settings", action_id: "save-settings" },
 			},
@@ -1334,10 +1360,16 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 
 	if (interaction.action_id === "save-settings") {
 		const defaultTimezone = readString(interaction.values.defaultTimezone).trim();
+		const submittedTimeFormat = readString(interaction.values.timeFormat).trim();
+		const timeFormat = submittedTimeFormat || DEFAULT_TIME_DISPLAY_FORMAT;
 		if (!isValidTimeZone(defaultTimezone)) {
 			return { ...await renderSettings(ctx, "Choose a valid IANA timezone."), toast: { message: "Choose a valid timezone", type: "error" } };
 		}
+		if (!isOneOf(timeFormat, ["12-hour", "24-hour"] as const)) {
+			return { ...await renderSettings(ctx, "Choose either 12-hour or 24-hour time."), toast: { message: "Choose a valid time format", type: "error" } };
+		}
 		await ctx.settings.set("defaultTimezone", defaultTimezone);
+		await ctx.settings.set("timeFormat", timeFormat);
 		return { ...(await renderSettings(ctx)), toast: { message: "Settings saved", type: "success" } };
 	}
 

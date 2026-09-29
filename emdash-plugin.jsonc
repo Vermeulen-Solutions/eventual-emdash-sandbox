@@ -43,6 +43,16 @@
 				"description": "IANA timezone used to initialize new events. Each event can use its own timezone.",
 				"type": "string",
 				"default": "UTC"
+			},
+			"timeFormat": {
+				"label": "Admin time display",
+				"description": "12-hour or 24-hour formatting for Eventual's EmDash admin displays.",
+				"type": "select",
+				"options": [
+					{ "value": "24-hour", "label": "24-hour (18:30)" },
+					{ "value": "12-hour", "label": "12-hour (6:30 PM)" }
+				],
+				"default": "24-hour"
 			}
 		}
 	}
