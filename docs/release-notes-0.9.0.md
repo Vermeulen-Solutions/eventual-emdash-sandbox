@@ -54,9 +54,6 @@ EmDash test site have also been checked against EmDash 1.0.1.
 The prepared bundle contains `backend.js` at 113,497 bytes against the
 131,072-byte backend limit, and 169,124 decompressed bytes across the complete
 package against the 262,144-byte package limit. The compressed archive is
-44,119 bytes. The bundle validator reports all three measurements as valid.
+44,121 bytes. The bundle validator reports all three measurements as valid.
 
-Before publication, make the release metadata consistent: the working package
-and current bundle identify themselves as `1.0.0`, while these notes describe
-the requested `0.9.0` release. The package version, archive name, registry
-release record, and publication must use one version.
+This release uses version `0.9.0` consistently in the package metadata and archive.
