@@ -799,6 +799,13 @@ describe("sandboxed Eventual plugin", () => {
 			type: "actions",
 			elements: [{ type: "button", action_id: "back-to-events", label: "← Back to events", style: "secondary" }],
 		});
+		expect(newEvent.blocks).toContainEqual({
+			type: "banner",
+			title: "Create your event",
+			description: "Complete the fields below, then scroll to the bottom of the form and choose Create event →.",
+		});
+		expect(newEvent.blocks.findIndex((block) => block.type === "banner" && block.title === "Create your event"))
+			.toBeLessThan(newEvent.blocks.findIndex((block) => block.type === "form"));
 		expect(form.fields.findIndex((field) => field.action_id === "description")).toBe(1);
 		expect(form.fields.find((field) => field.action_id === "imageMediaId")).toMatchObject({
 			type: "combobox",
@@ -1009,6 +1016,13 @@ describe("sandboxed Eventual plugin", () => {
 		expect(form.fields.find((field) => field.action_id === "description")).toMatchObject({ label: "Description (Markdown optional; drag corner to resize)", initial_value: description, multiline: true });
 		expect(form.submit).toMatchObject({ label: "Save event →", action_id: "save-event" });
 		const pageResponse = page as BlockResponse;
+		expect(pageResponse.blocks).toContainEqual({
+			type: "banner",
+			title: "Save your changes",
+			description: "Complete the fields below, then scroll to the bottom of the form and choose Save event →.",
+		});
+		expect(pageResponse.blocks.findIndex((block) => block.type === "banner" && block.title === "Save your changes"))
+			.toBeLessThan(pageResponse.blocks.findIndex((block) => block.type === "form"));
 		const formIndex = pageResponse.blocks.findIndex((block) => block.type === "form");
 		const deleteIndex = pageResponse.blocks.findIndex((block) => block.type === "actions" && JSON.stringify(block).includes("delete-event"));
 		expect(deleteIndex).toBeLessThan(formIndex);

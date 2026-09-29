@@ -402,6 +402,13 @@ function eventFormBlocks(
 	];
 	if (duplicate) blocks.push({ type: "context", text: "This is an unpublished copy. Dates, times, recurrence, venue, and event details were copied; review the schedule before saving. Occurrence exceptions were not copied." });
 	if (error) blocks.push({ type: "banner", title: "Event not saved", description: error, variant: "error" });
+	blocks.push({
+		type: "banner",
+		title: id ? "Save your changes" : "Create your event",
+		description: id
+			? "Complete the fields below, then scroll to the bottom of the form and choose Save event →."
+			: "Complete the fields below, then scroll to the bottom of the form and choose Create event →.",
+	});
 	const selectedImage = images.items.find((image) => image.id === draft.imageMediaId);
 	if (/<\/?[a-z!][^>]*>/i.test(draft.description)) blocks.push({
 		type: "banner",
