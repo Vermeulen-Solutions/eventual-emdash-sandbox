@@ -370,7 +370,7 @@ function eventFormBlocks(
 	const formBlockId = `event-form:${id || (duplicate ? `new:duplicate${typeof duplicate === "string" ? `:${duplicate}` : ""}` : "new")}`;
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
-		{ type: "actions", elements: [{ type: "link", label: "Back to events", target: { kind: "plugin-page", path: "/events" } }] },
+		{ type: "actions", elements: [{ type: "button", action_id: "back-to-events", label: "← Back to events", style: "secondary" }] },
 		{ type: "header", text: id ? "Edit event" : "Add event" },
 	];
 	if (duplicate) blocks.push({ type: "context", text: "This is an unpublished copy. Dates, times, recurrence, venue, and event details were copied; review the schedule before saving. Occurrence exceptions were not copied." });
@@ -832,17 +832,6 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 		blocks.push({ type: "empty", title: "No events yet", description: "Add a one-off event or create a recurring series." });
 		return { blocks };
 	}
-	blocks.push({
-		type: "form",
-		block_id: "events-bulk-delete",
-		fields: [{
-			type: "checkbox",
-			action_id: "eventIds",
-			label: "Select events to delete",
-			options: page.items.map(({ data: event }) => ({ label: event.title, value: event.id })),
-		}],
-		submit: { label: "Delete selected", action_id: "delete-selected-events" },
-	});
 	const rows = page.items.map(({ data: event }) => {
 		const dateLabel = event.allDay ? event.start : `${instantToLocalDateTime(event.start, event.timezone)} (${event.timezone})`;
 		return {
@@ -875,6 +864,22 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 		page_action_id: "events-next",
 		...(page.hasMore && page.cursor ? { next_cursor: page.cursor } : {}),
 	});
+	blocks.push(
+		{ type: "divider" },
+		{ type: "header", text: "Bulk delete" },
+		{ type: "context", text: "Select events from this page, then confirm their permanent deletion. You can select up to 25 events at a time." },
+		{
+			type: "form",
+			block_id: "events-bulk-delete",
+			fields: [{
+				type: "checkbox",
+				action_id: "eventIds",
+				label: "Events to delete",
+				options: page.items.map(({ data: event }) => ({ label: event.title, value: event.id })),
+			}],
+			submit: { label: "Delete selected", action_id: "delete-selected-events" },
+		},
+	);
 	return { blocks };
 }
 
@@ -1059,6 +1064,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 	if (descriptionResponse) return descriptionResponse;
 
 	if (interaction.type === "block_action") {
+		if (interaction.action_id === "back-to-events") return renderEvents(ctx);
 		if (interaction.action_id === "event-row" && typeof interaction.value === "string") {
 			const [action, ...idParts] = interaction.value.split(":");
 			const id = idParts.join(":");

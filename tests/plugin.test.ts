@@ -117,6 +117,8 @@ describe("sandboxed Eventual plugin", () => {
 			block_id: "events-bulk-delete",
 			submit: { action_id: "delete-selected-events" },
 		});
+		expect(events.blocks.findIndex((block) => block.type === "form" && block.block_id === "events-bulk-delete"))
+			.toBeGreaterThan(events.blocks.findIndex((block) => block.type === "table"));
 		expect(bulkForm?.type === "form" && bulkForm.fields[0]).toMatchObject({
 			type: "checkbox",
 			action_id: "eventIds",
@@ -145,6 +147,8 @@ describe("sandboxed Eventual plugin", () => {
 		const secondId = await createEventThroughAdmin(host, { title: "Delete two", startDate: "2026-10-11", endDate: "2026-10-11" });
 		const edit = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: firstId }) as BlockResponse;
 		const form = adminForm(edit);
+		const back = await host.invokeRoute("admin", { type: "block_action", action_id: "back-to-events" }) as BlockResponse;
+		expect(back.blocks.some((block) => block.type === "table")).toBe(true);
 		const values = Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined]));
 		const saved = await host.invokeRoute("admin", {
 			type: "form_submit", action_id: "save-event", block_id: form.block_id,
@@ -765,7 +769,7 @@ describe("sandboxed Eventual plugin", () => {
 		});
 		expect(newEvent.blocks).toContainEqual({
 			type: "actions",
-			elements: [{ type: "link", label: "Back to events", target: { kind: "plugin-page", path: "/events" } }],
+			elements: [{ type: "button", action_id: "back-to-events", label: "← Back to events", style: "secondary" }],
 		});
 		expect(form.fields.findIndex((field) => field.action_id === "description")).toBe(1);
 		expect(form.fields.find((field) => field.action_id === "imageMediaId")).toMatchObject({
