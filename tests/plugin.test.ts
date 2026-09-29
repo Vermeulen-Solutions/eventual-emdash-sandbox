@@ -802,7 +802,7 @@ describe("sandboxed Eventual plugin", () => {
 		expect(newEvent.blocks).toContainEqual({
 			type: "banner",
 			title: "Create your event",
-			description: "Complete the fields, then choose Create event → to submit the new event.",
+			description: "Complete the fields below, then scroll to the bottom of the form and choose Create event →.",
 		});
 		expect(newEvent.blocks.findIndex((block) => block.type === "banner" && block.title === "Create your event"))
 			.toBeLessThan(newEvent.blocks.findIndex((block) => block.type === "form"));
@@ -1019,7 +1019,7 @@ describe("sandboxed Eventual plugin", () => {
 		expect(pageResponse.blocks).toContainEqual({
 			type: "banner",
 			title: "Save your changes",
-			description: "Complete the fields, then choose Save event → to submit all your changes.",
+			description: "Complete the fields below, then scroll to the bottom of the form and choose Save event →.",
 		});
 		expect(pageResponse.blocks.findIndex((block) => block.type === "banner" && block.title === "Save your changes"))
 			.toBeLessThan(pageResponse.blocks.findIndex((block) => block.type === "form"));

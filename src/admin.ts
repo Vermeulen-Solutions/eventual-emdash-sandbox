@@ -406,8 +406,8 @@ function eventFormBlocks(
 		type: "banner",
 		title: id ? "Save your changes" : "Create your event",
 		description: id
-			? "Complete the fields, then choose Save event → to submit all your changes."
-			: "Complete the fields, then choose Create event → to submit the new event.",
+			? "Complete the fields below, then scroll to the bottom of the form and choose Save event →."
+			: "Complete the fields below, then scroll to the bottom of the form and choose Create event →.",
 	});
 	const selectedImage = images.items.find((image) => image.id === draft.imageMediaId);
 	if (/<\/?[a-z!][^>]*>/i.test(draft.description)) blocks.push({
