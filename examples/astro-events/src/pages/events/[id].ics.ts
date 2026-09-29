@@ -18,11 +18,12 @@ export const GET: APIRoute = async ({ params, url }) => {
 
 		const body = formatICalendar(event, url.host);
 		const filename = safeFileName(event.title) || "event";
+		const subscription = url.searchParams.get("ical") === "1";
 		return new Response(body, {
 			headers: {
 				"content-type": "text/calendar; charset=utf-8",
-				"content-disposition": `attachment; filename="${filename}.ics"`,
-				"cache-control": "no-store",
+				...(subscription ? {} : { "content-disposition": `attachment; filename="${filename}.ics"` }),
+				"cache-control": subscription ? "public, max-age=300" : "no-store",
 			},
 		});
 	} catch {

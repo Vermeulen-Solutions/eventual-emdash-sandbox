@@ -33,6 +33,11 @@ export interface EventBrowserMessages {
 	eventDetails: string;
 	externalWebsite: string;
 	addToCalendar: string;
+	googleCalendar: string;
+	outlookCalendar: string;
+	yahooCalendar: string;
+	iCalendar: string;
+	subscribeCalendar: string;
 	backToEvents: string;
 	eventNotFound: string;
 	previous: string;
@@ -80,6 +85,11 @@ const messages: Record<string, EventBrowserMessages> = {
 		eventDetails: "Event details",
 		externalWebsite: "Event website",
 		addToCalendar: "Add to calendar",
+		googleCalendar: "Google Calendar",
+		outlookCalendar: "Outlook",
+		yahooCalendar: "Yahoo Calendar",
+		iCalendar: "iCalendar",
+		subscribeCalendar: "Subscribe to calendar",
 		backToEvents: "Back to events",
 		eventNotFound: "This event is unavailable or has been removed.",
 		previous: "Previous",
@@ -125,6 +135,11 @@ const messages: Record<string, EventBrowserMessages> = {
 		eventDetails: "Evenementdetails",
 		externalWebsite: "Website van het evenement",
 		addToCalendar: "Toevoegen aan agenda",
+		googleCalendar: "Google Agenda",
+		outlookCalendar: "Outlook",
+		yahooCalendar: "Yahoo Agenda",
+		iCalendar: "iCalendar",
+		subscribeCalendar: "Abonneren op agenda",
 		backToEvents: "Terug naar evenementen",
 		eventNotFound: "Dit evenement is niet beschikbaar of is verwijderd.",
 		previous: "Vorige",
@@ -170,6 +185,11 @@ const messages: Record<string, EventBrowserMessages> = {
 		eventDetails: "Détails de l’événement",
 		externalWebsite: "Site de l’événement",
 		addToCalendar: "Ajouter au calendrier",
+		googleCalendar: "Google Agenda",
+		outlookCalendar: "Outlook",
+		yahooCalendar: "Yahoo Agenda",
+		iCalendar: "iCalendar",
+		subscribeCalendar: "S’abonner au calendrier",
 		backToEvents: "Retour aux événements",
 		eventNotFound: "Cet événement est indisponible ou a été supprimé.",
 		previous: "Précédent",

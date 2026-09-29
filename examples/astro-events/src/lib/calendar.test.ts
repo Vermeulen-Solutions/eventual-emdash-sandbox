@@ -3,6 +3,7 @@ import {
 	addMonths,
 	addCalendarDay,
 	buildCalendar,
+	calendarFeedUrl,
 	calendarRange,
 	displayDate,
 	eventDetailsUrl,
@@ -11,14 +12,18 @@ import {
 	eventTouchesDate,
 	eventTimeRange,
 	formatICalendar,
+	googleCalendarUrl,
 	firstDayOfWeek,
 	isMonthKey,
 	monthDateRange,
 	normalizeLocale,
 	normalizeTimeZone,
+	outlookCalendarUrl,
 	safeHttpUrl,
 	safeImageUrl,
 	weekdayHeadings,
+	webcalUrl,
+	yahooCalendarUrl,
 } from "./calendar";
 import type { PublicEvent } from "./feed";
 
@@ -114,6 +119,39 @@ describe("Astro event browser calendar", () => {
 		expect(allDay).toContain("DTSTART;VALUE=DATE:20261010");
 		expect(allDay).toContain("DTEND;VALUE=DATE:20261013");
 		expect(addCalendarDay("2024-02-29")).toBe("2024-03-01");
+	});
+
+	it("turns the iCalendar endpoint into a webcal subscription URL", () => {
+		expect(webcalUrl("/_emdash/api/plugins/eventual/calendar", "https://events.example/events/test-event")).toBe("webcal://events.example/_emdash/api/plugins/eventual/calendar");
+		expect(calendarFeedUrl("https://events.example")).toBe("webcal://events.example/_emdash/api/plugins/eventual/calendar");
+	});
+
+	it("prefills a single Google Calendar event with UTC times or exclusive all-day end", () => {
+		const timed = new URL(googleCalendarUrl(event({ title: "Club & friends", description: "Meet here." })));
+		expect(timed.origin).toBe("https://calendar.google.com");
+		expect(timed.pathname).toBe("/calendar/r/eventedit");
+		expect(timed.searchParams.get("action")).toBe("TEMPLATE");
+		expect(timed.searchParams.get("text")).toBe("Club & friends");
+		expect(timed.searchParams.get("dates")).toBe("20261010T160000Z/20261010T170000Z");
+		expect(timed.searchParams.get("stz")).toBe("Europe/Paris");
+		expect(timed.searchParams.get("etz")).toBe("Europe/Paris");
+		expect(timed.searchParams.get("details")).toBe("Meet here.");
+		expect(timed.searchParams.get("location")).toBe("Town hall");
+
+		const outlook = new URL(outlookCalendarUrl(event()));
+		expect(outlook.origin).toBe("https://outlook.live.com");
+		expect(outlook.searchParams.get("rru")).toBe("addevent");
+		expect(outlook.searchParams.get("startdt")).toBe("2026-10-10T16:00:00.000Z");
+		expect(outlook.searchParams.get("enddt")).toBe("2026-10-10T17:00:00.000Z");
+
+		const yahoo = new URL(yahooCalendarUrl(event()));
+		expect(yahoo.origin).toBe("https://calendar.yahoo.com");
+		expect(yahoo.searchParams.get("st")).toBe("20261010T160000Z");
+		expect(yahoo.searchParams.get("et")).toBe("20261010T170000Z");
+
+		const allDay = new URL(googleCalendarUrl(event({ start: "2026-10-10", end: "2026-10-12", allDay: true })));
+		expect(allDay.searchParams.get("dates")).toBe("20261010/20261013");
+		expect(allDay.searchParams.has("stz")).toBe(false);
 	});
 
 	it("folds calendar lines at 75 UTF-8 octets", () => {

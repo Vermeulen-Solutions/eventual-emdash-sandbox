@@ -1,6 +1,6 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
-import { displayDate, eventDetailsUrl, eventEndDate, eventIdFromRoute, eventStartDate, eventTimeRange, normalizeLocale, safeHttpUrl, safeImageUrl } from "../../lib/calendar";
+import { calendarFeedUrl, displayDate, eventDetailsUrl, eventEndDate, eventIdFromRoute, eventStartDate, eventTimeRange, googleCalendarUrl, normalizeLocale, outlookCalendarUrl, safeHttpUrl, safeImageUrl, yahooCalendarUrl } from "../../lib/calendar";
 import { fetchPublicFeed, type PublicEvent } from "../../lib/feed";
 import { eventRange } from "../../lib/event-range";
 import { messagesForLocale } from "../../lib/messages";
@@ -27,6 +27,10 @@ Astro.response.status = feedError ? 502 : event ? 200 : 404;
 
 const title = event?.title ?? labels.eventDetails;
 const calendarUrl = event ? eventDetailsUrl(event, "/events", ".ics") : "";
+const googleUrl = event ? googleCalendarUrl(event) : "";
+const outlookUrl = event ? outlookCalendarUrl(event) : "";
+const yahooUrl = event ? yahooCalendarUrl(event) : "";
+const subscriptionUrl = calendarFeedUrl(apiOrigin);
 const eventImageUrl = event ? safeImageUrl(event.imageUrl, apiOrigin) : "";
 const eventWebsite = event ? safeHttpUrl(event.externalUrl) : "";
 const eventDirections = event ? safeHttpUrl(event.directionsUrl) : "";
@@ -45,7 +49,22 @@ const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : tru
 			<>
 				<h1>{event.title}</h1>
 				<ul class="event-actions">
-					<li><a class="button-link" href={calendarUrl}>{labels.addToCalendar}</a></li>
+					<li>
+						<details class="calendar-menu">
+							<summary class="button-link">
+								<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4.5h13v15H3zM6 8h7M6 11h7M6 14h5M18 8l3 4-3 4M16 12h5" /></svg>
+								<span>{labels.addToCalendar}</span>
+								<svg class="calendar-menu__chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 6 5 5 5-5" /></svg>
+							</summary>
+							<div class="calendar-menu__options">
+								<a href={googleUrl} target="_blank" rel="noopener noreferrer">{labels.googleCalendar}</a>
+								<a href={outlookUrl} target="_blank" rel="noopener noreferrer">{labels.outlookCalendar}</a>
+								<a href={yahooUrl} target="_blank" rel="noopener noreferrer">{labels.yahooCalendar}</a>
+								<a href={calendarUrl}>{labels.iCalendar}</a>
+							</div>
+						</details>
+					</li>
+					<li><a class="button-link button-link--secondary" href={subscriptionUrl}>{labels.subscribeCalendar}</a></li>
 					{eventWebsite && <li><a href={eventWebsite} target="_blank" rel="noopener noreferrer">{labels.externalWebsite}</a></li>}
 				</ul>
 				<article class="event-detail-card">

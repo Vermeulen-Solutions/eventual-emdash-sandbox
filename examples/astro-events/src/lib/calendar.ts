@@ -155,6 +155,19 @@ export function eventDetailsUrl(event: PublicEvent, originPath = "/events", exte
 	return `${url.pathname}${url.search}`;
 }
 
+export function webcalUrl(path: string, siteUrl: string | URL): string {
+	const url = new URL(path, siteUrl);
+	return url.href.replace(/^[a-z][a-z0-9+.-]*:/i, "webcal:");
+}
+
+export function calendarFeedUrl(siteUrl: string | URL): string {
+	try {
+		return webcalUrl("/_emdash/api/plugins/eventual/calendar", siteUrl);
+	} catch {
+		return "";
+	}
+}
+
 export function eventIdFromRoute(value: string | undefined): string {
 	if (!value) return "";
 	try {
@@ -169,6 +182,46 @@ export function addCalendarDay(value: string): string {
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(date.getTime())) return "";
 	date.setUTCDate(date.getUTCDate() + 1);
 	return dateKey(date);
+}
+
+export function googleCalendarUrl(event: PublicEvent): string {
+	const url = new URL("https://calendar.google.com/calendar/r/eventedit");
+	url.searchParams.set("action", "TEMPLATE");
+	url.searchParams.set("text", event.title);
+	const start = event.allDay ? event.start.replaceAll("-", "") : formatUtcDateTime(new Date(event.start));
+	const end = event.allDay ? addCalendarDay(event.end).replaceAll("-", "") : formatUtcDateTime(new Date(event.end));
+	url.searchParams.set("dates", `${start}/${end}`);
+	if (!event.allDay) {
+		url.searchParams.set("stz", event.timezone);
+		url.searchParams.set("etz", event.timezone);
+	}
+	if (event.description) url.searchParams.set("details", event.description);
+	if (event.location) url.searchParams.set("location", event.location);
+	return url.href;
+}
+
+export function outlookCalendarUrl(event: PublicEvent): string {
+	const url = new URL("https://outlook.live.com/calendar/0/deeplink/compose");
+	url.searchParams.set("path", "/calendar/action/compose");
+	url.searchParams.set("rru", "addevent");
+	url.searchParams.set("subject", event.title);
+	url.searchParams.set("startdt", event.allDay ? `${event.start.slice(0, 10)}T00:00:00` : new Date(event.start).toISOString());
+	url.searchParams.set("enddt", event.allDay ? `${addCalendarDay(event.end)}T00:00:00` : new Date(event.end).toISOString());
+	url.searchParams.set("allday", String(event.allDay));
+	if (event.description) url.searchParams.set("body", event.description);
+	if (event.location) url.searchParams.set("location", event.location);
+	return url.href;
+}
+
+export function yahooCalendarUrl(event: PublicEvent): string {
+	const url = new URL("https://calendar.yahoo.com/");
+	url.searchParams.set("v", "60");
+	url.searchParams.set("title", event.title);
+	url.searchParams.set("st", event.allDay ? `${event.start.slice(0, 10).replaceAll("-", "")}T000000Z` : formatUtcDateTime(new Date(event.start)));
+	url.searchParams.set("et", event.allDay ? `${addCalendarDay(event.end).replaceAll("-", "")}T000000Z` : formatUtcDateTime(new Date(event.end)));
+	if (event.description) url.searchParams.set("desc", event.description);
+	if (event.location) url.searchParams.set("in_loc", event.location);
+	return url.href;
 }
 
 export function formatICalendar(event: PublicEvent, siteHost: string, generatedAt = new Date()): string {

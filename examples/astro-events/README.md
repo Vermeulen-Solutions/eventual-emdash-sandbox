@@ -68,6 +68,10 @@ timezone.
 - Event detail pages are served at `/events/{occurrence-id}`. Their `from` and
   `through` query values identify the occurrence's own local date range, so a
   shared link resolves to the same occurrence in a series.
+- The detail page's add-to-calendar menu opens a prefilled, single-occurrence
+  Google Calendar, Outlook, or Yahoo Calendar event, or downloads that
+  occurrence as iCalendar. A separate subscription link uses `webcal://` with
+  the plugin's complete published calendar feed for live updates.
 - The `.ics` download uses a stable occurrence ID, UTC instants for timed
   events, and an exclusive end date for inclusive all-day events. It records
   the event's IANA timezone in an `X-EVENTUAL-TIMEZONE` calendar property.
