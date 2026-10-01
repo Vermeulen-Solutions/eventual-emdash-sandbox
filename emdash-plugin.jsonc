@@ -14,7 +14,17 @@
 		"installation": { "file": "./docs/registry-installation.md" }
 	},
 	"repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
-	"release": { "requires": { "env:emdash": ">=1.0.1" } },
+	"release": {
+		"requires": { "env:emdash": ">=1.0.1" },
+		"artifacts": {
+			"screenshots": [
+				{ "file": "./images/registry-0.10.0/01-events-admin.png" },
+				{ "file": "./images/registry-0.10.0/02-event-editor.png" },
+				{ "file": "./images/registry-0.10.0/03-event-settings.png" },
+				{ "file": "./images/registry-0.10.0/04-public-events.png" }
+			]
+		}
+	},
 
 	// Trust contract — what runtime APIs the plugin asks for.
 	// Empty arrays mean no extra privileges beyond logging,

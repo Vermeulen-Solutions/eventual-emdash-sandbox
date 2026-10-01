@@ -53,12 +53,12 @@ describe("occurrence editor and MCP", () => {
     expect(created.event.recurrence).toMatchObject({ weekdays: ["tuesday", "thursday"] });
     const id = created.event.id;
     const editor = await h.admin.act("/events", "edit-event", { value: id });
-    const form = editor.blocks.find((block) => block.type === "form" && block.block_id === `event-form:${id}`);
+    const form = editor.blocks.find((block) => block.type === "form" && block.block_id?.startsWith(`event-form:${id}:updated:`));
     expect(form?.type === "form" && form.fields.find((field) => field.action_id === "weeklyWeekdays"))
       .toMatchObject({ type: "checkbox", initial_value: ["tuesday", "thursday"] });
     // Submit actual saved values through the validated host to catch conversion losses.
     const draftValues = form?.type === "form" ? Object.fromEntries(form.fields.map((field) => [field.action_id, "initial_value" in field ? field.initial_value : undefined])) : {};
-    await h.admin.submit("/events", "save-event", { ...draftValues, title: "Training updated" }, { blockId: `event-form:${id}` });
+    await h.admin.submit("/events", "save-event", { ...draftValues, title: "Training updated" }, { blockId: form?.type === "form" ? form.block_id : undefined });
     expect(await h.inspect.storage.get<EventRecord>("events", id)).toMatchObject({ title: "Training updated", recurrence: created.event.recurrence });
     await h.transport.invokeRoute("mcp/events/publish", { id });
     const publicFeed = await h.transport.invokeRoute("publicEvents", { from, through: until }, { method: "GET" }) as { events: EventRecord[] };
@@ -90,7 +90,7 @@ describe("occurrence editor and MCP", () => {
       .resolves.toMatchObject({ ok: true, event: { recurrence: rule } });
     const form = await h.admin.act("/events", "edit-event", { value: created.event.id });
     expect(JSON.stringify(form)).toContain("every 2 months");
-    const eventForm = form.blocks.find((block) => block.type === "form" && block.block_id === `event-form:${created.event.id}`);
+    const eventForm = form.blocks.find((block) => block.type === "form" && block.block_id?.startsWith(`event-form:${created.event.id}:updated:`));
     expect(eventForm?.type === "form" && eventForm.fields.find((field) => field.action_id === "recurrenceInterval")).toMatchObject({ type: "number_input", initial_value: 2 });
     expect(eventForm?.type === "form" && eventForm.fields.find((field) => field.action_id === "monthlyDayOfMonth")).toMatchObject({ initial_value: 31 });
   }, 15000);

@@ -115,8 +115,8 @@ describe("sandboxed Eventual plugin", () => {
 		const titleButton = (eventTable as { rows?: Array<Record<string, unknown>> }).rows?.[0]?.title;
 		expect(titleButton).toMatchObject({ type: "button", action_id: "edit-event", value: eventId });
 		const titleEdit = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: eventId }) as BlockResponse;
-		expect(titleEdit.blocks.some((block) => block.type === "form" && block.block_id === `event-form:${eventId}`)).toBe(true);
-		const bulkForm = events.blocks.find((block) => block.type === "form");
+		expect(titleEdit.blocks.some((block) => block.type === "form" && block.block_id?.startsWith(`event-form:${eventId}:updated:`))).toBe(true);
+		const bulkForm = events.blocks.find((block) => block.type === "form" && block.block_id === "events-bulk-delete");
 		expect(bulkForm).toMatchObject({
 			type: "form",
 			block_id: "events-bulk-delete",
@@ -130,7 +130,7 @@ describe("sandboxed Eventual plugin", () => {
 			options: [{ value: eventId }],
 		});
 		const edit = await host.invokeRoute("admin", { type: "block_action", action_id: "event-row", value: `edit:${eventId}` }) as BlockResponse;
-		expect(edit.blocks.some((block) => block.type === "form" && block.block_id === `event-form:${eventId}`)).toBe(true);
+		expect(edit.blocks.some((block) => block.type === "form" && block.block_id?.startsWith(`event-form:${eventId}:updated:`))).toBe(true);
 		const duplicate = await host.invokeRoute("admin", { type: "block_action", action_id: "event-row", value: `duplicate:${eventId}` }) as BlockResponse;
 		expect(duplicate.blocks.some((block) => block.type === "form" && block.block_id === `event-form:new:duplicate:${eventId}`)).toBe(true);
 
@@ -374,13 +374,13 @@ describe("sandboxed Eventual plugin", () => {
 
 		const editPage = await host.invokeRoute("admin", { type: "block_action", action_id: "edit-event", value: eventId });
 		const editBlocks = (editPage as { blocks: Array<Record<string, unknown>> }).blocks;
-		const eventForm = editBlocks.find((block) => block.type === "form" && block.block_id === `event-form:${eventId}`) as { fields: Array<Record<string, unknown>> };
+		const eventForm = editBlocks.find((block) => block.type === "form" && String(block.block_id ?? "").startsWith(`event-form:${eventId}:updated:`)) as { fields: Array<Record<string, unknown>> };
 		expect(eventForm.fields.some((field) => field.action_id === "exceptionsJson")).toBe(false);
 
 		const addPage = await host.invokeRoute("admin", { type: "block_action", action_id: "add-exception", value: eventId });
 		const addBlocks = (addPage as { blocks: Array<Record<string, unknown>> }).blocks;
 		const exceptionForm = addBlocks.find((block) => block.type === "form" && block.block_id === `exception-form:${eventId}:new`) as { fields: Array<Record<string, unknown>> };
-		expect(addBlocks.some((block) => block.type === "form" && block.block_id === `event-form:${eventId}`)).toBe(false);
+		expect(addBlocks.some((block) => block.type === "form" && String(block.block_id ?? "").startsWith(`event-form:${eventId}:updated:`))).toBe(false);
 		expect(exceptionForm.fields.some((field) => field.type === "date_input" && field.action_id === "recurrenceDate")).toBe(true);
 		expect(exceptionForm.fields.some((field) => field.action_id === "recurrenceTime")).toBe(true);
 		expect(exceptionForm.fields.some((field) => field.type === "date_input" && field.action_id === "overrideStartDate")).toBe(true);
@@ -623,7 +623,7 @@ describe("sandboxed Eventual plugin", () => {
 			value: eventId,
 		});
 		const blocks = (page as { blocks: Array<Record<string, unknown>> }).blocks;
-		const form = blocks.find((block) => block.type === "form" && block.block_id === `event-form:${eventId}`) as { fields: Array<Record<string, unknown>> };
+		const form = blocks.find((block) => block.type === "form" && String(block.block_id ?? "").startsWith(`event-form:${eventId}:updated:`)) as { fields: Array<Record<string, unknown>> };
 		expect(JSON.stringify(blocks)).toContain("Schedule preview: all day, 2026-10-10 through 2026-10-10 (inclusive).");
 		expect(form.fields.find((field) => field.action_id === "venueId")).toMatchObject({
 			type: "combobox",

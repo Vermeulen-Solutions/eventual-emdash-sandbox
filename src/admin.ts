@@ -32,14 +32,18 @@ import {
 	deleteVenue,
 	EventScanLimitError,
 	getEvent,
+	getEventVersioned,
 	getEventsById,
 	getVenue,
+	getVenueVersioned,
 	listEvents,
 	listEventsByVenueId,
 	listVenues,
 	listVenuesById,
 	putEvent,
+	putEventIfUnchanged,
 	putVenue,
+	putVenueIfUnchanged,
 	type EventualContext,
 } from "./storage";
 import { isUsableEventImage, listEventImages, type EventImageOptions } from "./media";
@@ -387,6 +391,7 @@ function eventFormBlocks(
 	error?: string,
 	images: EventImageOptions = { items: [], hasMore: false },
 	duplicate: boolean | string = false,
+	expectedUpdatedAt?: string,
 ): BlockResponse["blocks"] {
 	const recurrenceOptions = [
 		{ label: "Does not repeat", value: "none" },
@@ -394,7 +399,9 @@ function eventFormBlocks(
 		{ label: "Weekly", value: "weekly" },
 		{ label: "Monthly", value: "monthly" },
 	];
-	const formBlockId = `event-form:${id || (duplicate ? `new:duplicate${typeof duplicate === "string" ? `:${duplicate}` : ""}` : "new")}`;
+	const formBlockId = id
+		? `event-form:${id}:updated:${encodeURIComponent(expectedUpdatedAt ?? "")}`
+		: `event-form:${duplicate ? `new:duplicate${typeof duplicate === "string" ? `:${duplicate}` : ""}` : "new"}`;
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
 		{ type: "actions", elements: [{ type: "button", action_id: "back-to-events", label: "← Back to events", style: "secondary" }] },
@@ -657,7 +664,7 @@ function eventEditorBlocks(
 		: window ? [
 			...pageNav(), { type: "header", text: event.title },
 			{ type: "actions", elements: [{ type: "button", action_id: "edit-event", label: "Back to event details", value: event.id }] },
-		] : eventFormBlocks(draft, venues, event.id, eventError, images);
+		] : eventFormBlocks(draft, venues, event.id, eventError, images, false, event.updatedAt);
 	blocks.push({ type: "divider" });
 	if (event.recurrence && window && !exceptionEditor) blocks.push(...occurrenceBlocks(event, window), { type: "divider" });
 	blocks.push({ type: "header", text: "Occurrence exceptions" });
@@ -705,12 +712,12 @@ function eventEditorBlocks(
 	return blocks;
 }
 
-async function renderEventForm(ctx: EventualContext, draft: EventDraft, id: string, error?: string, duplicate: boolean | string = false): Promise<BlockResponse> {
+async function renderEventForm(ctx: EventualContext, draft: EventDraft, id: string, error?: string, duplicate: boolean | string = false, expectedUpdatedAt?: string): Promise<BlockResponse> {
 	const [venues, images] = await Promise.all([
 		listVenues(ctx),
 		listEventImages(ctx, draft.imageMediaId),
 	]);
-	return { blocks: eventFormBlocks(draft, venues, id, error, images, duplicate) };
+	return { blocks: eventFormBlocks(draft, venues, id, error, images, duplicate, expectedUpdatedAt) };
 }
 
 async function renderEventEditor(
@@ -822,7 +829,7 @@ function eventExceptionFromForm(
 	return { exception: { recurrenceId, status: "modified", overrides } };
 }
 
-function venueFormBlocks(venue: VenueFields, id: string, error?: string): BlockResponse["blocks"] {
+function venueFormBlocks(venue: VenueFields, id: string, error?: string, expectedUpdatedAt?: string): BlockResponse["blocks"] {
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
 		{ type: "header", text: id ? "Edit venue" : "Add venue" },
@@ -837,7 +844,7 @@ function venueFormBlocks(venue: VenueFields, id: string, error?: string): BlockR
 	});
 	blocks.push({
 		type: "form",
-		block_id: `venue-form:${id || "new"}`,
+		block_id: `venue-form:${id ? `${id}:updated:${encodeURIComponent(expectedUpdatedAt ?? "")}` : "new"}`,
 		fields: [
 			textField("name", "Venue name", venue.name),
 			textField("street", "Street address", venue.street),
@@ -852,19 +859,85 @@ function venueFormBlocks(venue: VenueFields, id: string, error?: string): BlockR
 	return blocks;
 }
 
-async function renderEvents(ctx: EventualContext, cursor?: string, error?: string): Promise<BlockResponse> {
+function eventEditIdentityFromBlock(blockId: string | undefined): { id: string; updatedAt: string } | null {
+	const match = /^event-form:([^:]+):updated:(.*)$/.exec(blockId ?? "");
+	if (match) {
+		try { return { id: decodeURIComponent(match[1]!), updatedAt: decodeURIComponent(match[2]!) }; }
+		catch { return null; }
+	}
+	const legacy = /^event-form:([^:]+)$/.exec(blockId ?? "");
+	if (legacy && legacy[1] !== "new") return { id: legacy[1]!, updatedAt: "" };
+	if (blockId === "event-form:new" || blockId?.startsWith("event-form:new:duplicate")) return { id: "", updatedAt: "" };
+	return null;
+}
+
+function venueEditIdentityFromBlock(blockId: string | undefined): { id: string; updatedAt: string } | null {
+	const match = /^venue-form:([^:]+):updated:(.*)$/.exec(blockId ?? "");
+	if (match) {
+		try { return { id: decodeURIComponent(match[1]!), updatedAt: decodeURIComponent(match[2]!) }; }
+		catch { return null; }
+	}
+	const legacy = /^venue-form:([^:]+)$/.exec(blockId ?? "");
+	if (legacy && legacy[1] !== "new") return { id: legacy[1]!, updatedAt: "" };
+	if (blockId === "venue-form:new") return { id: "", updatedAt: "" };
+	return null;
+}
+
+type EventStatusFilter = "all" | "published" | "draft";
+type EventDateFilter = "all" | "upcoming" | "past";
+interface EventListFilters { status: EventStatusFilter; dates: EventDateFilter }
+const DEFAULT_EVENT_FILTERS: EventListFilters = { status: "all", dates: "all" };
+
+function validEventFilters(value: unknown): value is EventListFilters {
+	if (typeof value !== "object" || value === null) return false;
+	const filters = value as Record<string, unknown>;
+	return (filters.status === "all" || filters.status === "published" || filters.status === "draft") &&
+		(filters.dates === "all" || filters.dates === "upcoming" || filters.dates === "past");
+}
+
+function eventPageValue(cursor: string | undefined, filters: EventListFilters): string {
+	return JSON.stringify({ cursor, filters });
+}
+
+function parseEventPageValue(value: string): { cursor?: string; filters: EventListFilters } {
+	try {
+		const parsed = JSON.parse(value) as { cursor?: unknown; filters?: unknown };
+		if (validEventFilters(parsed.filters)) return {
+			...(typeof parsed.cursor === "string" ? { cursor: parsed.cursor } : {}),
+			filters: parsed.filters,
+		};
+	} catch { /* Accept cursors from older rendered pages. */ }
+	return { cursor: value, filters: DEFAULT_EVENT_FILTERS };
+}
+
+async function renderEvents(ctx: EventualContext, cursor?: string, error?: string, filters: EventListFilters = DEFAULT_EVENT_FILTERS): Promise<BlockResponse> {
 	const timeFormat = normalizeTimeDisplayFormat(await ctx.settings.get<string>("timeFormat"));
+	const today = new Date().toISOString().slice(0, 10);
+	const order = filters.dates === "upcoming" ? "asc" : "desc";
 	const page = await (ctx.storage.events as import("emdash").StorageCollection<EventRecord>).query({
-		orderBy: { start: "desc" }, limit: 25, cursor,
+		where: {
+			...(filters.status === "all" ? {} : { published: filters.status === "published" }),
+			...(filters.dates === "upcoming" ? { start: { gte: today } } : {}),
+			...(filters.dates === "past" ? { start: { lt: today } } : {}),
+		},
+		orderBy: { start: order }, limit: 25, cursor,
 	});
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
 		{ type: "header", text: "Events" },
 		{ type: "actions", elements: [{ type: "button", action_id: "new-event", label: "Add event", style: "primary" }] },
+		{ type: "form", block_id: "events-filter-form", fields: [
+			selectField("status", "Publication status", [
+				{ label: "All events", value: "all" }, { label: "Published", value: "published" }, { label: "Drafts", value: "draft" },
+			], filters.status),
+			selectField("dates", "Date range", [
+				{ label: "Any date", value: "all" }, { label: "Upcoming", value: "upcoming" }, { label: "Past", value: "past" },
+			], filters.dates),
+		], submit: { label: "Apply filters", action_id: "filter-events" } },
 	];
 	if (error) blocks.push({ type: "banner", title: "Events not deleted", description: error, variant: "error" });
 	if (!page.items.length) {
-		blocks.push({ type: "empty", title: "No events yet", description: "Add a one-off event or create a recurring series." });
+		blocks.push({ type: "empty", title: filters.status === "all" && filters.dates === "all" ? "No events yet" : "No matching events", description: filters.status === "all" && filters.dates === "all" ? "Add a one-off event or create a recurring series." : "Change the filters or add an event that matches them." });
 		return { blocks };
 	}
 	const rows = page.items.map(({ data: event }) => {
@@ -901,7 +974,7 @@ async function renderEvents(ctx: EventualContext, cursor?: string, error?: strin
 		],
 		rows,
 		page_action_id: "events-next",
-		...(page.hasMore && page.cursor ? { next_cursor: page.cursor } : {}),
+		...(page.hasMore && page.cursor ? { next_cursor: eventPageValue(page.cursor, filters) } : {}),
 	});
 	blocks.push(
 		{ type: "divider" },
@@ -1002,7 +1075,16 @@ async function renderSettings(ctx: EventualContext, error?: string): Promise<Blo
 			{ type: "header", text: "Event settings" },
 			{ type: "context", text: "Choose the timezone used for new events. Each event can still use a different timezone." },
 			{ type: "context", text: "Choose 12-hour or 24-hour time for Eventual's admin displays. This only changes the EmDash admin UI; public feeds and your site's frontend are unchanged." },
-			{ type: "context", text: "Calendar subscription URL: /_emdash/api/plugins/eventual/calendar. Add this URL to a calendar app that supports iCalendar subscriptions." },
+			{ type: "header", text: "Use events on your site" },
+			{ type: "context", text: "The JSON feed supplies published events to your Astro pages. The iCalendar URL can be subscribed to from calendar apps." },
+			{ type: "fields", fields: [
+				{ label: "Public JSON feed", value: "/_emdash/api/plugins/eventual/publicEvents?from=YYYY-MM-DD&through=YYYY-MM-DD" },
+				{ label: "iCalendar subscription", value: "/_emdash/api/plugins/eventual/calendar" },
+			] },
+			{ type: "section", text: "For visitor pages, copy the astro-events example from the Eventual repository into your site's Astro project. Registry installation installs the plugin backend; the visitor pages are site source." },
+			{ type: "actions", elements: [
+				{ type: "link", label: "Open Astro integration guide", target: { kind: "external", url: "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/tree/main/examples/astro-events" } },
+			] },
 		];
 	if (error) blocks.push({ type: "banner", title: "Settings not saved", description: error, variant: "error" });
 	return {
@@ -1234,17 +1316,21 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		if (interaction.action_id === "edit-venue" && typeof interaction.value === "string") {
 			const venue = await getVenue(ctx, interaction.value);
 			return venue
-				? { blocks: venueFormBlocks(venue, venue.id) }
+				? { blocks: venueFormBlocks(venue, venue.id, undefined, venue.updatedAt) }
 				: { blocks: [{ type: "banner", title: "Venue no longer exists", variant: "error" }] };
 		}
 		if (interaction.action_id === "delete-venue" && typeof interaction.value === "string") {
 			if (await listEventsByVenueId(ctx, interaction.value)) {
-				return { blocks: venueFormBlocks((await getVenue(ctx, interaction.value)) ?? blankVenue(), interaction.value, "This venue is assigned to one or more events."), toast: { message: "Venue is still in use", type: "error" } };
+				const venue = await getVenue(ctx, interaction.value);
+				return { blocks: venueFormBlocks(venue ?? blankVenue(), interaction.value, "This venue is assigned to one or more events.", venue?.updatedAt), toast: { message: "Venue is still in use", type: "error" } };
 			}
 			await deleteVenue(ctx, interaction.value);
 			return { ...(await renderVenues(ctx)), toast: { message: "Venue deleted", type: "success" } };
 		}
-		if (interaction.action_id === "events-next" && typeof interaction.value === "string") return renderEvents(ctx, interaction.value);
+		if (interaction.action_id === "events-next" && typeof interaction.value === "string") {
+			const page = parseEventPageValue(interaction.value);
+			return renderEvents(ctx, page.cursor, undefined, page.filters);
+		}
 		if (interaction.action_id === "venues-next" && typeof interaction.value === "string") return renderVenues(ctx, interaction.value);
 		return { blocks: [{ type: "context", text: "No action was taken." }] };
 	}
@@ -1255,6 +1341,14 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		const event = eventId ? await getEvent(ctx, eventId) : null;
 		if (!event?.recurrence || !isDateOnly(from) || !validOccurrenceRange(from, addDays(from, 89))) return { blocks: [{ type: "banner", title: "Choose a valid occurrence start date", variant: "error" }] };
 		return renderEventEditor(ctx, event, eventToDraft(event), undefined, undefined, { from, offset: 0 });
+	}
+
+	if (interaction.action_id === "filter-events") {
+		const filters: EventListFilters = {
+			status: interaction.values.status === "published" || interaction.values.status === "draft" ? interaction.values.status : "all",
+			dates: interaction.values.dates === "upcoming" || interaction.values.dates === "past" ? interaction.values.dates : "all",
+		};
+		return renderEvents(ctx, undefined, undefined, filters);
 	}
 
 	if (interaction.action_id === "save-exception") {
@@ -1293,19 +1387,24 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 	}
 
 	if (interaction.action_id === "save-event") {
-		const id = idFromBlock(interaction.block_id, "event-form:");
+		const eventFormIdentity = eventEditIdentityFromBlock(interaction.block_id);
+		const id = eventFormIdentity?.id ?? null;
 		const duplicate = interaction.block_id?.startsWith("event-form:new:duplicate:")
 			? interaction.block_id.slice("event-form:new:duplicate:".length) : isDuplicateForm(interaction.block_id);
 		if (id === null) return { blocks: [{ type: "banner", title: "Invalid event form", variant: "error" }] };
-		const previous = id ? await getEvent(ctx, id) : null;
+		const versionedPrevious = id ? await getEventVersioned(ctx, id) : null;
+		const previous = versionedPrevious?.value ?? null;
 		if (id && !previous) return { blocks: [{ type: "banner", title: "Event no longer exists", variant: "error" }] };
+		if (id && eventFormIdentity?.updatedAt && eventFormIdentity.updatedAt !== previous?.updatedAt) {
+			return { ...await renderEventEditor(ctx, previous!), toast: { message: "This event changed while you were editing. Review the latest version before saving.", type: "error" } };
+		}
 		const source = typeof duplicate === "string" ? await getEvent(ctx, duplicate) : null;
 		if (typeof duplicate === "string" && !source) return { blocks: [{ type: "banner", title: "Original event no longer exists", description: "Start a new event to create this copy.", variant: "error" }] };
 		const { draft, error } = valuesToDraft({ ...interaction.values,
 			description: interaction.values.description === undefined ? previous?.description ?? source?.description ?? "" : interaction.values.description,
 		});
-		if (!draft) return renderEventForm(ctx, EMPTY_EVENT_DRAFT, id, error ?? "Check each event field and its date, time, and recurrence settings.", duplicate);
-		if (error) return renderEventForm(ctx, draft, id, error, duplicate);
+		if (!draft) return renderEventForm(ctx, EMPTY_EVENT_DRAFT, id, error ?? "Check each event field and its date, time, and recurrence settings.", duplicate, previous?.updatedAt);
+		if (error) return renderEventForm(ctx, draft, id, error, duplicate, previous?.updatedAt);
 		const prepared = prepareEventData(draft);
 		if (!prepared.data) {
 			return previous
@@ -1314,11 +1413,11 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		}
 		if (draft.imageMediaId) {
 			if (!(await isUsableEventImage(ctx, draft.imageMediaId))) {
-				return renderEventForm(ctx, draft, id, "Choose a ready JPEG, PNG, GIF, WebP, or AVIF image from the media library smaller than 8 MiB.", duplicate);
+				return renderEventForm(ctx, draft, id, "Choose a ready JPEG, PNG, GIF, WebP, or AVIF image from the media library smaller than 8 MiB.", duplicate, previous?.updatedAt);
 			}
 		}
 		if (draft.venueId && !(await getVenue(ctx, draft.venueId))) {
-			return renderEventForm(ctx, draft, id, "Choose a saved venue that still exists.", duplicate);
+			return renderEventForm(ctx, draft, id, "Choose a saved venue that still exists.", duplicate, previous?.updatedAt);
 		}
 		const now = new Date().toISOString();
 		const event: EventRecord = {
@@ -1331,7 +1430,15 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 		if (!exceptionIdsMatchRecurrence(event)) {
 			return renderEventEditor(ctx, previous!, draft, "Changing this recurrence would invalidate saved occurrence exceptions. Remove or update those exceptions first.");
 		}
-		await putEvent(ctx, event);
+		if (previous) {
+			const saved = await putEventIfUnchanged(ctx, event, eventFormIdentity!.updatedAt || previous.updatedAt);
+			if (!saved) {
+				const latest = await getEvent(ctx, event.id);
+				return latest
+					? { ...await renderEventEditor(ctx, latest), toast: { message: "This event changed while you were editing. Review the latest version before saving.", type: "error" } }
+					: { blocks: [{ type: "banner", title: "Event no longer exists", variant: "error" }] };
+			}
+		} else await putEvent(ctx, event);
 		return { ...(await renderEvents(ctx)), toast: { message: previous ? "Event updated" : "Event created", type: "success" }, navigate: { kind: "plugin-page", path: "/events" } };
 	}
 
@@ -1354,11 +1461,17 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 	if (interaction.action_id === "cancel-delete-selected-events") return renderEvents(ctx);
 
 	if (interaction.action_id === "save-venue") {
-		const id = idFromBlock(interaction.block_id, "venue-form:");
+		const venueFormIdentity = venueEditIdentityFromBlock(interaction.block_id);
+		const id = venueFormIdentity?.id ?? null;
 		const venue = submittedVenue(interaction.values);
 		if (id === null) return { blocks: [{ type: "banner", title: "Invalid venue form", variant: "error" }] };
-		if (!venue || !venue.name) return { blocks: venueFormBlocks(venue ?? blankVenue(), id, "Venue name is required.") };
-		const previous = id ? await getVenue(ctx, id) : null;
+		if (!venue || !venue.name) return { blocks: venueFormBlocks(venue ?? blankVenue(), id, "Venue name is required.", venueFormIdentity?.updatedAt) };
+		const versionedPrevious = id ? await getVenueVersioned(ctx, id) : null;
+		const previous = versionedPrevious?.value ?? null;
+		if (id && !previous) return { blocks: [{ type: "banner", title: "Venue no longer exists", variant: "error" }] };
+		if (id && venueFormIdentity?.updatedAt && venueFormIdentity.updatedAt !== previous?.updatedAt) {
+			return { blocks: venueFormBlocks(previous!, id, "This venue changed while you were editing. Review the latest version before saving.", previous!.updatedAt), toast: { message: "Venue changed; latest version loaded", type: "error" } };
+		}
 		const now = new Date().toISOString();
 		const record: VenueRecord = {
 			...venue,
@@ -1366,7 +1479,15 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 			createdAt: previous?.createdAt ?? now,
 			updatedAt: now,
 		};
-		await putVenue(ctx, record);
+		if (previous) {
+			const saved = await putVenueIfUnchanged(ctx, record, venueFormIdentity!.updatedAt || previous.updatedAt);
+			if (!saved) {
+				const latest = await getVenue(ctx, record.id);
+				return latest
+					? { blocks: venueFormBlocks(latest, latest.id, "This venue changed while you were editing. Review the latest version before saving.", latest.updatedAt), toast: { message: "Venue changed; latest version loaded", type: "error" } }
+					: { blocks: [{ type: "banner", title: "Venue no longer exists", variant: "error" }] };
+			}
+		} else await putVenue(ctx, record);
 		return { ...(await renderVenues(ctx)), toast: { message: previous ? "Venue updated" : "Venue created", type: "success" } };
 	}
 

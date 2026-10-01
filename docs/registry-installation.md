@@ -5,14 +5,17 @@ runner. Eventual adds **Events**, **Venues**, and **Settings** pages to the
 admin. It requires EmDash 1.0.1 or newer. Users with `plugins:manage` can
 manage one-off and recurring events.
 
-The Events page provides Edit, Duplicate, and Delete actions. Select up to 25
-events on the current page and choose **Delete selected** for a confirmed bulk
-delete. Saving returns to the Events list, and **Back to events** leaves the
-editor without saving. Event titles are also clickable shortcuts to the editor.
+The Events page filters by publication status and upcoming or past start dates,
+and keeps filters active while paging. It provides Edit, Duplicate, and Delete
+actions. Bulk delete selects up to 25 events on the current page and requires
+confirmation.
 
-Settings default admin time displays to 24-hour. The 12-hour option affects the
-admin event list and dashboard widget only; stored values, public feeds, MCP,
-and the consuming site's frontend are unchanged.
+Event and venue forms detect when another editor saved a newer version while
+the form was open. Eventual reloads that version so it can be reviewed before
+making further changes.
+
+Admin time displays default to 24-hour. The 12-hour option changes the event
+list and dashboard only; stored values, public feeds, and MCP are unchanged.
 
 ## Manage events with agents
 

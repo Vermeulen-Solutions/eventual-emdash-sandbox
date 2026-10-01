@@ -2,7 +2,7 @@
 
 A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.com).
 
-Version 0.9.2 requires EmDash 1.0.1 or newer. The minimum is declared in both
+Version 0.10.0 requires EmDash 1.0.1 or newer. The minimum is declared in both
 the npm peer dependency and the plugin release requirements.
 
 ## Features
@@ -15,6 +15,10 @@ the npm peer dependency and the plugin release requirements.
   clickable title editing, duplication, and confirmed deletion; the event list can select up to 25
   events on the current page for one confirmed bulk deletion. Saving an event
   returns to the primary Events list.
+- The Events page can filter by publication status and by upcoming or past start
+  dates. Filters work with server-side pagination.
+- Event and venue edits detect changes made by another editor while a form is
+  open. The newer version is reloaded so it can be reviewed before editing again.
 - Event list duplication starts a clearly marked unpublished draft, carrying
   event fields, dates, and recurrence forward while clearing occurrence
   exceptions for review before saving.
@@ -52,6 +56,8 @@ the npm peer dependency and the plugin release requirements.
 - Public iCalendar subscription at `/_emdash/api/plugins/eventual/calendar`.
   It expands published series into stable, dated event entries and retains
   cancellation tombstones when a published occurrence is removed.
+- Settings show the public JSON and iCalendar feed paths and link to the Astro
+  integration example for adding visitor pages.
 
 Public feeds and the dashboard select published events whose start is no later
 than the requested window, retaining older recurring series. Event scans stop

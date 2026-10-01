@@ -41,12 +41,27 @@ export function getEvent(ctx: EventualContext, id: string): Promise<EventRecord 
 	return eventCollection(ctx).get(id);
 }
 
+export function getEventVersioned(ctx: EventualContext, id: string) {
+	return eventCollection(ctx).getVersioned(id);
+}
+
 export function getEventsById(ctx: EventualContext, ids: string[]): Promise<Map<string, EventRecord>> {
 	return ids.length ? eventCollection(ctx).getMany([...new Set(ids)]) : Promise.resolve(new Map());
 }
 
 export function putEvent(ctx: EventualContext, event: EventRecord): Promise<void> {
 	return writeEventAndCancellations(ctx, event);
+}
+
+export async function putEventIfUnchanged(ctx: EventualContext, event: EventRecord, expectedUpdatedAt: string): Promise<boolean> {
+	const collection = eventCollection(ctx);
+	const previous = await collection.getVersioned(event.id);
+	if (!previous || previous.value.updatedAt !== expectedUpdatedAt) return false;
+	const result = await collection.compareAndSet(event.id, previous.revision, event);
+	if (!result.applied) return false;
+	const activeIds = await syncCalendarCancellations(ctx, previous.value, event);
+	if (activeIds.length) await cancellationCollection(ctx).deleteMany(activeIds);
+	return true;
 }
 
 async function writeEventAndCancellations(ctx: EventualContext, event: EventRecord): Promise<void> {
@@ -111,6 +126,17 @@ export function getVenue(ctx: EventualContext, id: string): Promise<VenueRecord 
 
 export function putVenue(ctx: EventualContext, venue: VenueRecord): Promise<void> {
 	return venueCollection(ctx).put(venue.id, venue);
+}
+
+export async function getVenueVersioned(ctx: EventualContext, id: string) {
+	return venueCollection(ctx).getVersioned(id);
+}
+
+export async function putVenueIfUnchanged(ctx: EventualContext, venue: VenueRecord, expectedUpdatedAt: string): Promise<boolean> {
+	const collection = venueCollection(ctx);
+	const previous = await collection.getVersioned(venue.id);
+	if (!previous || previous.value.updatedAt !== expectedUpdatedAt) return false;
+	return (await collection.compareAndSet(venue.id, previous.revision, venue)).applied;
 }
 
 export function deleteVenue(ctx: EventualContext, id: string): Promise<boolean> {
