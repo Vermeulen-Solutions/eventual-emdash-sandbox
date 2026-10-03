@@ -37,9 +37,11 @@ function validEventInput(value: unknown, patch = false): boolean {
 	if (!isObject(value)) return false;
 	if (!patch && (!validText(value.title, 200, 1) || !validText(value.start, 32, 1) || !validText(value.end, 32, 1) || typeof value.allDay !== "boolean")) return false;
 	if (patch && !Object.keys(value).length) return false;
-	for (const [key, max] of Object.entries({ title: 200, description: 12000, start: 32, end: 32, timezone: 100, location: 500, organizer: 300, externalUrl: 2048, imageUrl: 2048, imageMediaId: 200, venueId: 200 })) {
+	for (const [key, max] of Object.entries({ title: 200, description: 12000, start: 32, end: 32, timezone: 100, location: 500, virtualUrl: 2048, organizer: 300, externalUrl: 2048, imageUrl: 2048, imageMediaId: 200, venueId: 200 })) {
 		if (value[key] !== undefined && !validText(value[key], max, key === "title" ? 1 : 0)) return false;
 	}
+	if (value.locationType !== undefined && value.locationType !== "physical" && value.locationType !== "virtual" && value.locationType !== "hybrid") return false;
+	if (value.status !== undefined && !["draft", "published", "cancelled", "postponed", "rescheduled"].includes(value.status as string)) return false;
 	if (value.allDay !== undefined && typeof value.allDay !== "boolean") return false;
 	if (value.categories !== undefined && (!Array.isArray(value.categories) || value.categories.length > 30 || !value.categories.every((item) => validText(item, 100)))) return false;
 	if (value.recurrence !== undefined && value.recurrence !== null && !validRecurrence(value.recurrence)) return false;
@@ -102,6 +104,9 @@ function draftFromFields(fields: McpEventInput, base?: EventRecord): EventDraft 
 		allDay: fields.allDay ?? draft.allDay,
 		timezone: fields.timezone ?? draft.timezone,
 		location: fields.location ?? draft.location,
+		locationType: fields.locationType ?? draft.locationType ?? "physical",
+		virtualUrl: fields.virtualUrl ?? draft.virtualUrl ?? "",
+		status: fields.status ?? draft.status ?? (draft.published ? "published" : "draft"),
 		organizer: fields.organizer ?? draft.organizer,
 		externalUrl: fields.externalUrl ?? draft.externalUrl,
 		imageUrl: fields.imageUrl ?? draft.imageUrl,

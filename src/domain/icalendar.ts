@@ -32,17 +32,28 @@ const utf8Encoder = new TextEncoder();
 
 function eventLines(event: EventRecord, host: string, generatedAt: Date): string[] {
 	const modifiedAt = parseDate(event.updatedAt) ?? generatedAt;
+	const statusLine = event.status === "cancelled"
+		? "STATUS:CANCELLED"
+		: event.status === "postponed" || event.status === "rescheduled"
+			? "STATUS:TENTATIVE"
+			: "STATUS:CONFIRMED";
+	const locationText = event.locationType === "virtual" && event.virtualUrl
+		? event.virtualUrl
+		: event.locationType === "hybrid" && event.virtualUrl && event.location
+			? `${event.location} (${event.virtualUrl})`
+			: event.location;
+	const eventUrl = safeHttpUrl(event.externalUrl || (event.locationType === "virtual" ? event.virtualUrl ?? "" : ""));
 	return [
 		"BEGIN:VEVENT",
 		`UID:${eventUid(event.id, host)}`,
 		`DTSTAMP:${formatUtc(generatedAt)}`,
 		`LAST-MODIFIED:${formatUtc(modifiedAt)}`,
 		`SEQUENCE:${Math.max(0, modifiedAt.getTime())}`,
-		"STATUS:CONFIRMED",
+		statusLine,
 		`SUMMARY:${escapeText(event.title)}`,
 		...(event.description ? [`DESCRIPTION:${escapeText(event.description)}`] : []),
-		...(event.location ? [`LOCATION:${escapeText(event.location)}`] : []),
-		...(event.externalUrl && safeHttpUrl(event.externalUrl) ? [`URL:${safeHttpUrl(event.externalUrl)}`] : []),
+		...(locationText ? [`LOCATION:${escapeText(locationText)}`] : []),
+		...(eventUrl ? [`URL:${eventUrl}`] : []),
 		...(event.categories.length ? [`CATEGORIES:${event.categories.map(escapeText).join(",")}`] : []),
 		`X-EVENTUAL-TIMEZONE:${escapeText(event.timezone)}`,
 		...dateLines(event.start, event.end, event.allDay),

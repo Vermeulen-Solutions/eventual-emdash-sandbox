@@ -74,6 +74,9 @@ export function prepareEventData(
   if (draft.externalUrl.trim() && !safeHttpUrl(draft.externalUrl)) {
     return { error: "External URL must use HTTP or HTTPS." };
   }
+  if (draft.virtualUrl?.trim() && !safeHttpUrl(draft.virtualUrl)) {
+    return { error: "Virtual URL must use HTTP or HTTPS." };
+  }
   if (draft.imageUrl.trim() && !safeHttpUrl(draft.imageUrl)) {
     return { error: "Image URL must use HTTP or HTTPS." };
   }
@@ -122,6 +125,9 @@ export function prepareEventData(
       allDay: draft.allDay,
       timezone: draft.timezone.trim(),
       location: draft.location.trim(),
+      locationType: draft.locationType ?? "physical",
+      ...(draft.virtualUrl?.trim() ? { virtualUrl: safeHttpUrl(draft.virtualUrl) } : {}),
+      status: draft.status ?? (draft.published ? "published" : "draft"),
       organizer: draft.organizer.trim(),
       externalUrl: safeHttpUrl(draft.externalUrl),
       imageUrl: draft.imageMediaId.trim() ? "" : safeHttpUrl(draft.imageUrl),
@@ -152,6 +158,9 @@ export function eventToDraft(event: EventRecord): EventDraft {
     allDay: event.allDay,
     timezone,
     location: event.location,
+    locationType: event.locationType ?? "physical",
+    virtualUrl: event.virtualUrl ?? "",
+    status: event.status ?? (event.published ? "published" : "draft"),
     organizer: event.organizer,
     externalUrl: event.externalUrl,
     imageUrl: event.imageUrl,
@@ -189,6 +198,7 @@ export function duplicateEventDraft(event: EventRecord): EventDraft {
 		...eventToDraft(event),
 		title: `Copy of ${event.title}`,
 		published: false,
+		status: "draft",
 		exceptions: [],
 	};
 }

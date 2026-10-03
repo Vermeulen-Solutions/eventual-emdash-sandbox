@@ -63,6 +63,9 @@ interface EventFormValues {
 	allDay: boolean;
 	timezone: string;
 	location: string;
+	locationType?: "physical" | "virtual" | "hybrid";
+	virtualUrl?: string;
+	status?: "draft" | "published" | "cancelled" | "postponed" | "rescheduled";
 	organizer: string;
 	externalUrl: string;
 	imageUrl?: string;
@@ -164,9 +167,11 @@ function parseInteraction(input: unknown): Interaction | null {
 function parseEventValues(value: unknown): EventFormValues | null {
 	if (!isRecord(value)) return null;
 	const requiredStrings = ["title", "startDate", "endDate", "timezone", "location", "organizer", "externalUrl", "categories", "venueId", "recurrenceUntil"];
-	const optionalStrings = ["description", "startTime", "endTime", "imageUrl", "imageMediaId"];
+	const optionalStrings = ["description", "startTime", "endTime", "imageUrl", "imageMediaId", "virtualUrl"];
 	if (requiredStrings.some((key) => typeof value[key] !== "string") || !hasOptionalStringFields(value, optionalStrings)) return null;
 	if (typeof value.allDay !== "boolean" || typeof value.published !== "boolean") return null;
+	if (value.locationType !== undefined && !isOneOf(value.locationType, ["physical", "virtual", "hybrid"])) return null;
+	if (value.status !== undefined && !isOneOf(value.status, ["draft", "published", "cancelled", "postponed", "rescheduled"])) return null;
 	if (["recurrenceInterval", "monthlyDayOfMonth"].some((key) => value[key] !== undefined && typeof value[key] !== "number")) return null;
 	if (value.weeklyWeekdays !== undefined && (!Array.isArray(value.weeklyWeekdays) || !value.weeklyWeekdays.every((day) => WEEKDAYS.includes(day)))) return null;
 	if (!isOneOf(value.repeatFrequency, ["none", "daily", "weekly", "monthly"])) return null;
@@ -455,7 +460,13 @@ function eventFormBlocks(
 			{ ...textField("endTime", "End time", draft.allDay ? "" : draftTime(draft.end)), placeholder: "20:00 or 8:00 PM", condition: { field: "allDay", eq: false } },
 			{ type: "toggle", action_id: "allDay", label: "All-day event", initial_value: draft.allDay },
 			timeZoneField(draft.timezone),
+			selectField("locationType", "Event format", [
+				{ label: "Physical (in-person)", value: "physical" },
+				{ label: "Virtual (online)", value: "virtual" },
+				{ label: "Hybrid (in-person and online)", value: "hybrid" },
+			], draft.locationType ?? "physical"),
 			textField("location", "Location note", draft.location),
+			{ ...textField("virtualUrl", "Online meeting / stream URL", draft.virtualUrl ?? ""), placeholder: "https://zoom.us/j/...", condition: { field: "locationType", neq: "physical" } },
 			comboboxField("venueId", "Saved venue", [
 				{ label: "No saved venue", value: "" },
 				...venues.map((venue) => ({ label: venue.name, value: venue.id })),
@@ -463,6 +474,13 @@ function eventFormBlocks(
 			textField("organizer", "Organizer", draft.organizer),
 			textField("externalUrl", "External URL", draft.externalUrl),
 			textField("categories", "Categories (one per line or comma-separated)", draft.categories, true),
+			selectField("status", "Event status", [
+				{ label: "Draft", value: "draft" },
+				{ label: "Published", value: "published" },
+				{ label: "Cancelled", value: "cancelled" },
+				{ label: "Postponed", value: "postponed" },
+				{ label: "Rescheduled", value: "rescheduled" },
+			], draft.status ?? (draft.published ? "published" : "draft")),
 			{ type: "toggle", action_id: "published", label: "Published on the public events route", initial_value: draft.published },
 			selectField("repeatFrequency", "Repeat", recurrenceOptions, draft.repeatFrequency),
 			{ type: "number_input", action_id: "recurrenceInterval", label: "Every N days, weeks, or months (1–52)", initial_value: draft.recurrenceInterval ?? 1, min: 1, max: 52, condition: { field: "repeatFrequency", neq: "none" } },
@@ -1144,6 +1162,9 @@ function valuesToDraft(values: Record<string, unknown>): { draft: EventDraft | n
 		allDay: value.allDay,
 		timezone: value.timezone,
 		location: value.location,
+		locationType: value.locationType ?? "physical",
+		virtualUrl: value.virtualUrl ?? "",
+		status: value.status ?? (value.published ? "published" : "draft"),
 		organizer: value.organizer,
 		externalUrl: value.externalUrl,
 		imageUrl: value.imageUrl ?? "",

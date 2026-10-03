@@ -13,6 +13,9 @@ export interface PublicEvent {
 	allDay: boolean;
 	timezone: string;
 	location: string;
+	locationType?: "physical" | "virtual" | "hybrid";
+	virtualUrl?: string;
+	status?: "draft" | "published" | "cancelled" | "postponed" | "rescheduled";
 	organizer: string;
 	externalUrl: string;
 	imageUrl: string;
@@ -38,6 +41,9 @@ export function formatPublicEvent(
 		allDay: event.allDay,
 		timezone: event.timezone,
 		location,
+		locationType: event.locationType ?? "physical",
+		...(event.virtualUrl ? { virtualUrl: event.virtualUrl } : {}),
+		status: event.status ?? (event.published ? "published" : "draft"),
 		organizer: event.organizer,
 		externalUrl: event.externalUrl,
 		imageUrl: event.imageUrl || (event.imageMediaId ? publicEventImageUrl(pluginId, baseEventId) : ""),

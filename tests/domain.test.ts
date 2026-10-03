@@ -356,3 +356,98 @@ describe("recurrence exception references", () => {
 		})).toBe(false);
 	});
 });
+
+describe("virtual and hybrid event format and status", () => {
+	const baseDraft = {
+		...EMPTY_EVENT_DRAFT,
+		title: "Virtual Meetup",
+		start: "2026-10-10",
+		end: "2026-10-10",
+		allDay: true,
+	};
+
+	it("accepts virtual events with valid HTTP(S) virtual URL", () => {
+		const prepared = prepareEventData({
+			...baseDraft,
+			locationType: "virtual",
+			virtualUrl: "https://zoom.us/j/123456789",
+			status: "published",
+		});
+		expect(prepared.error).toBeUndefined();
+		expect(prepared.data).toMatchObject({
+			locationType: "virtual",
+			virtualUrl: "https://zoom.us/j/123456789",
+			status: "published",
+		});
+	});
+
+	it("rejects unsafe or non-HTTP virtual URLs", () => {
+		const prepared = prepareEventData({
+			...baseDraft,
+			locationType: "virtual",
+			virtualUrl: "javascript:alert(1)",
+		});
+		expect(prepared.error).toBe("Virtual URL must use HTTP or HTTPS.");
+	});
+
+	it("preserves locationType and virtualUrl in duplicateEventDraft and resets status to draft", () => {
+		const record: EventRecord = {
+			id: "evt-123",
+			title: "Hybrid Workshop",
+			description: "",
+			start: "2026-10-10",
+			end: "2026-10-10",
+			allDay: true,
+			timezone: "UTC",
+			location: "Room 101",
+			locationType: "hybrid",
+			virtualUrl: "https://stream.example.com",
+			status: "postponed",
+			organizer: "",
+			externalUrl: "",
+			imageUrl: "",
+			categories: [],
+			published: true,
+			exceptions: [],
+			createdAt: "2026-01-01T00:00:00.000Z",
+			updatedAt: "2026-01-01T00:00:00.000Z",
+		};
+		const duplicated = duplicateEventDraft(record);
+		expect(duplicated).toMatchObject({
+			title: "Copy of Hybrid Workshop",
+			locationType: "hybrid",
+			virtualUrl: "https://stream.example.com",
+			status: "draft",
+			published: false,
+		});
+	});
+
+	it("formats virtual and hybrid event locations and status in iCalendar feed", () => {
+		const virtualEvent: EventRecord = {
+			id: "virtual-meet",
+			title: "Virtual Meetup",
+			description: "Zoom call",
+			start: "2026-10-10T18:00:00.000Z",
+			end: "2026-10-10T19:00:00.000Z",
+			allDay: false,
+			timezone: "UTC",
+			location: "",
+			locationType: "virtual",
+			virtualUrl: "https://zoom.us/j/999",
+			status: "cancelled",
+			organizer: "",
+			externalUrl: "",
+			imageUrl: "",
+			categories: [],
+			published: true,
+			exceptions: [],
+			createdAt: "2026-01-01T00:00:00.000Z",
+			updatedAt: "2026-01-01T00:00:00.000Z",
+		};
+		const ical = formatCalendarFeed([virtualEvent], [], "example.com");
+		expect(ical).toContain("STATUS:CANCELLED");
+		expect(ical).toContain("LOCATION:https://zoom.us/j/999");
+		expect(ical).toContain("URL:https://zoom.us/j/999");
+	});
+});
+

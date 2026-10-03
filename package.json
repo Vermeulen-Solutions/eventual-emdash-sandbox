@@ -13,6 +13,7 @@
 		},
 		"./sandbox": "./dist/plugin.mjs",
 		"./astro": "./astro/feed.ts",
+		"./astro/schema": "./astro/schema.ts",
 		"./astro/EventList.astro": "./astro/EventList.astro"
 	},
 	"files": [

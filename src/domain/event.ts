@@ -28,6 +28,9 @@ export type EventRecurrence = (
           };
     }) & { interval?: number };
 
+export type EventLocationType = "physical" | "virtual" | "hybrid";
+export type EventStatus = "draft" | "published" | "cancelled" | "postponed" | "rescheduled";
+
 export interface EventFields {
   title: string;
   description: string;
@@ -38,6 +41,9 @@ export interface EventFields {
   allDay: boolean;
   timezone: string;
   location: string;
+  locationType?: EventLocationType;
+  virtualUrl?: string;
+  status?: EventStatus;
   organizer: string;
   externalUrl: string;
   imageUrl: string;
@@ -57,6 +63,9 @@ export type EventOverride = Partial<
     | "allDay"
     | "timezone"
     | "location"
+    | "locationType"
+    | "virtualUrl"
+    | "status"
     | "organizer"
     | "externalUrl"
     | "imageUrl"
@@ -88,6 +97,9 @@ export interface EventDraft {
   allDay: boolean;
   timezone: string;
   location: string;
+  locationType?: EventLocationType;
+  virtualUrl?: string;
+  status?: EventStatus;
   organizer: string;
   externalUrl: string;
   imageUrl: string;
@@ -131,6 +143,9 @@ export const EMPTY_EVENT_DRAFT: EventDraft = {
   allDay: false,
   timezone: "UTC",
   location: "",
+  locationType: "physical",
+  virtualUrl: "",
+  status: "draft",
   organizer: "",
   externalUrl: "",
   imageUrl: "",

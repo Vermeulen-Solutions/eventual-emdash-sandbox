@@ -14,6 +14,9 @@ export interface PublicEvent {
 	allDay: boolean;
 	timezone: string;
 	location: string;
+	locationType?: "physical" | "virtual" | "hybrid";
+	virtualUrl?: string;
+	status?: "draft" | "published" | "cancelled" | "postponed" | "rescheduled";
 	organizer: string;
 	externalUrl: string;
 	imageUrl: string;
@@ -21,6 +24,8 @@ export interface PublicEvent {
 	venue: PublicVenue | null;
 	directionsUrl: string;
 }
+
+export { eventToJsonLd, type EventJsonLdOptions } from "./schema";
 
 export interface PublicFeed {
 	ok: true;
@@ -110,6 +115,9 @@ function isPublicEvent(value: unknown): value is PublicEvent {
 			&& typeof value.venue.name === "string"
 			&& typeof value.venue.address === "string"))
 		&& typeof value.directionsUrl === "string")) return false;
+	if (value.locationType !== undefined && value.locationType !== "physical" && value.locationType !== "virtual" && value.locationType !== "hybrid") return false;
+	if (value.virtualUrl !== undefined && typeof value.virtualUrl !== "string") return false;
+	if (value.status !== undefined && typeof value.status !== "string") return false;
 	if (value.updatedAt !== undefined && (typeof value.updatedAt !== "string" || !isInstant(value.updatedAt))) return false;
 	if (value.allDay) {
 		if (!isDateOnly(value.start) || !isDateOnly(value.end) || value.end < value.start) return false;
