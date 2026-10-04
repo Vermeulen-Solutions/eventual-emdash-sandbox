@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+reports/
 .astro/
 .env
 .env.*

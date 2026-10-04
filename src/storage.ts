@@ -1,7 +1,8 @@
 import type { StorageCollection } from "emdash";
 import type { PluginContext } from "emdash/plugin";
 
-import type { EventRecord, VenueRecord } from "./domain/event";
+import type { EventRecord, VenueRecord, OrganizerRecord } from "./domain/event";
+import { withScheduleHistory } from './domain/schedule-history';
 import { expandEventsInDateRange } from "./domain/recurrence";
 
 export type EventualContext = PluginContext;
@@ -49,7 +50,7 @@ export function getEventsById(ctx: EventualContext, ids: string[]): Promise<Map<
 	return ids.length ? eventCollection(ctx).getMany([...new Set(ids)]) : Promise.resolve(new Map());
 }
 
-export function putEvent(ctx: EventualContext, event: EventRecord): Promise<void> {
+export function putEvent(ctx: EventualContext, event: EventRecord): Promise<EventRecord> {
 	return writeEventAndCancellations(ctx, event);
 }
 
@@ -57,6 +58,7 @@ export async function putEventIfUnchanged(ctx: EventualContext, event: EventReco
 	const collection = eventCollection(ctx);
 	const previous = await collection.getVersioned(event.id);
 	if (!previous || previous.value.updatedAt !== expectedUpdatedAt) return false;
+	event = withScheduleHistory(previous.value, event);
 	const result = await collection.compareAndSet(event.id, previous.revision, event);
 	if (!result.applied) return false;
 	const activeIds = await syncCalendarCancellations(ctx, previous.value, event);
@@ -64,11 +66,13 @@ export async function putEventIfUnchanged(ctx: EventualContext, event: EventReco
 	return true;
 }
 
-async function writeEventAndCancellations(ctx: EventualContext, event: EventRecord): Promise<void> {
+async function writeEventAndCancellations(ctx: EventualContext, event: EventRecord): Promise<EventRecord> {
 	const previous = await eventCollection(ctx).get(event.id);
+	event = withScheduleHistory(previous, event);
 	const activeIds = await syncCalendarCancellations(ctx, previous, event);
 	await eventCollection(ctx).put(event.id, event);
 	if (activeIds.length) await cancellationCollection(ctx).deleteMany(activeIds);
+	return event;
 }
 
 export async function deleteEvent(ctx: EventualContext, id: string): Promise<boolean> {
@@ -199,4 +203,24 @@ export async function listVenuesById(
 ): Promise<Map<string, VenueRecord>> {
 	if (!ids.length) return new Map();
 	return venueCollection(ctx).getMany([...new Set(ids)]);
+}
+
+export function organizerCollection(ctx: EventualContext): StorageCollection<OrganizerRecord> {
+  return ctx.storage.organizers as StorageCollection<OrganizerRecord>;
+}
+
+export async function listOrganizers(ctx: EventualContext): Promise<OrganizerRecord[]> {
+  const items: OrganizerRecord[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await organizerCollection(ctx).query({ orderBy: { name: 'asc' }, limit: 100, cursor });
+    items.push(...page.items.map(item => item.data));
+    if (page.hasMore && (!page.cursor || items.length >= 5000)) throw new Error('Organizer list exceeds the supported scan limit or has an incomplete page.');
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+  return items;
+}
+
+export function listOrganizersById(ctx: EventualContext, ids: string[]): Promise<Map<string, OrganizerRecord>> {
+  return ids.length ? organizerCollection(ctx).getMany([...new Set(ids)]) : Promise.resolve(new Map());
 }

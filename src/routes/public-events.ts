@@ -2,7 +2,7 @@ import { expandEventsInDateRange } from "../domain/recurrence";
 import { isDateOnly } from "../domain/date-time";
 import { categoryKey } from "../domain/category";
 import { formatPublicEvent } from "../public-event";
-import { EventScanLimitError, listEvents, listVenuesById, type EventualContext } from "../storage";
+import { EventScanLimitError, listEvents, listVenuesById, listOrganizersById, type EventualContext } from "../storage";
 
 const MAX_PUBLIC_EVENT_RANGE_DAYS = 366;
 
@@ -43,7 +43,10 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 	const visible = category
 		? expanded.filter((event) => event.categories.some((item) => categoryKey(item) === category))
 		: expanded;
-	const venues = await listVenuesById(ctx, visible.flatMap((event) => event.venueId ? [event.venueId] : []));
+	const [venues, organizers] = await Promise.all([
+		listVenuesById(ctx, visible.flatMap(event => event.venueId ? [event.venueId] : [])),
+		listOrganizersById(ctx, visible.flatMap(event => event.organizerId ? [event.organizerId] : [])),
+	]);
 
 	return {
 		ok: true,
@@ -53,6 +56,7 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 			event,
 			event.venueId ? venues.get(event.venueId) : undefined,
 			ctx.plugin.id,
+			event.organizerId ? organizers.get(event.organizerId) : undefined,
 		)),
 	};
 }

@@ -1,3 +1,4 @@
+import { normalizeEventStatus } from "./event-data";
 import {
   calendarDateKey,
   instantToLocalDateTime,
@@ -134,10 +135,13 @@ function applyException(
   exception?: EventException,
 ): EventRecord | null {
   if (exception?.status === "cancelled") return null;
-  const { recurrence: _recurrence, exceptions: _exceptions, ...fields } = series;
+  const { recurrence: _recurrence, exceptions: _exceptions, previousStartDate: _previousStartDate, scheduleHistory: _history, ...fields } = series;
   return {
     ...fields,
     ...exception?.overrides,
+    ...(exception?.overrides?.start && exception.overrides.start !== series.start ? { previousStartDate: series.start } : {}),
+    ...(exception?.overrides?.organizer !== undefined ? { organizerId: undefined } : {}),
+    status: normalizeEventStatus(series.published, exception?.overrides?.status ?? series.status),
     id: `${series.id}#${recurrenceId}`,
     exceptions: [],
     createdAt: series.createdAt,

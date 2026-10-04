@@ -186,8 +186,21 @@ describe("Astro event browser calendar", () => {
 		expect(safeHttpUrl("/_emdash/image?id=123", "https://events.example/")).toBe("https://events.example/_emdash/image?id=123");
 		expect(safeHttpUrl("javascript:alert(1)", "https://events.example/")).toBe("");
 		expect(safeHttpUrl("data:image/png;base64,AAAA")).toBe("");
+		expect(safeImageUrl("", "http://127.0.0.1:4322")).toBe("");
+		expect(safeImageUrl("  ", "https://events.example")).toBe("");
 		expect(safeImageUrl("/_emdash/image?id=123", "http://127.0.0.1:4322")).toBe("http://127.0.0.1:4322/_emdash/image?id=123");
 		expect(safeImageUrl("http://insecure.example/image.png", "https://events.example")).toBe("");
 		expect(safeImageUrl("https://images.example/image.png", "https://events.example")).toBe("https://images.example/image.png");
 	});
+});
+
+it("exports lifecycle statuses and online links consistently", () => {
+ for (const [status, expected] of [["cancelled","CANCELLED"],["postponed","TENTATIVE"],["rescheduled","CONFIRMED"]] as const) {
+  const online = event({location:"",locationType:"hybrid",virtualUrl:"https://example.com/join",status});
+  expect(formatICalendar(online,"example.com")).toContain(`STATUS:${expected}`);
+  expect(formatICalendar(online,"example.com")).toContain("LOCATION:https://example.com/join");
+  for (const link of [googleCalendarUrl(online),outlookCalendarUrl(online),yahooCalendarUrl(online)]) {
+   expect(decodeURIComponent(link)).toContain("https://example.com/join");
+  }
+ }
 });

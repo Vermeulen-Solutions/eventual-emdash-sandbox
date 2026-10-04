@@ -372,6 +372,7 @@ describe("virtual and hybrid event format and status", () => {
 			locationType: "virtual",
 			virtualUrl: "https://zoom.us/j/123456789",
 			status: "published",
+			published: true,
 		});
 		expect(prepared.error).toBeUndefined();
 		expect(prepared.data).toMatchObject({
@@ -381,11 +382,11 @@ describe("virtual and hybrid event format and status", () => {
 		});
 	});
 
-	it("rejects unsafe or non-HTTP virtual URLs", () => {
+	it.each(["javascript:alert(1)", "ftp://example.com", "https://", "not a URL"])("rejects unsafe or malformed virtual URL %s", (virtualUrl) => {
 		const prepared = prepareEventData({
 			...baseDraft,
 			locationType: "virtual",
-			virtualUrl: "javascript:alert(1)",
+			virtualUrl,
 		});
 		expect(prepared.error).toBe("Virtual URL must use HTTP or HTTPS.");
 	});

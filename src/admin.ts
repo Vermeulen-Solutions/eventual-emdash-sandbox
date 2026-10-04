@@ -9,6 +9,7 @@ import {
 	type MonthlyPosition,
 	type VenueFields,
 	type VenueRecord,
+	type OrganizerRecord,
 	type WeekdayName,
 } from "./domain/event";
 import { duplicateEventDraft, eventToDraft, prepareEventData } from "./domain/event-data";
@@ -26,6 +27,8 @@ import { validOccurrenceRange } from "./domain/occurrences";
 import { recurrenceSummary, WEEKDAYS } from "./domain/recurrence-rule";
 import { defaultOccurrenceWindow, occurrenceBlocks, occurrenceWindowValue, type OccurrenceWindow } from "./occurrence-admin";
 import { eventLocation } from "./domain/venue";
+import { handleOrganizerAdmin } from "./organizer-admin";
+import { listOrganizers, organizerCollection } from "./storage";
 import { handleDescriptionAdmin } from "./description-admin";
 import {
 	deleteEvent,
@@ -67,6 +70,7 @@ interface EventFormValues {
 	virtualUrl?: string;
 	status?: "draft" | "published" | "cancelled" | "postponed" | "rescheduled";
 	organizer: string;
+	organizerId?: string;
 	externalUrl: string;
 	imageUrl?: string;
 	imageMediaId?: string;
@@ -167,7 +171,7 @@ function parseInteraction(input: unknown): Interaction | null {
 function parseEventValues(value: unknown): EventFormValues | null {
 	if (!isRecord(value)) return null;
 	const requiredStrings = ["title", "startDate", "endDate", "timezone", "location", "organizer", "externalUrl", "categories", "venueId", "recurrenceUntil"];
-	const optionalStrings = ["description", "startTime", "endTime", "imageUrl", "imageMediaId", "virtualUrl"];
+	const optionalStrings = ["description", "startTime", "endTime", "imageUrl", "imageMediaId", "virtualUrl", "organizerId"];
 	if (requiredStrings.some((key) => typeof value[key] !== "string") || !hasOptionalStringFields(value, optionalStrings)) return null;
 	if (typeof value.allDay !== "boolean" || typeof value.published !== "boolean") return null;
 	if (value.locationType !== undefined && !isOneOf(value.locationType, ["physical", "virtual", "hybrid"])) return null;
@@ -254,6 +258,7 @@ function pageNav(): BlockResponse["blocks"] {
 			elements: [
 				{ type: "link", label: "Events", target: { kind: "plugin-page", path: "/events" } },
 				{ type: "link", label: "Venues", target: { kind: "plugin-page", path: "/venues" } },
+				{ type: "link", label: "Organizers", target: { kind: "plugin-page", path: "/organizers" } },
 				{ type: "link", label: "Settings", target: { kind: "plugin-page", path: "/settings" } },
 			],
 		},
@@ -397,6 +402,7 @@ function eventFormBlocks(
 	images: EventImageOptions = { items: [], hasMore: false },
 	duplicate: boolean | string = false,
 	expectedUpdatedAt?: string,
+	organizers: OrganizerRecord[] = [],
 ): BlockResponse["blocks"] {
 	const recurrenceOptions = [
 		{ label: "Does not repeat", value: "none" },
@@ -405,7 +411,7 @@ function eventFormBlocks(
 		{ label: "Monthly", value: "monthly" },
 	];
 	const formBlockId = id
-		? `event-form:${id}:updated:${encodeURIComponent(expectedUpdatedAt ?? "")}`
+		? `event-form:${encodeURIComponent(id)}:updated:${encodeURIComponent(expectedUpdatedAt ?? "")}`
 		: `event-form:${duplicate ? `new:duplicate${typeof duplicate === "string" ? `:${duplicate}` : ""}` : "new"}`;
 	const blocks: BlockResponse["blocks"] = [
 		...pageNav(),
@@ -471,7 +477,8 @@ function eventFormBlocks(
 				{ label: "No saved venue", value: "" },
 				...venues.map((venue) => ({ label: venue.name, value: venue.id })),
 			], draft.venueId, "Search saved venues"),
-			textField("organizer", "Organizer", draft.organizer),
+			comboboxField("organizerId", "Saved organizer (optional)", [{ label: "Use free text", value: "" }, ...organizers.map(organizer => ({ label: organizer.name, value: organizer.id }))], draft.organizerId ?? ""),
+			textField("organizer", "Organizer (free text fallback)", draft.organizer),
 			textField("externalUrl", "External URL", draft.externalUrl),
 			textField("categories", "Categories (one per line or comma-separated)", draft.categories, true),
 			selectField("status", "Event status", [
@@ -672,6 +679,7 @@ function eventEditorBlocks(
 	exceptionEditor?: { draft: ExceptionFormDraft; originalRecurrenceId?: string; error?: string },
 	images: EventImageOptions = { items: [], hasMore: false },
 	window?: OccurrenceWindow,
+	organizers: OrganizerRecord[] = [],
 ): BlockResponse["blocks"] {
 	const blocks: BlockResponse["blocks"] = exceptionEditor
 		? [
@@ -682,7 +690,7 @@ function eventEditorBlocks(
 		: window ? [
 			...pageNav(), { type: "header", text: event.title },
 			{ type: "actions", elements: [{ type: "button", action_id: "edit-event", label: "Back to event details", value: event.id }] },
-		] : eventFormBlocks(draft, venues, event.id, eventError, images, false, event.updatedAt);
+		] : eventFormBlocks(draft, venues, event.id, eventError, images, false, event.updatedAt, organizers);
 	blocks.push({ type: "divider" });
 	if (event.recurrence && window && !exceptionEditor) blocks.push(...occurrenceBlocks(event, window), { type: "divider" });
 	blocks.push({ type: "header", text: "Occurrence exceptions" });
@@ -731,11 +739,12 @@ function eventEditorBlocks(
 }
 
 async function renderEventForm(ctx: EventualContext, draft: EventDraft, id: string, error?: string, duplicate: boolean | string = false, expectedUpdatedAt?: string): Promise<BlockResponse> {
-	const [venues, images] = await Promise.all([
+	const [venues, images, organizers] = await Promise.all([
 		listVenues(ctx),
 		listEventImages(ctx, draft.imageMediaId),
+		listOrganizers(ctx),
 	]);
-	return { blocks: eventFormBlocks(draft, venues, id, error, images, duplicate, expectedUpdatedAt) };
+	return { blocks: eventFormBlocks(draft, venues, id, error, images, duplicate, expectedUpdatedAt, organizers) };
 }
 
 async function renderEventEditor(
@@ -749,11 +758,12 @@ async function renderEventEditor(
 	if (exceptionEditor || window) {
 		return { blocks: eventEditorBlocks(event, [], draft, eventError, exceptionEditor, undefined, window) };
 	}
-	const [venues, images] = await Promise.all([
+	const [venues, images, organizers] = await Promise.all([
 		listVenues(ctx),
 		listEventImages(ctx, draft.imageMediaId),
+		listOrganizers(ctx),
 	]);
-	return { blocks: eventEditorBlocks(event, venues, draft, eventError, exceptionEditor, images, window) };
+	return { blocks: eventEditorBlocks(event, venues, draft, eventError, exceptionEditor, images, window, organizers) };
 }
 
 function eventExceptionFromForm(
@@ -862,7 +872,7 @@ function venueFormBlocks(venue: VenueFields, id: string, error?: string, expecte
 	});
 	blocks.push({
 		type: "form",
-		block_id: `venue-form:${id ? `${id}:updated:${encodeURIComponent(expectedUpdatedAt ?? "")}` : "new"}`,
+		block_id: `venue-form:${id ? `${encodeURIComponent(id)}:updated:${encodeURIComponent(expectedUpdatedAt ?? "")}` : "new"}`,
 		fields: [
 			textField("name", "Venue name", venue.name),
 			textField("street", "Street address", venue.street),
@@ -1166,6 +1176,7 @@ function valuesToDraft(values: Record<string, unknown>): { draft: EventDraft | n
 		virtualUrl: value.virtualUrl ?? "",
 		status: value.status ?? (value.published ? "published" : "draft"),
 		organizer: value.organizer,
+		organizerId: value.organizerId,
 		externalUrl: value.externalUrl,
 		imageUrl: value.imageUrl ?? "",
 		imageMediaId: value.imageMediaId ?? "",
@@ -1202,6 +1213,9 @@ function submittedVenue(values: Record<string, unknown>): VenueFields | null {
 export async function handleAdmin(input: unknown, ctx: EventualContext): Promise<BlockResponse> {
 	const interaction = parseInteraction(input);
 	if (!interaction) return { blocks: [{ type: "banner", title: "Invalid admin request", variant: "error" }] };
+
+	const organizerResponse = await handleOrganizerAdmin(interaction, ctx);
+	if (organizerResponse) return organizerResponse;
 
 	if (interaction.type === "page_load") {
 		if (interaction.page === "widget:upcoming-events") return renderUpcomingWidget(ctx);
@@ -1441,6 +1455,7 @@ export async function handleAdmin(input: unknown, ctx: EventualContext): Promise
 			return renderEventForm(ctx, draft, id, "Choose a saved venue that still exists.", duplicate, previous?.updatedAt);
 		}
 		const now = new Date().toISOString();
+		if (draft.organizerId && !(await organizerCollection(ctx).get(draft.organizerId))) return renderEventForm(ctx, draft, id, "Choose a saved organizer that still exists.", duplicate, previous?.updatedAt);
 		const event: EventRecord = {
 			...prepared.data,
 			id: id || crypto.randomUUID(),

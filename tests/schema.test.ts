@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventToJsonLd } from "../astro/schema";
+import { eventToJsonLd, serializeJsonLd } from "../astro/schema";
 import type { PublicEvent } from "../astro/feed";
 
 describe("Schema.org JSON-LD generation", () => {
@@ -39,10 +39,7 @@ describe("Schema.org JSON-LD generation", () => {
 			location: {
 				"@type": "Place",
 				name: "Main Center",
-				address: {
-					"@type": "PostalAddress",
-					streetAddress: "10 Innovation Way, Amsterdam",
-				},
+				address: "10 Innovation Way, Amsterdam",
 			},
 			organizer: {
 				"@type": "Organization",
@@ -76,14 +73,11 @@ describe("Schema.org JSON-LD generation", () => {
 		};
 		const jsonLd = eventToJsonLd(hybridEvent);
 		expect(jsonLd["eventAttendanceMode"]).toBe("https://schema.org/MixedEventAttendanceMode");
-		expect(jsonLd["location"]).toEqual({
+		expect(jsonLd["location"]).toEqual([{
 			"@type": "Place",
 			name: "Main Center",
-			address: {
-				"@type": "PostalAddress",
-				streetAddress: "10 Innovation Way, Amsterdam",
-			},
-		});
+			address: "10 Innovation Way, Amsterdam",
+		}, { "@type": "VirtualLocation", url: hybridEvent.virtualUrl }]);
 	});
 
 	it("maps cancelled, postponed, and rescheduled statuses to Schema.org statuses", () => {

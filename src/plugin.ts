@@ -6,11 +6,13 @@ import { handlePublicEventImage } from "./routes/public-media";
 import { handleCalendarFeed } from "./routes/calendar-feed";
 import { mcpTools } from "./mcp-schemas";
 import { mcpRoutes } from "./mcp";
+import { transferRoutes } from './transfer';
 import { EventScanLimitError } from "./storage";
 
 const plugin: SandboxedPlugin = {
 	routes: {
 		...mcpRoutes,
+		...transferRoutes,
 		admin: {
 			permission: "plugins:manage",
 			handler: async (routeCtx, ctx) => handleAdmin(routeCtx.input, ctx),

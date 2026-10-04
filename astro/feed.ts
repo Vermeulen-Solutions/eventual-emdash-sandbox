@@ -1,7 +1,9 @@
+import { safeWebUrl } from "./event-details";
 export interface PublicVenue {
 	id: string;
 	name: string;
 	address: string;
+	addressParts?: { street?: string; street2?: string; locality?: string; region?: string; postalCode?: string; country?: string };
 }
 
 export interface PublicEvent {
@@ -18,6 +20,8 @@ export interface PublicEvent {
 	virtualUrl?: string;
 	status?: "draft" | "published" | "cancelled" | "postponed" | "rescheduled";
 	organizer: string;
+	organizerDetails?: { id: string; name: string; website: string; contactUrl: string };
+	previousStartDate?: string;
 	externalUrl: string;
 	imageUrl: string;
 	categories: string[];
@@ -25,7 +29,8 @@ export interface PublicEvent {
 	directionsUrl: string;
 }
 
-export { eventToJsonLd, type EventJsonLdOptions } from "./schema";
+export { eventToJsonLd, serializeJsonLd, type EventJsonLdOptions } from "./schema";
+export { calendarLocation, calendarStatus, calendarEventUrl } from './event-details';
 
 export interface PublicFeed {
 	ok: true;
@@ -116,9 +121,12 @@ function isPublicEvent(value: unknown): value is PublicEvent {
 			&& typeof value.venue.address === "string"))
 		&& typeof value.directionsUrl === "string")) return false;
 	if (value.locationType !== undefined && value.locationType !== "physical" && value.locationType !== "virtual" && value.locationType !== "hybrid") return false;
-	if (value.virtualUrl !== undefined && typeof value.virtualUrl !== "string") return false;
-	if (value.status !== undefined && typeof value.status !== "string") return false;
+	if (value.virtualUrl !== undefined && (typeof value.virtualUrl !== "string" || value.virtualUrl.trim() !== "" && !safeWebUrl(value.virtualUrl))) return false;
+	if (value.status !== undefined && !["draft", "published", "cancelled", "postponed", "rescheduled"].includes(value.status as string)) return false;
 	if (value.updatedAt !== undefined && (typeof value.updatedAt !== "string" || !isInstant(value.updatedAt))) return false;
+	if (value.previousStartDate !== undefined && !isDateOnly(value.previousStartDate) && !isInstant(value.previousStartDate)) return false;
+	if (isRecord(value.venue) && value.venue.addressParts !== undefined && (!isRecord(value.venue.addressParts) || !Object.values(value.venue.addressParts).every(part => typeof part === 'string'))) return false;
+	if (value.organizerDetails !== undefined && (!isRecord(value.organizerDetails) || !['id', 'name', 'website', 'contactUrl'].every(key => typeof (value.organizerDetails as Record<string, unknown>)[key] === 'string') || ['website', 'contactUrl'].some(key => (value.organizerDetails as Record<string, string>)[key] && !safeWebUrl((value.organizerDetails as Record<string, string>)[key]!)))) return false;
 	if (value.allDay) {
 		if (!isDateOnly(value.start) || !isDateOnly(value.end) || value.end < value.start) return false;
 	} else {

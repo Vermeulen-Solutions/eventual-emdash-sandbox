@@ -95,3 +95,10 @@ describe("Eventual public route adapter", () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 });
+
+it("rejects unknown status values and unsafe online URLs", async () => {
+ for (const patch of [{status:"unknown"}, {virtualUrl:"javascript:alert(1)"}, {virtualUrl:"https://"}]) {
+  vi.stubGlobal("fetch",vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,data:{ok:true,from:"2026-10-01",through:"2026-10-31",events:[{...publicEvent,...patch}]}}))));
+  await expect(fetchPublicFeed("https://cms.example","2026-10-01","2026-10-31")).rejects.toThrow("invalid event list");
+ }
+});

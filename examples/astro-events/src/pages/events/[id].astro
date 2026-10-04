@@ -1,7 +1,7 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { calendarFeedUrl, displayDate, eventDetailsUrl, eventEndDate, eventIdFromRoute, eventStartDate, eventTimeRange, googleCalendarUrl, normalizeLocale, outlookCalendarUrl, safeHttpUrl, safeImageUrl, yahooCalendarUrl } from "../../lib/calendar";
-import { fetchPublicFeed, eventToJsonLd, type PublicEvent } from "../../lib/feed";
+import { fetchPublicFeed, eventToJsonLd, serializeJsonLd, type PublicEvent } from "../../lib/feed";
 import { eventRange } from "../../lib/event-range";
 import { messagesForLocale } from "../../lib/messages";
 import EventDescription from "../../components/EventDescription.astro";
@@ -34,6 +34,7 @@ const subscriptionUrl = calendarFeedUrl(apiOrigin);
 const eventImageUrl = event ? safeImageUrl(event.imageUrl, apiOrigin) : "";
 const eventWebsite = event ? safeHttpUrl(event.externalUrl) : "";
 const eventDirections = event ? safeHttpUrl(event.directionsUrl) : "";
+const eventVirtualUrl = event ? safeHttpUrl(event.virtualUrl ?? "") : "";
 const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : true;
 ---
 
@@ -47,9 +48,9 @@ const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : tru
 			</section>
 		) : event ? (
 			<>
-				<script type="application/ld+json" set:html={JSON.stringify(eventToJsonLd(event))} />
+				<script type="application/ld+json" set:html={serializeJsonLd(eventToJsonLd(event, { siteUrl: apiOrigin }))} />
 				{event.status && !["published", "draft"].includes(event.status) && (
-					<p class="notice notice--alert"><strong>Status:</strong> {event.status[0]!.toUpperCase() + event.status.slice(1)}</p>
+					<p class="notice notice--alert"><strong>{labels.status}:</strong> {labels.eventStatuses[event.status]}</p>
 				)}
 				<h1>{event.title}</h1>
 				<ul class="event-actions">
@@ -80,7 +81,7 @@ const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : tru
 						</p>
 						{event.organizer && <p class="event-card__organizer">{labels.organizer} {event.organizer}</p>}
 						{event.location && <p class="event-card__location">{event.location}{eventDirections && <> · <a href={eventDirections} target="_blank" rel="noopener noreferrer">{labels.directions}</a></>}</p>}
-						{event.virtualUrl && <p class="event-card__virtual"><a href={event.virtualUrl} target="_blank" rel="noopener noreferrer">Join online meeting / stream ↗</a></p>}
+						{eventVirtualUrl && <p class="event-card__virtual"><a href={eventVirtualUrl} target="_blank" rel="noopener noreferrer">{labels.joinOnline} ↗</a></p>}
 					</div>
 					{eventImageUrl && <img class="event-card__image" src={eventImageUrl} alt="" decoding="async" />}
 					{event.description && <EventDescription source={event.description} />}

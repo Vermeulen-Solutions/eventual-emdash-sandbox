@@ -384,3 +384,50 @@ You MUST bump version whenever you change `capabilities`, `allowedHosts`,
 or `storage` in the manifest. Installed users have consented to the
 old trust contract; a change without a version bump would let new
 behaviour slip past consent.
+
+## Event format, publication, and structured data
+
+`locationType` is `physical`, `virtual`, or `hybrid`; meeting URLs must use HTTP
+or HTTPS. Hybrid JSON-LD includes both available physical and virtual locations.
+Calendar exports retain the meeting URL even when no physical location is set.
+
+`published` controls public visibility. Unpublished saves use status `draft`.
+Publishing a draft changes its status to `published`; publishing an already
+cancelled, postponed, or rescheduled event preserves that lifecycle state.
+Unpublishing resets status to `draft`, including when the event is later
+republished. Status-only MCP updates do not publish an event.
+Occurrence overrides support event format, meeting URL, and lifecycle status;
+unpublished occurrences are drafts regardless of their stored overrides.
+Calendar status is CANCELLED for cancelled events, TENTATIVE for postponed
+events, and CONFIRMED for scheduled or rescheduled events. Rescheduled means
+that the supplied dates are the confirmed replacement schedule.
+
+Import `eventToJsonLd` and `serializeJsonLd` from `eventual/astro` or
+`eventual/astro/schema`. Pass `{ siteUrl: "https://example.com" }` to resolve
+relative image, event, and meeting URLs; unsafe or unresolvable URLs are omitted.
+Use `serializeJsonLd(eventToJsonLd(event, options))` when embedding the result
+in an HTML script element. It escapes `<` without changing parsed JSON values.
+Schedule edits retain up to ten previous series schedules. Rescheduled events
+expose `previousStartDate`; moved recurring occurrences use their original start.
+Duplicates start without history. Full-series shifts do not infer a previous
+date for each new occurrence.
+
+Saved venues now expose optional `addressParts` alongside the existing formatted
+address. JSON-LD maps each address component to PostalAddress and keeps legacy
+formatted addresses as text. Saved organizers are optional: choose one in the
+admin form or MCP, or continue using free text. Their names, website and contact
+links are public. Clearing `organizerId` returns to the free text fallback.
+
+JSON export/restore, CSV conversion, limited ICS conversion and draft-first,
+atomic imports are documented in [data transfer](docs/data-transfer.md).
+Host-side helpers are exported as `eventual/transfer` and add no parser to the
+sandbox runtime. Deferred work is recorded in [issue drafts](docs/future-work.md).
+
+CI checks locked dependencies, plugin types/tests, the actual installation archive,
+and the Astro example including its built event page, under UTC and America/New_York.
+Run `npm run bundle && npm run budget` to check working ceilings of 110 KiB per
+file, 220 KiB total and 16 files, below the hard 128 KiB/256 KiB/20 limits.
+`npm run test:tooling` covers host parsers and budget measurements. Performance
+tests enforce batched reference lookups; `npm run profile` writes diagnostic call
+counts, UTF-8 payload sizes and elapsed times to `reports/`. These mock timings are not a
+measurement of production sandbox CPU.

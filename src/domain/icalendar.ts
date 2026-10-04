@@ -1,6 +1,6 @@
+import { calendarLocation, calendarStatus, calendarEventUrl } from "../../astro/event-details";
 import type { EventRecord } from "./event";
 import type { CalendarCancellation } from "../storage";
-import { safeHttpUrl } from "./venue";
 
 export function formatCalendarFeed(
 	events: EventRecord[],
@@ -32,17 +32,9 @@ const utf8Encoder = new TextEncoder();
 
 function eventLines(event: EventRecord, host: string, generatedAt: Date): string[] {
 	const modifiedAt = parseDate(event.updatedAt) ?? generatedAt;
-	const statusLine = event.status === "cancelled"
-		? "STATUS:CANCELLED"
-		: event.status === "postponed" || event.status === "rescheduled"
-			? "STATUS:TENTATIVE"
-			: "STATUS:CONFIRMED";
-	const locationText = event.locationType === "virtual" && event.virtualUrl
-		? event.virtualUrl
-		: event.locationType === "hybrid" && event.virtualUrl && event.location
-			? `${event.location} (${event.virtualUrl})`
-			: event.location;
-	const eventUrl = safeHttpUrl(event.externalUrl || (event.locationType === "virtual" ? event.virtualUrl ?? "" : ""));
+	const statusLine = `STATUS:${calendarStatus(event)}`;
+	const locationText = calendarLocation(event);
+	const eventUrl = calendarEventUrl(event);
 	return [
 		"BEGIN:VEVENT",
 		`UID:${eventUid(event.id, host)}`,

@@ -13,7 +13,8 @@
 		"src/**/*",
 		"astro/**/*.ts",
 		"tests/**/*",
-		"vitest.config.ts"
+		"vitest.config.ts",
+		"vitest.profile.config.ts"
 	],
 	"exclude": [
 		"node_modules"

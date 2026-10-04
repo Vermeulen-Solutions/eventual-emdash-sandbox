@@ -1,9 +1,9 @@
-import type { McpEventInput } from "./mcp-schemas";
+import { validateMcpInput, type McpEventInput } from "./mcp-schemas";
 
 import { normalizeCategories } from "./domain/category";
 import { isDateOnly, isValidTimeZone } from "./domain/date-time";
-import { eventToDraft, prepareEventData } from "./domain/event-data";
-import type { EventDraft, EventException, EventRecord, EventRecurrence, VenueFields, VenueRecord } from "./domain/event";
+import { normalizeEventStatus, eventToDraft, prepareEventData } from "./domain/event-data";
+import type { EventDraft, EventException, EventRecord, VenueFields, VenueRecord } from "./domain/event";
 import { exceptionIdsMatchRecurrence, expandEventsInDateRange, scheduledOccurrence } from "./domain/recurrence";
 import { safeHttpUrl } from "./domain/venue";
 import {
@@ -23,59 +23,19 @@ import {
 import { normalizeEventDates } from "./domain/date-time";
 import { isUsableEventImage } from "./media";
 import { inspectOccurrences, validOccurrenceRange } from "./domain/occurrences";
-import { validRecurrence } from "./domain/recurrence-rule";
+import { saveOrganizer } from './organizers';
+import { organizerCollection, listOrganizers } from './storage';
 
-function isObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function validText(value: unknown, max: number, min = 0): value is string {
-	return typeof value === "string" && value.length >= min && value.length <= max;
-}
-
-function validEventInput(value: unknown, patch = false): boolean {
-	if (!isObject(value)) return false;
-	if (!patch && (!validText(value.title, 200, 1) || !validText(value.start, 32, 1) || !validText(value.end, 32, 1) || typeof value.allDay !== "boolean")) return false;
-	if (patch && !Object.keys(value).length) return false;
-	for (const [key, max] of Object.entries({ title: 200, description: 12000, start: 32, end: 32, timezone: 100, location: 500, virtualUrl: 2048, organizer: 300, externalUrl: 2048, imageUrl: 2048, imageMediaId: 200, venueId: 200 })) {
-		if (value[key] !== undefined && !validText(value[key], max, key === "title" ? 1 : 0)) return false;
-	}
-	if (value.locationType !== undefined && value.locationType !== "physical" && value.locationType !== "virtual" && value.locationType !== "hybrid") return false;
-	if (value.status !== undefined && !["draft", "published", "cancelled", "postponed", "rescheduled"].includes(value.status as string)) return false;
-	if (value.allDay !== undefined && typeof value.allDay !== "boolean") return false;
-	if (value.categories !== undefined && (!Array.isArray(value.categories) || value.categories.length > 30 || !value.categories.every((item) => validText(item, 100)))) return false;
-	if (value.recurrence !== undefined && value.recurrence !== null && !validRecurrence(value.recurrence)) return false;
-	return true;
-}
-
-function validVenueInput(value: unknown, patch = false): boolean {
-	if (!isObject(value) || (patch && !Object.keys(value).length) || (!patch && !validText(value.name, 200, 1))) return false;
-	for (const [key, max] of Object.entries({ name: 200, street: 300, street2: 300, locality: 150, region: 150, postalCode: 40, country: 100 })) {
-		if (value[key] !== undefined && !validText(value[key], max, key === "name" ? 1 : 0)) return false;
-	}
-	return true;
-}
-
-function validEventPatch(value: unknown): boolean { return isObject(value) && validText(value.id, 200, 1) && validEventInput(value.patch, true); }
-function validVenuePatch(value: unknown): boolean { return isObject(value) && validText(value.id, 200, 1) && validVenueInput(value.patch, true); }
-function validId(value: unknown): boolean { return isObject(value) && validText(value.id, 200, 1); }
-function validEmpty(value: unknown): boolean { return isObject(value) && !Object.keys(value).length; }
-function validListEvents(value: unknown): boolean {
-	return isObject(value) && (value.from === undefined || typeof value.from === "string" && isDateOnly(value.from)) && (value.through === undefined || typeof value.through === "string" && isDateOnly(value.through)) &&
-		(value.includeDrafts === undefined || typeof value.includeDrafts === "boolean") && (value.limit === undefined || Number.isInteger(value.limit) && Number(value.limit) >= 1 && Number(value.limit) <= 100);
-}
-function validExceptionSet(value: unknown): boolean {
-	if (!isObject(value) || !validText(value.eventId, 200, 1) || !validText(value.recurrenceId, 16) || (value.status !== "cancelled" && value.status !== "modified")) return false;
-	if (value.overrides === undefined) return true;
-	if (!isObject(value.overrides)) return false;
-	for (const [key, max] of Object.entries({ title: 200, description: 12000, start: 32, end: 32, timezone: 100, location: 500, organizer: 300, externalUrl: 2048, imageUrl: 2048 })) {
-		if (value.overrides[key] !== undefined && !validText(value.overrides[key], max, key === "title" ? 1 : 0)) return false;
-	}
-	if (value.overrides.allDay !== undefined && typeof value.overrides.allDay !== "boolean") return false;
-	return value.overrides.categories === undefined || Array.isArray(value.overrides.categories) && value.overrides.categories.length <= 30 && value.overrides.categories.every((item) => validText(item, 100));
-}
-function validExceptionRemove(value: unknown): boolean { return isObject(value) && validText(value.eventId, 200, 1) && validText(value.recurrenceId, 16); }
-function validSettingsUpdate(value: unknown): boolean { return isObject(value) && validText(value.defaultTimezone, 100, 1); }
+const validEventInput = (value: unknown) => validateMcpInput("createEvent", value);
+const validEventPatch = (value: unknown) => validateMcpInput("updateEvent", value);
+const validVenueInput = (value: unknown) => validateMcpInput("createVenue", value);
+const validVenuePatch = (value: unknown) => validateMcpInput("updateVenue", value);
+const validId = (value: unknown) => validateMcpInput("getEvent", value);
+const validEmpty = (value: unknown) => validateMcpInput("getSettings", value);
+const validListEvents = (value: unknown) => validateMcpInput("listEvents", value);
+const validExceptionSet = (value: unknown) => validateMcpInput("setOccurrenceException", value);
+const validExceptionRemove = (value: unknown) => validateMcpInput("removeOccurrenceException", value);
+const validSettingsUpdate = (value: unknown) => validateMcpInput("updateSettings", value);
 
 function route(validate: (input: unknown) => boolean, run: (input: any, ctx: EventualContext) => Promise<unknown>) {
 	return {
@@ -108,6 +68,7 @@ function draftFromFields(fields: McpEventInput, base?: EventRecord): EventDraft 
 		virtualUrl: fields.virtualUrl ?? draft.virtualUrl ?? "",
 		status: fields.status ?? draft.status ?? (draft.published ? "published" : "draft"),
 		organizer: fields.organizer ?? draft.organizer,
+		organizerId: fields.organizerId ?? draft.organizerId,
 		externalUrl: fields.externalUrl ?? draft.externalUrl,
 		imageUrl: fields.imageUrl ?? draft.imageUrl,
 		categories: fields.categories ? fields.categories.join(", ") : draft.categories,
@@ -134,6 +95,7 @@ async function saveEvent(ctx: EventualContext, fields: McpEventInput, previous?:
 	if (prepared.data.externalUrl && !safeHttpUrl(prepared.data.externalUrl)) return validationResult("External URL must use HTTP or HTTPS.");
 	if (draft.imageMediaId && !(await isUsableEventImage(ctx, draft.imageMediaId))) return validationResult("Choose a ready JPEG, PNG, GIF, WebP, or AVIF media image under 8 MiB.");
 	if (draft.venueId && !(await getVenue(ctx, draft.venueId))) return validationResult("The selected saved venue does not exist.");
+	if (draft.organizerId && !(await organizerCollection(ctx).get(draft.organizerId))) return validationResult('The selected saved organizer does not exist.');
 	const now = new Date().toISOString();
 	const event: EventRecord = {
 		...prepared.data,
@@ -143,8 +105,7 @@ async function saveEvent(ctx: EventualContext, fields: McpEventInput, previous?:
 		updatedAt: now,
 	};
 	if (!exceptionIdsMatchRecurrence(event)) return validationResult("Changing this schedule would invalidate occurrence exceptions. Remove or update those exceptions first.");
-	await putEvent(ctx, event);
-	return { ok: true, event };
+	return { ok: true, event: await putEvent(ctx, event) };
 }
 
 function venueInput(fields: VenueFields, previous?: VenueRecord): VenueRecord {
@@ -163,6 +124,13 @@ function addDays(value: string, count: number): string {
 }
 
 export const mcpRoutes = {
+	'mcp/organizers/list': route(input => validateMcpInput('listOrganizers', input), async (_input, ctx) => ({ ok: true, organizers: await listOrganizers(ctx) })),
+	'mcp/organizers/create': route(input => validateMcpInput('createOrganizer', input), async (input, ctx) => saveOrganizer(ctx, input)),
+	'mcp/organizers/update': route(input => validateMcpInput('updateOrganizer', input), async (input, ctx) => {
+		const previous = await organizerCollection(ctx).get(input.id);
+		if (!previous) return { ok: false, error: 'NOT_FOUND' };
+		return saveOrganizer(ctx, { ...previous, ...input.patch }, input.id, input.expectedUpdatedAt);
+	}),
 	"mcp/events/list": route(validListEvents, async (input, ctx) => {
 		const today = new Date().toISOString().slice(0, 10);
 		const from = input.from ?? today;
@@ -184,7 +152,7 @@ export const mcpRoutes = {
 		if (!event) return { ok: false, error: "NOT_FOUND" };
 		return { ok: true, event, venue: event.venueId ? await getVenue(ctx, event.venueId) : null };
 	}),
-	"mcp/events/occurrences": route((input) => validId(input) && validListEvents(input), async (input, ctx) => {
+	"mcp/events/occurrences": route((input) => validateMcpInput("listOccurrences", input), async (input, ctx) => {
 		const event = await getEvent(ctx, input.id);
 		if (!event) return { ok: false, error: "NOT_FOUND" };
 		const from = input.from ?? new Date().toISOString().slice(0, 10);
@@ -207,7 +175,11 @@ export const mcpRoutes = {
 			allDay: patch.allDay ?? current.allDay,
 			timezone: patch.timezone ?? current.timezone,
 			location: patch.location ?? current.location,
+			locationType: patch.locationType ?? current.locationType,
+			virtualUrl: patch.virtualUrl ?? current.virtualUrl,
+			status: patch.status ?? current.status,
 			organizer: patch.organizer ?? current.organizer,
+			organizerId: patch.organizerId ?? current.organizerId,
 			externalUrl: patch.externalUrl ?? current.externalUrl,
 			imageUrl: patch.imageUrl ?? current.imageUrl,
 			imageMediaId: patch.imageMediaId ?? current.imageMediaId,
@@ -220,14 +192,14 @@ export const mcpRoutes = {
 	"mcp/events/publish": route(validId, async ({ id }, ctx) => {
 		const event = await getEvent(ctx, id);
 		if (!event) return { ok: false, error: "NOT_FOUND" };
-		const updated = { ...event, published: true, updatedAt: new Date().toISOString() };
+		const updated = { ...event, published: true, status: normalizeEventStatus(true, event.status), updatedAt: new Date().toISOString() };
 		await putEvent(ctx, updated);
 		return { ok: true, event: updated };
 	}),
 	"mcp/events/unpublish": route(validId, async ({ id }, ctx) => {
 		const event = await getEvent(ctx, id);
 		if (!event) return { ok: false, error: "NOT_FOUND" };
-		const updated = { ...event, published: false, updatedAt: new Date().toISOString() };
+		const updated = { ...event, published: false, status: normalizeEventStatus(false, event.status), updatedAt: new Date().toISOString() };
 		await putEvent(ctx, updated);
 		return { ok: true, event: updated };
 	}),
@@ -258,6 +230,9 @@ export const mcpRoutes = {
 				overrides.start = normalized.dates.start;
 				overrides.end = normalized.dates.end;
 			}
+			if (patch.virtualUrl !== undefined && patch.virtualUrl && !safeHttpUrl(patch.virtualUrl)) return validationResult("Virtual URL must use HTTP or HTTPS.");
+			if (patch.virtualUrl !== undefined) overrides.virtualUrl = safeHttpUrl(patch.virtualUrl);
+			if (patch.status !== undefined) overrides.status = normalizeEventStatus(event.published, patch.status);
 			if (patch.externalUrl !== undefined && patch.externalUrl && !safeHttpUrl(patch.externalUrl)) return validationResult("External URL must use HTTP or HTTPS.");
 			if (patch.imageUrl !== undefined && patch.imageUrl && !safeHttpUrl(patch.imageUrl)) return validationResult("Image URL must use HTTP or HTTPS.");
 			if (!isValidTimeZone(timezone)) return validationResult("Choose a valid IANA timezone.");

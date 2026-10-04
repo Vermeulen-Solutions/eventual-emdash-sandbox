@@ -1,5 +1,8 @@
 export interface EventBrowserMessages {
 	title: string;
+	status: string;
+	joinOnline: string;
+	eventStatuses: Record<"draft" | "published" | "cancelled" | "postponed" | "rescheduled", string>;
 	skipToContent: string;
 	viewLabel: string;
 	listView: string;
@@ -51,6 +54,9 @@ export interface EventBrowserMessages {
 
 const messages: Record<string, EventBrowserMessages> = {
 	en: {
+		status: "Status",
+		joinOnline: "Join online meeting / stream",
+		eventStatuses: { draft: "Draft", published: "Published", cancelled: "Cancelled", postponed: "Postponed", rescheduled: "Rescheduled" },
 		title: "Events",
 		skipToContent: "Skip to event content",
 		viewLabel: "View",
@@ -101,6 +107,9 @@ const messages: Record<string, EventBrowserMessages> = {
 		jumpToDate: "Jump to a date",
 	},
 	nl: {
+		status: "Status",
+		joinOnline: "Deelnemen aan online bijeenkomst / stream",
+		eventStatuses: { draft: "Concept", published: "Gepubliceerd", cancelled: "Geannuleerd", postponed: "Uitgesteld", rescheduled: "Verplaatst" },
 		title: "Evenementen",
 		skipToContent: "Ga naar de evenementen",
 		viewLabel: "Weergave",
@@ -151,6 +160,9 @@ const messages: Record<string, EventBrowserMessages> = {
 		jumpToDate: "Ga naar een datum",
 	},
 	fr: {
+		status: "Statut",
+		joinOnline: "Rejoindre la réunion / diffusion en ligne",
+		eventStatuses: { draft: "Brouillon", published: "Publié", cancelled: "Annulé", postponed: "Reporté", rescheduled: "Reprogrammé" },
 		title: "Événements",
 		skipToContent: "Aller au contenu des événements",
 		viewLabel: "Affichage",

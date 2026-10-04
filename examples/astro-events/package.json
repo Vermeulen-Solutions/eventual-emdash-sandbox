@@ -6,6 +6,7 @@
 		"dev": "astro dev",
 		"check": "astro check",
 		"test": "vitest run",
+		"test:page": "npm run build && node scripts/verify-event-page.mjs",
 		"build": "astro build",
 		"preview": "astro preview"
 	},

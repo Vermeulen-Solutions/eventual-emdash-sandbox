@@ -45,6 +45,7 @@ export interface EventFields {
   virtualUrl?: string;
   status?: EventStatus;
   organizer: string;
+  organizerId?: string;
   externalUrl: string;
   imageUrl: string;
   imageMediaId?: string;
@@ -87,6 +88,9 @@ export interface EventRecord extends EventFields {
   exceptions: EventException[];
   createdAt: string;
   updatedAt: string;
+  /** Up to ten previous series schedules, newest first; never copied to duplicates. */
+  scheduleHistory?: Array<{ start: string; end: string; allDay: boolean; timezone: string; changedAt: string }>;
+  previousStartDate?: string;
 }
 
 export interface EventDraft {
@@ -101,6 +105,7 @@ export interface EventDraft {
   virtualUrl?: string;
   status?: EventStatus;
   organizer: string;
+  organizerId?: string;
   externalUrl: string;
   imageUrl: string;
   imageMediaId: string;
@@ -131,6 +136,16 @@ export interface VenueFields {
 
 export interface VenueRecord extends VenueFields {
   id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrganizerRecord {
+  id: string;
+  name: string;
+  website: string;
+  /** Public contact URL; do not store private addresses here. */
+  contactUrl: string;
   createdAt: string;
   updatedAt: string;
 }

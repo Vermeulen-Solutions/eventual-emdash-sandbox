@@ -2,6 +2,7 @@ import { instantToLocalDateTime, isDateOnly, normalizeEventDates } from "./date-
 import { normalizeCategories } from "./category";
 import type {
   EventDraft,
+  EventStatus,
   EventFields,
   EventRecurrence,
   EventRecord,
@@ -66,8 +67,15 @@ export function recurrenceForDraft(draft: EventDraft): EventRecurrence | undefin
   };
 }
 
+/** Visibility is authoritative; lifecycle states only apply to published events. */
+export function normalizeEventStatus(published: boolean, status?: EventStatus): EventStatus {
+ return !published ? "draft" : !status || status === "draft" ? "published" : status;
+}
+
 export function prepareEventData(
   draft: EventDraft,
+  /** Only for storage import callers that already validated canonical schedules. */
+  validatedDates?: { start: string; end: string },
 ): { data?: EventFields & { recurrence?: EventRecurrence; exceptions: EventRecord["exceptions"] }; error?: string } {
   const title = draft.title.trim();
   if (!title) return { error: "Event title is required." };
@@ -80,7 +88,7 @@ export function prepareEventData(
   if (draft.imageUrl.trim() && !safeHttpUrl(draft.imageUrl)) {
     return { error: "Image URL must use HTTP or HTTPS." };
   }
-  const normalized = normalizeEventDates({
+  const normalized = validatedDates ? { dates: validatedDates, errors: {} } : normalizeEventDates({
     start: draft.start,
     end: draft.end,
     allDay: draft.allDay,
@@ -127,8 +135,9 @@ export function prepareEventData(
       location: draft.location.trim(),
       locationType: draft.locationType ?? "physical",
       ...(draft.virtualUrl?.trim() ? { virtualUrl: safeHttpUrl(draft.virtualUrl) } : {}),
-      status: draft.status ?? (draft.published ? "published" : "draft"),
+      status: normalizeEventStatus(draft.published, draft.status),
       organizer: draft.organizer.trim(),
+      ...(draft.organizerId ? { organizerId: draft.organizerId } : {}),
       externalUrl: safeHttpUrl(draft.externalUrl),
       imageUrl: draft.imageMediaId.trim() ? "" : safeHttpUrl(draft.imageUrl),
       ...(draft.imageMediaId.trim() ? { imageMediaId: draft.imageMediaId.trim() } : {}),
@@ -160,8 +169,9 @@ export function eventToDraft(event: EventRecord): EventDraft {
     location: event.location,
     locationType: event.locationType ?? "physical",
     virtualUrl: event.virtualUrl ?? "",
-    status: event.status ?? (event.published ? "published" : "draft"),
+    status: normalizeEventStatus(event.published, event.status),
     organizer: event.organizer,
+    organizerId: event.organizerId,
     externalUrl: event.externalUrl,
     imageUrl: event.imageUrl,
     imageMediaId: event.imageMediaId ?? "",

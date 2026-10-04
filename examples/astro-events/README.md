@@ -107,3 +107,7 @@ npm run build
 focused route-adapter, calendar, detail-link, date-range, and iCalendar tests,
 and `npm run build` verifies the SSR site output. The plugin package has its
 own validation and test commands in the repository root.
+
+Run `npm run test:page` to build the site and check the rendered event page against
+an isolated local CMS fixture. This verifies JSON-LD escaping, hybrid locations,
+relative image URLs, meeting links, and localized lifecycle notices.

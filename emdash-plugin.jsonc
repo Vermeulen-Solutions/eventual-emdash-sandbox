@@ -34,8 +34,9 @@
 	"capabilities": ["media:read", "media:bytes:read"],
 	"allowedHosts": [],
 	"storage": {
-		"events": { "indexes": ["start", "published", ["published", "start"], "venueId"] },
+		"events": { "indexes": ["start", "published", ["published", "start"], "venueId", "organizerId"] },
 		"venues": { "indexes": ["name"] },
+		"organizers": { "indexes": ["name"] },
 		"calendar_cancellations": { "indexes": ["eventId", "cancelledAt"] }
 	},
 	"admin": {
@@ -45,6 +46,7 @@
 		"pages": [
 			{ "path": "/events", "label": "Events", "icon": "calendar" },
 			{ "path": "/venues", "label": "Venues", "icon": "map-pin" },
+			{ "path": "/organizers", "label": "Organizers", "icon": "users" },
 			{ "path": "/settings", "label": "Settings", "icon": "settings" }
 		],
 		"settingsSchema": {

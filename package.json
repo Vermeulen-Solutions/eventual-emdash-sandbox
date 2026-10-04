@@ -14,12 +14,17 @@
 		"./sandbox": "./dist/plugin.mjs",
 		"./astro": "./astro/feed.ts",
 		"./astro/schema": "./astro/schema.ts",
-		"./astro/EventList.astro": "./astro/EventList.astro"
+		"./astro/EventList.astro": "./astro/EventList.astro",
+		"./transfer": {
+			"types": "./transfer/index.d.mts",
+			"import": "./transfer/index.mjs"
+		}
 	},
 	"files": [
 		"dist",
 		"emdash-plugin.jsonc",
-		"astro"
+		"astro",
+		"transfer"
 	],
 	"scripts": {
 		"validate": "emdash-plugin validate",
@@ -30,7 +35,10 @@
 		"bundle": "emdash-plugin bundle",
 		"login": "emdash-plugin login",
 		"publish": "emdash-plugin publish",
-		"release:setup": "emdash-plugin release setup"
+		"release:setup": "emdash-plugin release setup",
+		"budget": "node scripts/bundle-budget.mjs",
+		"test:tooling": "node --test scripts/*.test.mjs",
+		"profile": "vitest run --config vitest.profile.config.ts"
 	},
 	"peerDependencies": {
 		"emdash": ">=1.0.1"

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createPluginRuntimeTestHost, type PluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 import type { EventRecord } from "../src/domain/event";
-import { mcpTools } from "../src/mcp-schemas";
+import { mcpTools, validateMcpInput } from "../src/mcp-schemas";
 import { addDays } from "../src/domain/recurrence";
 
 let host: PluginRuntimeTestHost | undefined;
@@ -73,7 +73,7 @@ describe("occurrence editor and MCP", () => {
     await expect(h.transport.invokeRoute("mcp/events/update", { id, patch: { recurrence: { frequency: "weekly", interval: 2, until, weekdays: ["tuesday"] } } }))
       .resolves.toMatchObject({ ok: true });
     expect(await h.inspect.storage.get("calendar_cancellations", `${id}#${thursday}`)).toMatchObject({ eventId: id });
-    expect(mcpTools.createEvent.input.safeParse({ title: "Invalid", start: from, end: from, allDay: true, recurrence: { frequency: "weekly", until, weekdays: ["tuesday", "tuesday"] } }).success).toBe(false);
+    expect(validateMcpInput("createEvent", { title: "Invalid", start: from, end: from, allDay: true, recurrence: { frequency: "weekly", until, weekdays: ["tuesday", "tuesday"] } })).toBe(false);
   }, 15000);
 
   it("validates and retains recurrence intervals and monthly days across unrelated MCP edits", async () => {
@@ -97,7 +97,7 @@ describe("occurrence editor and MCP", () => {
   it("validates MCP dates and limits and inspects drafts with explicit truncation", async () => {
     const h = await seed();
     expect(mcpTools.listOccurrences.destructive).toBe(false);
-    expect(mcpTools.listOccurrences.input.safeParse({ id: "practice", from: "2026-02-31" }).success).toBe(false);
+    expect(validateMcpInput("listOccurrences", { id: "practice", from: "2026-02-31" })).toBe(false);
     const call = (input: unknown) => h.transport.invokeRoute("mcp/events/occurrences", input);
     await expect(call({ id: "practice", from: "2026-10-06", through: "2026-10-31", limit: 2 })).resolves.toMatchObject({
       ok: true, published: false, total: 26, truncated: true,

@@ -1,3 +1,4 @@
+import { calendarLocation, calendarStatus, calendarEventUrl } from "../../../../astro/event-details";
 import type { PublicEvent } from "./feed";
 
 const SUNDAY_FIRST_REGIONS = new Set(["US", "CA", "JP", "KR", "TW", "IL", "SA", "PH"]);
@@ -196,7 +197,7 @@ export function googleCalendarUrl(event: PublicEvent): string {
 		url.searchParams.set("etz", event.timezone);
 	}
 	if (event.description) url.searchParams.set("details", event.description);
-	if (event.location) url.searchParams.set("location", event.location);
+	if (calendarLocation(event)) url.searchParams.set("location", calendarLocation(event));
 	return url.href;
 }
 
@@ -209,7 +210,7 @@ export function outlookCalendarUrl(event: PublicEvent): string {
 	url.searchParams.set("enddt", event.allDay ? `${addCalendarDay(event.end)}T00:00:00` : new Date(event.end).toISOString());
 	url.searchParams.set("allday", String(event.allDay));
 	if (event.description) url.searchParams.set("body", event.description);
-	if (event.location) url.searchParams.set("location", event.location);
+	if (calendarLocation(event)) url.searchParams.set("location", calendarLocation(event));
 	return url.href;
 }
 
@@ -220,11 +221,13 @@ export function yahooCalendarUrl(event: PublicEvent): string {
 	url.searchParams.set("st", event.allDay ? `${event.start.slice(0, 10).replaceAll("-", "")}T000000Z` : formatUtcDateTime(new Date(event.start)));
 	url.searchParams.set("et", event.allDay ? `${addCalendarDay(event.end).replaceAll("-", "")}T000000Z` : formatUtcDateTime(new Date(event.end)));
 	if (event.description) url.searchParams.set("desc", event.description);
-	if (event.location) url.searchParams.set("in_loc", event.location);
+	if (calendarLocation(event)) url.searchParams.set("in_loc", calendarLocation(event));
 	return url.href;
 }
 
 export function formatICalendar(event: PublicEvent, siteHost: string, generatedAt = new Date()): string {
+	const location = calendarLocation(event);
+	const eventUrl = calendarEventUrl(event);
 	const modifiedAt = event.updatedAt && Number.isFinite(Date.parse(event.updatedAt))
 		? new Date(event.updatedAt)
 		: undefined;
@@ -238,10 +241,11 @@ export function formatICalendar(event: PublicEvent, siteHost: string, generatedA
 		`UID:${escapeICalendarText(event.id)}@${escapeICalendarText(siteHost)}`,
 		`DTSTAMP:${formatUtcDateTime(generatedAt)}`,
 		...(modifiedAt ? [`LAST-MODIFIED:${formatUtcDateTime(modifiedAt)}`, `SEQUENCE:${modifiedAt.getTime()}`] : []),
+		`STATUS:${calendarStatus(event)}`,
 		`SUMMARY:${escapeICalendarText(event.title)}`,
 		...(event.description ? [`DESCRIPTION:${escapeICalendarText(event.description)}`] : []),
-		...(event.location ? [`LOCATION:${escapeICalendarText(event.location)}`] : []),
-		...(safeHttpUrl(event.externalUrl) ? [`URL:${safeHttpUrl(event.externalUrl)}`] : []),
+		...(location ? [`LOCATION:${escapeICalendarText(location)}`] : []),
+		...(eventUrl ? [`URL:${eventUrl}`] : []),
 		...(event.allDay
 			? [`DTSTART;VALUE=DATE:${event.start.replaceAll("-", "")}`, `DTEND;VALUE=DATE:${addCalendarDay(event.end).replaceAll("-", "")}`]
 			: [`DTSTART:${formatUtcDateTime(new Date(event.start))}`, `DTEND:${formatUtcDateTime(new Date(event.end))}`]),
@@ -268,6 +272,7 @@ export function safeHttpUrl(value: string, base?: string): string {
 }
 
 export function safeImageUrl(value: string, base: string): string {
+	if (!value.trim()) return "";
 	try {
 		const url = new URL(value, base);
 		const site = new URL(base);

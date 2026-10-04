@@ -34,7 +34,8 @@ export function safeHttpUrl(value: string): string {
   if (!value.trim()) return "";
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
+    // workerd's URL parser can accept an empty HTTP authority (e.g. "https://").
+    return url.hostname && (url.protocol === "http:" || url.protocol === "https:") ? url.href : "";
   } catch {
     return "";
   }
