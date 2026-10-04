@@ -34,8 +34,21 @@ Prepared tarball SHA-256: `32ea7fbd531d9ee14c2898dd391d71602e86c80ab023516746526
 
 ## Publication steps still outstanding
 
+### Deployment attempt on 2026-10-04
+
+Publication was authorized. The installation/changelog profile update was
+applied once, producing PDS CID
+`bafyreifbrjztgozpsmof3kafmxbqrgxk32glygkt5mprpv6i2qwfuc3dem`.
+The listing service's current assessment is passed, with an active
+`listing-passed` label on that exact CID (completed at 20:16:46 UTC).
+However, the aggregator returns HTTP 404 `ListingUnavailable`, serves no
+profile CID, and CLI info reports `public: false`. Publication is blocked
+until the registry serves the current approved profile. No 0.11.0 release
+record was written, and the GitHub release remains a draft. Do not rewrite
+the profile or overwrite a version to work around this state.
+
 1. Review the additive storage contract and the disclosed version-policy choice in the release notes.
-2. Apply the already-previewed profile update with `npm exec emdash-plugin -- update-package --yes`. This changes the signed profile CID; wait for exact-CID approval and verify PDS/aggregator agreement before publishing.
+2. The profile update is applied and its exact CID is approved. Wait for the aggregator to serve that CID, then verify PDS/aggregator agreement before publishing.
 3. Publish 0.11.0 once, without overwrite, after publication is authorized.
 4. Verify profile and release labels independently, then test the actual registry-installed 0.10.0-to-0.11.0 upgrade and MCP consent on an isolated site. A configured-plugin upgrade check cannot validate registry download/approval/consent behavior.
 5. Publish the GitHub draft release only when the registry verification is complete.
