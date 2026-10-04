@@ -10,6 +10,9 @@ Prepared on 2026-10-04. This is release preparation, not registry publication.
 - Typecheck, manifest validation and 112 plugin tests pass; six tooling tests and two profiling tests pass.
 - Astro example: zero diagnostics, 29 tests and built-page JSON-LD verification pass.
 - Local EmDash site: zero diagnostics and fifteen integration groups pass in development and built production, using isolated SQLite backups.
+- Configured-plugin upgrade: actual 0.10.0 source creates a legacy venue/event, then 0.11.0 preserves their stored payloads and public defaults. New indexes materialize on the scheduler tick; changed MCP tools require renewed consent. This upgrade check and the fifteen integration groups pass together (sixteen groups).
+- [GitHub CI](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/actions/runs/37230982375) passes in UTC and America/New_York for release commit `f9fa43b`.
+- [GitHub draft release](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/releases/tag/untagged-f9ee1d85ccfbe3235e30) targets `f9fa43b` and contains the prepared archive. GitHub's uploaded-asset SHA-256 agrees with the local checksum below. The draft remains unpublished.
 - Issues filed: extensions #1, calendar revisions #2, tooling maintenance #3.
 - Publisher identity matches the manifest. PDS and aggregator return the same approved current profile CID, `bafyreiayr6jfyhycosvqz3n2inru4qohffwrj2rey64upgkzjq7rpr5egu`, with an exact-CID `listing-passed` label. The published 0.10.0 release has its separate passed label.
 - `emdash-plugin update-package` dry-run previews the installation/changelog changes. No signed record was written.
