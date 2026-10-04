@@ -1,42 +1,25 @@
-## Install Eventual
+## Install and upgrade
 
-Install the plugin from the EmDash **Registry** after configuring a sandbox
-runner. Eventual adds **Events**, **Venues**, and **Settings** pages to the
-admin. It requires EmDash 1.0.1 or newer. Users with `plugins:manage` can
-manage one-off and recurring events.
+Requires EmDash 1.0.1+ with a sandbox runner. Install Eventual from the Registry. Admin users with `plugins:manage` get Events, Venues, Organizers and Settings pages.
 
-The Events page filters by publication status and upcoming or past start dates,
-and keeps filters active while paging. It provides Edit, Duplicate, and Delete
-actions. Bulk delete selects up to 25 events on the current page and requires
-confirmation.
+Before upgrading, back up the database, media and encryption key. Version 0.11.0 adds organizer storage and an event organizer index. Review the updated storage contract. Existing events remain readable with compatible defaults.
 
-Event and venue forms detect when another editor saved a newer version while
-the form was open. Eventual reloads that version so it can be reviewed before
-making further changes.
+Create one-off or recurring events, choose physical/virtual/hybrid attendance and set their lifecycle status. Meeting URLs must use HTTP or HTTPS. Draft duplication resets publication and schedule history. Admin forms detect stale edits; bulk deletion requires confirmation.
 
-Admin time displays default to 24-hour. The 12-hour option changes the event
-list and dashboard only; stored values, public feeds, and MCP are unchanged.
+## Agent access and transfer
 
-## Manage events with agents
+In Admin → Plugins, expand Eventual and enable Agent access. Review and enable the MCP tools you need, including new organizer and transfer tools.
 
-Enable Eventual's MCP tools in EmDash under **Admin → Plugins**. Click the
-arrow next to **Eventual** to expand its details, then toggle the **Agent
-access** switch. The tools manage events, exceptions, venues, and the default
-timezone. Enable `eventual__listOccurrences` separately in MCP settings.
+Exports are paginated. Imports support preview, insert-only writes and retry protection, capped at ten records and 64 KiB per request. They omit settings, media and calendar cancellation tombstones and do not replace a complete site backup.
 
-## Show events to visitors
+## Visitor pages
 
-Eventual provides public JSON and iCalendar feeds. The repository also includes
-a [server-rendered Astro example](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/tree/main/examples/astro-events).
-Copy and adapt it in the site's Astro project; installing Eventual alone does
-not create visitor pages. For a smaller integration, install the source
-package and import `eventual/astro` or `eventual/astro/EventList.astro`.
+Eventual serves public JSON and iCalendar. The subscription URL is `/_emdash/api/plugins/eventual/calendar`.
 
-The site-wide iCalendar subscription URL is
-`/_emdash/api/plugins/eventual/calendar`.
+Installing the plugin does not create public pages. Adapt the [Astro example](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/tree/main/examples/astro-events), or use the source package's `eventual/astro` helpers and EventList component. Event detail pages can include Schema.org JSON-LD.
 
-## Permissions and data
+## Permissions and privacy
 
-Eventual requests `media:read` and `media:bytes:read` for event images. Events,
-venues, and cancellations use plugin-owned storage; EmDash presents storage
-deletion as a separate uninstall choice.
+The plugin requests `media:read` and `media:bytes:read` for event images, with no outbound hosts. Events, venues, organizers and cancellations use plugin-owned storage. EmDash offers storage deletion separately during uninstall.
+
+Meeting links appear publicly in feeds, calendars and JSON-LD. Do not store private credentials in these links.

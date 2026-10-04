@@ -2,7 +2,7 @@
 
 A general-purpose, sandboxed events plugin for [EmDash CMS](https://emdashcms.com).
 
-Version 0.10.0 requires EmDash 1.0.1 or newer. The minimum is declared in both
+Version 0.11.0 requires EmDash 1.0.1 or newer. The minimum is declared in both
 the npm peer dependency and the plugin release requirements.
 
 ## Features
@@ -117,10 +117,11 @@ Eventual is licensed under the MIT License. See [LICENSE](./LICENSE).
 
 ## MCP tools
 
-The plugin exposes 16 MCP tools under the `eventual__` namespace: list and get
+The plugin exposes 22 MCP tools under the `eventual__` namespace: list and get
 events; create, update, publish, unpublish, and delete events; set or remove a
 recurrence occurrence exception; list, create, update, and delete saved venues;
-inspect saved occurrences; and read or update the default timezone. Create starts with an unpublished
+inspect saved occurrences; read or update the default timezone; list, create and
+update organizers; and preview, import and export transfer records. Create starts with an unpublished
 event. Deletion preserves calendar cancellation tombstones, assigned venues
 cannot be removed, and schedule edits that orphan saved exceptions are
 rejected. Timed MCP values use local `YYYY-MM-DDTHH:mm` wall times with an IANA
@@ -421,7 +422,7 @@ links are public. Clearing `organizerId` returns to the free text fallback.
 JSON export/restore, CSV conversion, limited ICS conversion and draft-first,
 atomic imports are documented in [data transfer](docs/data-transfer.md).
 Host-side helpers are exported as `eventual/transfer` and add no parser to the
-sandbox runtime. Deferred work is recorded in [issue drafts](docs/future-work.md).
+sandbox runtime. Deferred work is recorded in [tracked future work](docs/future-work.md).
 
 CI checks locked dependencies, plugin types/tests, the actual installation archive,
 and the Astro example including its built event page, under UTC and America/New_York.

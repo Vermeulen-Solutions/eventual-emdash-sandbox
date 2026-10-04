@@ -1,7 +1,9 @@
 # Implementation and verification — 2026-10-04
 
 Changes are based on commit `57c8f13`. Verification was completed locally before committing. No plugin was
-published or installed on a live site; no GitHub issues were opened.
+published or installed on a live site. This report describes the implementation
+iteration; subsequent issue creation and release preparation are recorded in
+[the 0.11.0 readiness checklist](release-readiness-0.11.0.md).
 
 ## Completed
 
@@ -86,5 +88,5 @@ development stack still reports 5 findings, including its exact Undici 7.29.0
 dependency. Those modules are excluded from the installation archive. A toolchain
 upgrade and the existing calendar SEQUENCE migration are recorded alongside the
 deliberately deferred RSVP, private access, full recurrence and cache work in
-[future-work.md](future-work.md). Release preparation still requires a version
-bump and an installed-site upgrade test for the new storage collection/index.
+[future-work.md](future-work.md). See the release readiness checklist for the
+subsequent version bump, validation and remaining registry activation checks.

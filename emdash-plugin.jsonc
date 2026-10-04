@@ -11,17 +11,22 @@
 	"description": "Manage events, venues, and public feeds in EmDash with MCP tools and an Astro example offering seven visitor views.",
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
-		"installation": { "file": "./docs/registry-installation.md" }
+		"installation": { "file": "./docs/registry-installation.md" },
+		"changelog": { "file": "./CHANGELOG.md" }
 	},
 	"repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
 	"release": {
 		"requires": { "env:emdash": ">=1.0.1" },
 		"artifacts": {
+			"icon": { "file": "./images/registry/icon-v1.png" },
+			"banner": { "file": "./images/registry/banner-v1.png" },
 			"screenshots": [
-				{ "file": "./images/registry-0.10.0/01-events-admin.png" },
-				{ "file": "./images/registry-0.10.0/02-event-editor.png" },
-				{ "file": "./images/registry-0.10.0/03-event-settings.png" },
-				{ "file": "./images/registry-0.10.0/04-public-events.png" }
+				{ "file": "./images/registry-0.11.0/01-events-admin.jpg" },
+				{ "file": "./images/registry-0.11.0/02-event-editor.jpg" },
+				{ "file": "./images/registry-0.11.0/03-organizers.jpg" },
+				{ "file": "./images/registry-0.11.0/04-event-settings.jpg" },
+				{ "file": "./images/registry-0.11.0/05-public-events.jpg" },
+				{ "file": "./images/registry-0.11.0/06-hybrid-event-detail.jpg" }
 			]
 		}
 	},

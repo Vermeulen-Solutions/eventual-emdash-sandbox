@@ -1,4 +1,4 @@
-# Future work / issue drafts
+# Tracked future work
 
 These items were deliberately excluded from this iteration. They need their own
 design and validation before adding sandbox code or storage commitments.
@@ -42,3 +42,11 @@ design and validation before adding sandbox code or storage commitments.
   change rather than forcing an untested override. These modules are excluded
   from the sandbox archive. The http-cache-semantics lock entries were updated
   in both projects; the Astro example audit is clean.
+
+## GitHub tracking
+
+- [Extension roadmap (#1)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/1)
+- [Calendar SEQUENCE migration (#2)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/2)
+- [Test-stack maintenance (#3)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/3)
+
+Release preparation is recorded in [0.11.0 release notes](release-notes-0.11.0.md).
