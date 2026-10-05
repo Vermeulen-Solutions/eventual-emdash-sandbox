@@ -34,23 +34,27 @@ Prepared tarball SHA-256: `32ea7fbd531d9ee14c2898dd391d71602e86c80ab023516746526
 
 ## Publication steps still outstanding
 
-### Deployment attempt on 2026-10-04
+### Deployment status
 
-Publication was authorized. The installation/changelog profile update was
-applied once, producing PDS CID
-`bafyreifbrjztgozpsmof3kafmxbqrgxk32glygkt5mprpv6i2qwfuc3dem`.
-The listing service's current assessment is passed, with an active
-`listing-passed` label on that exact CID (completed at 20:16:46 UTC).
-However, the aggregator returns HTTP 404 `ListingUnavailable`, serves no
-profile CID, and CLI info reports `public: false`. Publication is blocked
-until the registry serves the current approved profile. No 0.11.0 release
-record was written, and the GitHub release remains a draft. Do not rewrite
-the profile or overwrite a version to work around this state.
+The profile update was applied once on 2026-10-04. Its then-current CID
+`bafyreifbrjztgozpsmof3kafmxbqrgxk32glygkt5mprpv6i2qwfuc3dem` received an
+exact-CID `listing-passed` assessment, but the aggregator initially returned
+`ListingUnavailable`. On 2026-10-05, the aggregator began serving the current
+profile CID `bafyreifbrjztgozpsmof3kafmxbqrgxk32glygkt5mprpv6i2qwfuc3dem`.
+
+The 0.11.0 release was then published to the PDS. Release URI:
+`at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.11.0`;
+release CID `bafyreib4lrtg62z63qi5pqwjpfw273mn5acgwcnqybh5q7v6w2dof5y47u`;
+checksum multihash `bciqbigj4ia652d6tijofqzl3ximo4tga6m4fm2joejdsuh67kjv6ejy`.
+The listing assessment for that exact release CID is currently `pending`; the
+aggregator still reports 0.10.0 as latest and has no 0.11.0 release label.
+The GitHub release remains a draft until the 0.11.0 release itself receives
+an exact-CID `listing-passed` label and becomes available through the
+aggregator. Check with `npm exec emdash-plugin -- info vermeulen.solutions eventual --version 0.11.0 --json`.
 
 1. Review the additive storage contract and the disclosed version-policy choice in the release notes.
-2. The profile update is applied and its exact CID is approved. Wait for the aggregator to serve that CID, then verify PDS/aggregator agreement before publishing.
-3. Publish 0.11.0 once, without overwrite, after publication is authorized.
-4. Verify profile and release labels independently, then test the actual registry-installed 0.10.0-to-0.11.0 upgrade and MCP consent on an isolated site. A configured-plugin upgrade check cannot validate registry download/approval/consent behavior.
-5. Publish the GitHub draft release only when the registry verification is complete.
+2. The approved profile is served by the aggregator, and the 0.11.0 PDS release record has been created once. Wait for the exact release CID to pass and appear as latest in the aggregator; do not overwrite the version.
+3. Verify profile and release labels independently, then test the actual registry-installed 0.10.0-to-0.11.0 upgrade and MCP consent on an isolated site. A configured-plugin upgrade check cannot validate registry download/approval/consent behavior.
+4. Publish the GitHub draft release only when the registry release verification is complete.
 
 The inherited iCalendar SEQUENCE limitation remains tracked in #2. Known test-stack advisories and the Windows workerd workaround remain tracked in #3; neither is included in the sandbox archive.
