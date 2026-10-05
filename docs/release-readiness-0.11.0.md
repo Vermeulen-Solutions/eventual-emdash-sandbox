@@ -36,11 +36,12 @@ Prepared tarball SHA-256: `32ea7fbd531d9ee14c2898dd391d71602e86c80ab023516746526
 
 ### Deployment status
 
-The profile update was applied once on 2026-10-04. Its then-current CID
+The profile update was applied on 2026-10-04. Its initial CID
 `bafyreifbrjztgozpsmof3kafmxbqrgxk32glygkt5mprpv6i2qwfuc3dem` received an
 exact-CID `listing-passed` assessment, but the aggregator initially returned
 `ListingUnavailable`. On 2026-10-05, the aggregator began serving the current
-profile CID `bafyreifbrjztgozpsmof3kafmxbqrgxk32glygkt5mprpv6i2qwfuc3dem`.
+profile CID `bafyreibfzbnnf674xonpa753cnmjnkcrvhbzvblln237dpntb53yoaj5wm`,
+which also has an exact-CID `listing-passed` label.
 
 The 0.11.0 release was then published to the PDS. Release URI:
 `at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.11.0`;
