@@ -1,113 +1,85 @@
-# Eventual Astro event browser
+# Eventual Astro Event Browser Example
 
-This is a site-owned Astro example for a sandboxed Eventual installation. It
-renders seven public views from Eventual's JSON route: compact list, timeline,
-card grid, collapsible daily schedule, horizontal date strip, responsive month
-calendar, and events grouped by location. Event titles link to site-owned detail pages, which include a
-single-event iCalendar download. The EmDash plugin itself stores and returns
-data; it does not add visitor pages or a calendar to an Astro site.
+<p align="center">
+  <img src="../../images/registry-0.11.0/05-public-events.jpg" alt="Astro Event Browser - 7 Public Views" width="90%" />
+</p>
 
-This example depends on the repository root package via `file:../..` and
-imports its shared `eventual/astro` feed client. The `simple-list.astro` page
-shows the reusable `eventual/astro/EventList.astro` component. When copying the
-example elsewhere, replace the local package path with the path to your
-Eventual source checkout.
+An official, site-owned Astro frontend integration showcasing how to render events from [Eventual](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox).
 
-Switch views with the `view` query parameter, for example
-`/events?month=2026-10&view=timeline`. Supported values are `list`, `timeline`,
-`cards`, `schedule`, `dates`, `month`, and `locations`. Every view is rendered
-on the server with Astro and uses ordinary links, forms, and native disclosures;
-there is no visitor JavaScript or calendar dependency.
+This example demonstrates how an Astro website can consume Eventual's public JSON API to deliver **seven fast, responsive, and accessible visitor views** with zero client-side JavaScript.
 
-## Run it locally
+---
 
-Requirements: Node.js 22.12 or newer. This example uses the npm package manager.
+## What It Looks Like
 
+<p align="center">
+  <img src="../../images/registry-0.11.0/06-hybrid-event-detail.jpg" alt="Astro Event Detail Page with Calendar Actions" width="90%" />
+</p>
+
+### Included Views
+Visitors can switch between seven viewing formats via query parameter (e.g., `/events?view=calendar`):
+
+| View | Query Param | Description |
+| :--- | :--- | :--- |
+| **List** *(Default)* | `?view=list` | Chronological agenda list with high-contrast date blocks. |
+| **Timeline** | `?view=timeline` | Vertical timeline with visual event nodes and summary cards. |
+| **Card Grid** | `?view=cards` | Rich card grid displaying event cover images, organizers, and tags. |
+| **Daily Schedule** | `?view=schedule` | Collapsible daily disclosures grouping events per date. |
+| **Date Strip** | `?view=dates` | Horizontal date jump bar for quick navigation across the month. |
+| **Month Calendar** | `?view=month` | Full week-aligned calendar grid on desktop; day-by-day agenda on mobile. |
+| **Locations** | `?view=locations` | Events grouped by physical venue or virtual attendance with map directions. |
+
+In addition, clicking any event opens a **shareable detail page** (`/events/[id]`) with:
+- Schema.org JSON-LD structured data for search engines.
+- Virtual meeting links (Zoom, Google Meet, YouTube Live) and map directions.
+- "Add to Calendar" dropdown (Google Calendar, Outlook, Yahoo Calendar, and Apple `.ics` download).
+- Feed subscription link for live calendar updates via `webcal://`.
+
+---
+
+## Quick Start
+
+### Requirements
+- Node.js `22.12` or newer
+- An active EmDash site with the Eventual plugin installed (or test server)
+
+### 1. Install & Configure
 ```sh
 npm install
 cp .env.example .env
+```
+*(On Windows PowerShell, use `Copy-Item .env.example .env`)*
+
+In your `.env` file, point to your EmDash site:
+```env
+EVENTUAL_API_ORIGIN=http://127.0.0.1:4322
+EVENTUAL_LOCALE=en-GB
+EVENTUAL_DISPLAY_TIMEZONE=Europe/Amsterdam
+```
+
+### 2. Run Locally
+```sh
 npm run dev
 ```
+Navigate to `http://localhost:4321/` in your browser. The root route automatically redirects to `/events`.
 
-On PowerShell, use `Copy-Item .env.example .env` instead of `cp`. Set
-`EVENTUAL_API_ORIGIN` in `.env` to the origin of the EmDash site that has
-Eventual installed, for example `http://127.0.0.1:4322`. Keep the URL's scheme,
-host, and port only; the example adds the public API path. The route must be
-reachable without an EmDash login. It is a public read-only route, so the
-Astro server does not forward cookies or credentials.
+---
 
-The example is SSR rendered with Astro's Node standalone adapter, so changes
-made in EmDash appear on the next page request without rebuilding the site.
-Deploy the generated `dist/server/entry.mjs` with Node or use the adapter's
-standalone output. Static-only hosting requires a separately designed fetch
-strategy and may otherwise freeze the feed at build time.
+## How It Works
 
-`EVENTUAL_LOCALE` controls visitor-facing labels, date formatting, and the
-calendar week start. English, Dutch, and French labels are included; other
-locales use English text while retaining locale-sensitive date and week
-formatting. `EVENTUAL_DISPLAY_TIMEZONE` selects which timezone determines the
-default current month. Each timed event still displays in the event's own IANA
-timezone.
+- **Zero-JavaScript by Default:** Everything—filtering, month navigation, view switching, and calendar disclosures—uses standard HTML links, GET forms, and native `<details>` elements. There are no client-side bundles or heavy calendar libraries.
+- **Server-Side Rendered (SSR):** Built with Astro's `@astrojs/node` adapter in standalone mode. Every page request fetches the latest event data from EmDash, ensuring real-time accuracy without rebuilds.
+- **Accessible & SEO Ready:** Includes semantic landmark regions, skip links, ARIA labels, polite screen reader announcements, and JSON-LD structured data in the document `<head>`.
+- **Localization:** Supports multi-language labels (English, Dutch, French included) and locale-aware week layouts (Monday-first vs Sunday-first).
 
-## Interaction and accessibility
+---
 
-- The API is queried for the selected month. The visual grid also requests the
-  adjacent dates needed to make complete locale-aligned weeks.
-- All seven views, month navigation, retry, and category filtering work
-  as ordinary links and GET forms without browser JavaScript.
-- The category filter accepts a free-form label for categories not present in
-  the current month; browser suggestions show labels used by the visible month.
-- On wide screens the month view is a locale-aligned week grid. On narrow
-  screens it becomes a chronological day agenda.
-- Each date's native disclosure shows every event on that day; busy dates do
-  not clip events. Its accessible name includes the date and event count. The
-  full list view always exposes all event details.
-- Native links and disclosures are keyboard operable, focus is visible, the
-  localized skip link moves focus to the page's main content, the page has
-  landmarks, headings and time elements are semantic, and errors/empty states
-  are announced. The server renders complete pages, so
-  the browser uses its regular document-loading indicator rather than a
-  client-side loading panel.
-- All-day end dates are inclusive. Timed start/end instants are formatted in
-  the event's named timezone. Multi-day occurrences appear on each local date
-  they span.
-- Event detail pages are served at `/events/{occurrence-id}`. Their `from` and
-  `through` query values identify the occurrence's own local date range, so a
-  shared link resolves to the same occurrence in a series.
-- The detail page's add-to-calendar menu opens a prefilled, single-occurrence
-  Google Calendar, Outlook, or Yahoo Calendar event, or downloads that
-  occurrence as iCalendar. A separate subscription link uses `webcal://` with
-  the plugin's complete published calendar feed for live updates.
-- The `.ics` download uses a stable occurrence ID, UTC instants for timed
-  events, and an exclusive end date for inclusive all-day events. It records
-  the event's IANA timezone in an `X-EVENTUAL-TIMEZONE` calendar property.
-  `LAST-MODIFIED` and `SEQUENCE` are based on the source event's `updatedAt`,
-  so a refreshed download keeps the same UID and carries a newer revision.
-  This is a download, not a live subscription. The separate plugin-owned
-  iCalendar subscription feed carries cancellation tombstones for published
-  event occurrences.
-- Event descriptions render the documented Markdown subset (headings, emphasis,
-  lists, and HTTP(S) links) with raw HTML escaped. External event/directions links
-  accept HTTP(S) only. External images must use HTTPS; relative EmDash media
-  links use the configured CMS origin. Eventual supplies directions links but
-  does not provide map embeds.
-
-Text labels live in `src/lib/messages.ts` so a site can add translations without
-editing layout code. The example does not use FullCalendar.
-
-## Commands
+## Available Scripts
 
 ```sh
-npm run check
-npm test
-npm run build
+npm run check       # Run Astro diagnostics and TypeScript validation
+npm test            # Run Vitest unit tests (calendar logic, timezone math, routes)
+npm run test:page   # Build and verify rendered event HTML against a mock CMS
+npm run build       # Build SSR server production bundle
+npm run preview     # Preview built standalone server
 ```
-
-`npm run check` runs Astro's diagnostics and TypeScript checks, `npm test` runs
-focused route-adapter, calendar, detail-link, date-range, and iCalendar tests,
-and `npm run build` verifies the SSR site output. The plugin package has its
-own validation and test commands in the repository root.
-
-Run `npm run test:page` to build the site and check the rendered event page against
-an isolated local CMS fixture. This verifies JSON-LD escaping, hybrid locations,
-relative image URLs, meeting links, and localized lifecycle notices.
