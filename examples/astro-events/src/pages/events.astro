@@ -20,9 +20,10 @@ import { messagesForLocale } from "../lib/messages";
 import EventAgendaItem from "../components/EventAgendaItem.astro";
 import EventCard from "../components/EventCard.astro";
 import SiteLayout from "../layouts/SiteLayout.astro";
+import { EVENTUAL_API_ORIGIN, EVENTUAL_DISPLAY_TIMEZONE, EVENTUAL_LOCALE } from "astro:env/server";
 
-const locale = normalizeLocale(process.env.EVENTUAL_LOCALE || "en-GB");
-const timeZone = normalizeTimeZone(process.env.EVENTUAL_DISPLAY_TIMEZONE || "UTC");
+const locale = normalizeLocale(EVENTUAL_LOCALE);
+const timeZone = normalizeTimeZone(EVENTUAL_DISPLAY_TIMEZONE);
 const now = new Date();
 const dateParts = new Intl.DateTimeFormat("en", {
 	timeZone,
@@ -35,7 +36,7 @@ const { month, view, category } = state;
 const labels = messagesForLocale(locale);
 const visibleRange = monthDateRange(month);
 const requestRange = view === "month" ? calendarRange(month, locale) : visibleRange;
-const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
+const apiOrigin = EVENTUAL_API_ORIGIN || Astro.url.origin;
 let feedEvents: PublicEvent[] = [];
 let feedError = false;
 try {
@@ -43,6 +44,7 @@ try {
 	feedEvents = feed.events;
 } catch {
 	feedError = true;
+	Astro.response.status = 502;
 }
 
 const events = feedEvents.filter((event) => eventStartDate(event) <= visibleRange.through && eventEndDate(event) >= visibleRange.from);

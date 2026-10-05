@@ -3,15 +3,15 @@ import SiteLayout from "../../layouts/SiteLayout.astro";
 import { calendarFeedUrl, displayDate, eventDetailsUrl, eventEndDate, eventIdFromRoute, eventStartDate, eventTimeRange, googleCalendarUrl, normalizeLocale, outlookCalendarUrl, safeHttpUrl, safeImageUrl, yahooCalendarUrl } from "../../lib/calendar";
 import { fetchPublicFeed, eventToJsonLd, serializeJsonLd, type PublicEvent } from "../../lib/feed";
 import { eventRange } from "../../lib/event-range";
+import { descriptionExcerpt } from "../../lib/markdown";
 import { messagesForLocale } from "../../lib/messages";
 import EventDescription from "../../components/EventDescription.astro";
+import { EVENTUAL_API_ORIGIN, EVENTUAL_LOCALE } from "astro:env/server";
 
-export const prerender = false;
-
-const locale = normalizeLocale(process.env.EVENTUAL_LOCALE || "en-GB");
+const locale = normalizeLocale(EVENTUAL_LOCALE);
 const labels = messagesForLocale(locale);
 const eventId = eventIdFromRoute(Astro.params.id);
-const apiOrigin = process.env.EVENTUAL_API_ORIGIN || Astro.url.origin;
+const apiOrigin = EVENTUAL_API_ORIGIN || Astro.url.origin;
 const range = eventRange(Astro.url.searchParams);
 let event: PublicEvent | undefined;
 let feedError = false;
@@ -26,6 +26,7 @@ if (range) {
 Astro.response.status = feedError ? 502 : event ? 200 : 404;
 
 const title = event?.title ?? labels.eventDetails;
+const eventDescription = event?.description ? descriptionExcerpt(event.description) : undefined;
 const calendarUrl = event ? eventDetailsUrl(event, "/events", ".ics") : "";
 const googleUrl = event ? googleCalendarUrl(event) : "";
 const outlookUrl = event ? outlookCalendarUrl(event) : "";
@@ -38,7 +39,10 @@ const eventVirtualUrl = event ? safeHttpUrl(event.virtualUrl ?? "") : "";
 const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : true;
 ---
 
-<SiteLayout title={`${title} · ${labels.title}`} locale={locale}>
+<SiteLayout title={`${title} · ${labels.title}`} locale={locale} description={eventDescription}>
+	{event && (
+		<script slot="head" type="application/ld+json" set:html={serializeJsonLd(eventToJsonLd(event, { siteUrl: apiOrigin }))} />
+	)}
 	<main class="event-browser event-detail" id="main-content" tabindex="-1">
 		<p><a class="back-link" href="/events">← {labels.backToEvents}</a></p>
 		{feedError ? (
@@ -48,7 +52,6 @@ const eventSameDay = event ? eventStartDate(event) === eventEndDate(event) : tru
 			</section>
 		) : event ? (
 			<>
-				<script type="application/ld+json" set:html={serializeJsonLd(eventToJsonLd(event, { siteUrl: apiOrigin }))} />
 				{event.status && !["published", "draft"].includes(event.status) && (
 					<p class="notice notice--alert"><strong>{labels.status}:</strong> {labels.eventStatuses[event.status]}</p>
 				)}

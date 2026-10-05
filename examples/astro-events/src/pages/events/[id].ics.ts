@@ -2,15 +2,14 @@ import type { APIRoute } from "astro";
 import { eventIdFromRoute, formatICalendar } from "../../lib/calendar";
 import { eventRange } from "../../lib/event-range";
 import { fetchPublicFeed } from "../../lib/feed";
-
-export const prerender = false;
+import { EVENTUAL_API_ORIGIN } from "astro:env/server";
 
 export const GET: APIRoute = async ({ params, url }) => {
 	const range = eventRange(url.searchParams);
 	if (!range) return new Response("A valid event date range is required.", { status: 400 });
 
 	try {
-		const apiOrigin = process.env.EVENTUAL_API_ORIGIN || url.origin;
+		const apiOrigin = EVENTUAL_API_ORIGIN || url.origin;
 		const eventId = eventIdFromRoute(params.id);
 		const event = (await fetchPublicFeed(apiOrigin, range.from, range.through)).events
 			.find((item) => item.id === eventId);

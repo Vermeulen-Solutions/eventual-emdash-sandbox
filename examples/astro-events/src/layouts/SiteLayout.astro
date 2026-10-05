@@ -5,10 +5,12 @@ import { messagesForLocale } from "../lib/messages";
 interface Props {
 	title: string;
 	locale: string;
+	description?: string;
 }
 
-const { title, locale } = Astro.props;
+const { title, locale, description } = Astro.props;
 const labels = messagesForLocale(locale);
+const metaDescription = description || labels.browseIntro;
 ---
 
 <!doctype html>
@@ -17,8 +19,9 @@ const labels = messagesForLocale(locale);
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="color-scheme" content="light" />
-		<meta name="description" content="Browse upcoming events." />
+		<meta name="description" content={metaDescription} />
 		<title>{title}</title>
+		<slot name="head" />
 	</head>
 	<body>
 		<a class="skip-link" href="#main-content">{labels.skipToContent}</a>
