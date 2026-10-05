@@ -1,6 +1,6 @@
 ## Install and upgrade
 
-Requires EmDash 1.0.1+ with a sandbox runner. Install Eventual from the Registry. Admin users with `plugins:manage` get Events, Venues, Organizers and Settings pages.
+Requires EmDash 1.0.1+ and a sandbox runner. Install from the Registry. Editors (`content:edit_any`) can manage Eventual events, venues, organizers and settings; MCP tools and plugin installation remain admin-only.
 
 Before upgrading, back up the database, media and encryption key. Version 0.11.0 adds organizer storage and an event organizer index. Review the updated storage contract. Existing events remain readable with compatible defaults.
 

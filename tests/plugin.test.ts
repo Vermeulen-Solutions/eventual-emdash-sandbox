@@ -9,6 +9,7 @@ import {
 	type PluginRuntimeTestHost,
 	type PluginTestHost,
 } from "@emdash-cms/plugin-test";
+import plugin from "../src/plugin";
 
 // Runtime-host secret-setting tests need a disposable encryption key. Keep it
 // process-local; it is never written to the project or reused for deployments.
@@ -92,6 +93,13 @@ async function createVenueThroughAdmin(testHost: PluginTestHost, name: string, a
 }
 
 describe("sandboxed Eventual plugin", () => {
+	it("allows EmDash Editors to use Eventual admin while keeping MCP management admin-only", () => {
+		const admin = plugin.routes?.admin as unknown as { permission?: string };
+		const createEvent = plugin.routes?.["mcp/events/create"] as unknown as { permission?: string };
+		expect(admin.permission).toBe("content:edit_any");
+		expect(createEvent.permission).toBe("plugins:manage");
+	});
+
 	it("uses paged Block Kit tables with working event and venue row actions", async () => {
 		host = await createPluginTestHost();
 		const eventId = await createEventThroughAdmin(host, { title: "Table event" });

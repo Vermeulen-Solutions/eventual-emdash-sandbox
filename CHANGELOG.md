@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.1
+
+- Allow EmDash Editors to manage Eventual events, venues, organizers, and settings through the Editor-level `content:edit_any` permission. MCP management tools and plugin installation remain restricted to administrators.
+
 ## 0.11.0
 
 - Physical, virtual and hybrid attendance, validated HTTP(S) meeting URLs, and draft, published, cancelled, postponed and rescheduled event states.

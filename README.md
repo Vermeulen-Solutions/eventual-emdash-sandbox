@@ -127,8 +127,11 @@ cannot be removed, and schedule edits that orphan saved exceptions are
 rejected. Timed MCP values use local `YYYY-MM-DDTHH:mm` wall times with an IANA
 timezone.
 
-All MCP routes require the `plugins:manage` permission. An administrator must
-enable the desired tools in the EmDash MCP settings before agents can call
+Eventual's admin pages require `content:edit_any`, so EmDash Editors and
+administrators can create, update, publish, and delete Eventual events and
+manage its venues, organizers, and settings. This access is limited to
+Eventual's own pages. MCP routes still require `plugins:manage`; an
+administrator must enable the desired tools in the EmDash MCP settings before agents can call
 them. Read tools are marked non-destructive; changes and exception operations
 are marked destructive for host approval handling.
 
@@ -382,9 +385,10 @@ source of truth. **Bump major** for breaking changes, **bump minor**
 for new routes or hooks, **bump patch** for fixes.
 
 You MUST bump version whenever you change `capabilities`, `allowedHosts`,
-or `storage` in the manifest. Installed users have consented to the
-old trust contract; a change without a version bump would let new
-behaviour slip past consent.
+or `storage` in the manifest. Bump the version when changing route permissions
+or expanding who can invoke plugin functionality as well. Installed users have
+consented to the old trust contract; a change without a version bump would let
+new behaviour slip past consent.
 
 ## Event format, publication, and structured data
 

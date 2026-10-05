@@ -14,7 +14,7 @@ const plugin: SandboxedPlugin = {
 		...mcpRoutes,
 		...transferRoutes,
 		admin: {
-			permission: "plugins:manage",
+			permission: "content:edit_any",
 			handler: async (routeCtx, ctx) => handleAdmin(routeCtx.input, ctx),
 		},
 		publicEvents: pluginRoute({
