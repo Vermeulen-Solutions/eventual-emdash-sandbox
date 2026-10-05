@@ -12,7 +12,7 @@
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
 		"installation": { "file": "./docs/registry-installation.md" },
-		"changelog": { "file": "./CHANGELOG.md" }
+		"changelog": { "file": "./docs/registry-changelog.md" }
 	},
 	"repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
 	"release": {
