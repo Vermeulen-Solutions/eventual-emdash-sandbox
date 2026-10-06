@@ -7,6 +7,8 @@ export interface PublicVenue {
 }
 
 export interface PublicEvent {
+	slug?: string;
+	publicUrl?: string;
 	id: string;
 	updatedAt?: string;
 	title: string;
@@ -27,6 +29,8 @@ export interface PublicEvent {
 	categories: string[];
 	venue: PublicVenue | null;
 	directionsUrl: string;
+	locale?: string;
+	translationGroup?: string;
 }
 
 export { eventToJsonLd, serializeJsonLd, type EventJsonLdOptions } from "./schema";
@@ -51,6 +55,7 @@ export async function fetchPublicFeed(
 	from: string,
 	through: string,
 	category = "",
+	options: {locale?:string;strict?:boolean} = {},
 ): Promise<PublicFeed> {
 	let url: URL;
 	try {
@@ -64,6 +69,8 @@ export async function fetchPublicFeed(
 	url.searchParams.set("from", from);
 	url.searchParams.set("through", through);
 	if (category) url.searchParams.set("category", category);
+	if (options.locale) url.searchParams.set('locale',options.locale);
+	if (options.strict !== undefined) url.searchParams.set('strict',String(options.strict));
 
 	let response: Response;
 	try {
@@ -102,6 +109,7 @@ export async function fetchPublicFeed(
 
 function isPublicEvent(value: unknown): value is PublicEvent {
 	if (!isRecord(value)) return false;
+	if (['slug','publicUrl','locale','translationGroup'].some(key=>value[key]!==undefined && typeof value[key]!=='string'))return false;
 	if (!(typeof value.id === "string"
 		&& typeof value.title === "string"
 		&& typeof value.description === "string"
@@ -159,3 +167,19 @@ function isTimeZone(value: string): boolean {
 		return false;
 	}
 }
+
+export {
+	portableTextToPlainText,
+	plainTextToPortableText,
+	type PortableTextBlock,
+} from "../src/domain/portable-text";
+export {
+	normalizeVenueRecord,
+	type NormalizedVenue,
+} from "../src/domain/venue-adapter";
+export {
+	expandEventOccurrences,
+	nativeEntryToEventRecord,
+	eventRecordToPublicEvent,
+	type ExpandOccurrencesOptions,
+} from "../src/domain/event-expansion";

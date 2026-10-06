@@ -1,6 +1,6 @@
 {
 	"name": "eventual",
-	"version": "0.11.1",
+	"version": "0.12.0",
 	"license": "MIT",
 	"private": true,
 	"type": "module",
@@ -12,6 +12,7 @@
 			"types": "./dist/index.d.mts"
 		},
 		"./sandbox": "./dist/plugin.mjs",
+		"./schema": "./src/schema/blueprint.ts",
 		"./astro": "./astro/feed.ts",
 		"./astro/schema": "./astro/schema.ts",
 		"./astro/EventList.astro": "./astro/EventList.astro",
@@ -21,10 +22,17 @@
 		}
 	},
 	"files": [
-		"dist",
+		"dist/*.mjs",
+		"dist/*.d.mts",
 		"emdash-plugin.jsonc",
 		"astro",
-		"transfer"
+		"transfer",
+		"src/domain",
+		"src/schema",
+		"src/storage.ts",
+		"src/public-event.ts",
+		"docs/native-modernization.md",
+		"scripts/export-native-schema.mjs"
 	],
 	"scripts": {
 		"validate": "emdash-plugin validate",
@@ -38,6 +46,7 @@
 		"release:setup": "emdash-plugin release setup",
 		"budget": "node scripts/bundle-budget.mjs",
 		"test:tooling": "node --test scripts/*.test.mjs",
+		"test:package": "node scripts/verify-packed-astro.mjs",
 		"profile": "vitest run --config vitest.profile.config.ts"
 	},
 	"peerDependencies": {
@@ -47,6 +56,7 @@
 		"@emdash-cms/plugin-cli": "0.13.1",
 		"@emdash-cms/plugin-test": "0.2.6",
 		"emdash": "1.0.1",
+		"ical.js": "^2.2.1",
 		"typescript": "^5.9.0",
 		"vitest": "^4.1.0"
 	},

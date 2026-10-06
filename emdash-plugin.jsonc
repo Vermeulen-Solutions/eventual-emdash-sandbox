@@ -8,7 +8,7 @@
 	"author": { "name": "Jaap Vermeulen", "email": "jaap.vermeulen@gmail.com" },
 	"security": { "email": "jaap.vermeulen@gmail.com" },
 	"name": "Eventual",
-	"description": "Manage events, venues, and public feeds in EmDash with MCP tools and an Astro example offering seven visitor views.",
+	"description": "Native multilingual event collections with recurrence validation, iCalendar feeds, Astro helpers and resumable legacy migration.",
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
 		"installation": { "file": "./docs/registry-installation.md" },
@@ -21,10 +21,6 @@
 			"icon": { "file": "./images/registry/icon-v1.png" },
 			"banner": { "file": "./images/registry/banner-v1.png" },
 			"screenshots": [
-				{ "file": "./images/registry-0.11.0/01-events-admin.jpg" },
-				{ "file": "./images/registry-0.11.0/02-event-editor.jpg" },
-				{ "file": "./images/registry-0.11.0/03-organizers.jpg" },
-				{ "file": "./images/registry-0.11.0/04-event-settings.jpg" },
 				{ "file": "./images/registry-0.11.0/05-public-events.jpg" },
 				{ "file": "./images/registry-0.11.0/06-hybrid-event-detail.jpg" }
 			]
@@ -36,7 +32,7 @@
 	// KV, and route/hook registration. Changing these between
 	// releases requires a version bump because installed
 	// users have consented to the old contract.
-	"capabilities": ["media:read", "media:bytes:read"],
+	"capabilities": ["media:read", "media:bytes:read", "content:read", "content:write", "content:publish", "content:revisions:read", "schema:read", "hooks.content-policy:register"],
 	"allowedHosts": [],
 	"storage": {
 		"events": { "indexes": ["start", "published", ["published", "start"], "venueId", "organizerId"] },
@@ -49,21 +45,18 @@
 			{ "id": "upcoming-events", "title": "Upcoming events", "size": "half" }
 		],
 		"pages": [
-			{ "path": "/events", "label": "Events", "icon": "calendar" },
-			{ "path": "/venues", "label": "Venues", "icon": "map-pin" },
-			{ "path": "/organizers", "label": "Organizers", "icon": "users" },
-			{ "path": "/settings", "label": "Settings", "icon": "settings" }
+			{ "path": "/events", "label": "Eventual", "icon": "calendar" }
 		],
 		"settingsSchema": {
 			"defaultTimezone": {
-				"label": "Default timezone for new events",
-				"description": "IANA timezone used to initialize new events. Each event can use its own timezone.",
+				"label": "Legacy MCP default timezone",
+				"description": "Used by legacy MCP event creation. Native collections use the timezone field's schema default.",
 				"type": "string",
 				"default": "UTC"
 			},
 			"timeFormat": {
-				"label": "Admin time display",
-				"description": "12-hour or 24-hour formatting for Eventual's EmDash admin displays.",
+				"label": "Legacy time display",
+				"description": "Retained for legacy settings compatibility. Native editing and Astro rendering use their own locale settings.",
 				"type": "select",
 				"options": [
 					{ "value": "24-hour", "label": "24-hour (18:30)" },

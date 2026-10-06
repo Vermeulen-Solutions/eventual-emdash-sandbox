@@ -1,6 +1,6 @@
 import { pluginResponse, pluginRoute, type SandboxedPlugin } from "emdash/plugin";
 
-import { handleAdmin } from "./admin";
+import { handleAdmin } from "./native-admin";
 import { handlePublicEvents } from "./routes/public-events";
 import { handlePublicEventImage } from "./routes/public-media";
 import { handleCalendarFeed } from "./routes/calendar-feed";
@@ -8,8 +8,15 @@ import { mcpTools } from "./mcp-schemas";
 import { mcpRoutes } from "./mcp";
 import { transferRoutes } from './transfer';
 import { EventScanLimitError } from "./storage";
+import { handleContentBeforeSave, handleContentBeforeDelete, handleContentBeforePublish } from "./hooks/content-hooks";
 
 const plugin: SandboxedPlugin = {
+	hooks: {
+		"content:beforeSave": handleContentBeforeSave,
+		"content:beforeDelete": handleContentBeforeDelete,
+		"content:beforePublish": handleContentBeforePublish,
+		"content:beforeSchedule": handleContentBeforePublish,
+	},
 	routes: {
 		...mcpRoutes,
 		...transferRoutes,
@@ -40,17 +47,27 @@ const plugin: SandboxedPlugin = {
 			cacheControl: "public, max-age=300",
 			handler: async (routeCtx, ctx) => {
 				try {
+					const url = new URL(routeCtx.request.url, "http://localhost");
+					const locale = url.searchParams.get("locale") || undefined;
+					try { if (locale) Intl.getCanonicalLocales(locale); } catch {
+						return pluginResponse({status:400,headers:{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'},body:{kind:'text',value:'Invalid locale.'}});
+					}
+					const strict = url.searchParams.get("strict") === "true";
+					const category = url.searchParams.get("category") || undefined;
+					const host = url.host || "localhost";
 					return pluginResponse({
 						status: 200,
 						headers: { "content-type": "text/calendar; charset=utf-8" },
-						body: { kind: "text", value: await handleCalendarFeed(ctx, new URL(routeCtx.request.url).host) },
+						body: {
+							kind: "text",
+							value: await handleCalendarFeed(ctx, host, { locale, strict, category }),
+						},
 					});
 				} catch (error) {
-					if (!(error instanceof EventScanLimitError)) throw error;
 					return pluginResponse({
 						status: 503,
 						headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
-						body: { kind: "text", value: error.message },
+						body: { kind: "text", value: error instanceof EventScanLimitError ? error.message : 'Calendar feed unavailable; retry later.' },
 					});
 				}
 			},

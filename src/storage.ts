@@ -24,6 +24,13 @@ export interface CalendarCancellation {
 	allDay: boolean;
 	timezone: string;
 	cancelledAt: string;
+	translationGroup?: string;
+	calendarUid?: string;
+	calendarSequence?: number;
+	locale?: string;
+	locales?: string[];
+	categories?: string[];
+	feedCategory?: string;
 }
 
 function eventCollection(ctx: EventualContext): StorageCollection<EventRecord> {
@@ -107,6 +114,9 @@ async function syncCalendarCancellations(
 				allDay: occurrence.allDay,
 				timezone: occurrence.timezone,
 				cancelledAt,
+				translationGroup: occurrence.translationGroup ?? previous!.translationGroup,
+				categories: occurrence.categories,
+				locales: occurrence.locale ? [occurrence.locale.toLowerCase()] : undefined,
 			},
 		})));
 	}
@@ -119,7 +129,9 @@ export async function listCalendarCancellations(ctx: EventualContext): Promise<C
 	do {
 		const page = await cancellationCollection(ctx).query({ limit: 100, cursor });
 		result.push(...page.items.map((item) => item.data));
-		cursor = page.cursor;
+		if (page.hasMore && (!page.cursor || page.cursor===cursor)) throw new Error('Incomplete cancellation cursor.');
+		if (result.length > MAX_EVENT_SCAN) throw new EventScanLimitError(MAX_EVENT_SCAN);
+		cursor = page.hasMore ? page.cursor : undefined;
 	} while (cursor);
 	return result;
 }
@@ -164,6 +176,7 @@ export async function listEvents(
 	// Timed events can fall on the following UTC date for a local date at the
 	// end of the requested window. Keep a one-day cushion for that offset.
 	const upperBound = options.through ? new Date(Date.parse(`${options.through}T00:00:00Z`) + 2 * 86_400_000).toISOString().slice(0, 10) : undefined;
+	const seen = new Set<string>();
 	do {
 		const page = await eventCollection(ctx).query({
 			where: {
@@ -176,6 +189,8 @@ export async function listEvents(
 		});
 		result.push(...page.items.map((item) => item.data));
 		if (page.hasMore && !page.cursor) throw new Error("Event storage returned an incomplete page without a cursor.");
+		if (page.hasMore && seen.has(page.cursor!)) throw new Error('Event storage returned a repeated cursor.');
+		if (page.cursor) seen.add(page.cursor);
 		cursor = page.hasMore ? page.cursor : undefined;
 		if (cursor && result.length >= maxItems) throw new EventScanLimitError(maxItems);
 	} while (cursor);
@@ -192,8 +207,10 @@ export async function listVenues(ctx: EventualContext): Promise<VenueRecord[]> {
 			cursor,
 		});
 		result.push(...page.items.map((item) => item.data));
-		cursor = page.cursor;
-	} while (cursor && result.length < 5000);
+		if (page.hasMore && (!page.cursor || page.cursor===cursor)) throw new Error('Incomplete venue cursor.');
+		if (result.length > 5000) throw new EventScanLimitError(5000);
+		cursor = page.hasMore ? page.cursor : undefined;
+	} while (cursor);
 	return result;
 }
 

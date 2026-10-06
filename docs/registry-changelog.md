@@ -1,24 +1,22 @@
+## 0.12.0 (unreleased)
+
+- Native multilingual blueprints with Portable Text, explicit all-day civil dates, localized occurrence copy and core scheduling.
+- Replace the custom editor with collection links; gate legacy CRUD/imports when events is installed, including an empty collection.
+- Production-contract lifecycle validation, paginated native feeds, media URLs and localized Astro rendering.
+- Stable translation/migration UIDs, logical RFC SEQUENCE, committed-state locale/category cancellations, parser checks and bounded work.
+- Non-destructive migration with structural preview, generated IDs, publication preservation, dependency validation, recovery and resumable batches.
+- Package Astro's transitive sources and keep the sandbox bundle within installation budgets.
+
+Requires EmDash 1.0.1+. Adds content/publication/revision/schema/policy capabilities. Review native setup before applying schemas: installation changes feed authority. Legacy data is retained. This local version has not been published.
+
 ## 0.11.1
 
-- Allow EmDash Editors to manage Eventual events, venues, organizers, and settings through the Editor-level `content:edit_any` permission. MCP management tools and plugin installation remain restricted to administrators.
+Editor-level admin permission; MCP management remains administrator-only.
 
 ## 0.11.0
 
-- Physical, virtual and hybrid attendance, validated HTTP(S) meeting URLs, and draft, published, cancelled, postponed and rescheduled event states.
-- Saved organizers, structured addresses, bounded schedule history and safer draft duplication.
-- iCalendar lifecycle states and virtual locations; headless Schema.org Event output with safe JSON-LD embedding and matching Astro detail pages.
-- Strict MCP inputs without bundling Zod schema code; smaller sandbox bundle with automated size budgets.
-- Paginated event, venue and organizer exports; bounded, previewable, insert-only imports with retry protection. Host-side CSV and limited ICS conversion.
-- Development and production integration checks, timezone coverage and registry icon/banner assets.
+Attendance/lifecycle states, saved organizers, structured addresses, native media, schedule history, transfer tools, calendar states and Astro/JSON-LD helpers. Requires EmDash 1.0.1+.
 
-Requires EmDash 1.0.1+. Adds organizer storage and an event organizer index. Back up before upgrading and review the revised storage contract and new MCP tools. Public meeting URLs are public in feeds, calendars and JSON-LD. Transfer tools do not replace a full site backup.
+## Earlier releases
 
-## 0.10.0
-
-- Event list publication/date filters that persist during pagination.
-- Stale event and venue editing detection.
-- Public feed and Astro integration guidance in Settings.
-
-## Earlier versions
-
-See GitHub releases and CHANGELOG.md for complete history from 0.5.0+.
+See CHANGELOG.md and GitHub releases for the complete history.

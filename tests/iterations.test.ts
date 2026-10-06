@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest';
 import { createPluginRuntimeTestHost } from '@emdash-cms/plugin-test';
-import { validateBlockResponse, type BlockResponse } from '@emdash-cms/blocks/server';
 import { EMPTY_EVENT_DRAFT, type EventRecord, type OrganizerRecord } from '../src/domain/event';
 import { eventToDraft, prepareEventData, duplicateEventDraft } from '../src/domain/event-data';
 import { withScheduleHistory } from '../src/domain/schedule-history';
@@ -42,24 +41,17 @@ it('maps structured address and public organizer metadata, omitting empty fields
   expect(record.previousStartDate).toBe('2026-10-09');
 });
 
-it('manages organizers through valid admin blocks and guards concurrent edits', async () => {
+it('retains legacy organizer management and guards concurrent edits', async () => {
   const h = await createPluginRuntimeTestHost();
   try {
-    const invoke = (input: unknown) => h.transport.invokeRoute('admin', input) as Promise<BlockResponse>;
-    const page = await invoke({ type: 'block_action', action_id: 'new-organizer' });
-    expect(validateBlockResponse(page, {})).toEqual({ valid: true, errors: [] });
-    const form = page.blocks.find(block => block.type === 'form')!;
-    const saved = await invoke({ type: 'form_submit', action_id: 'save-organizer', block_id: form.block_id, values: { name: 'Association', website: 'https://example.com', contactUrl: 'https://example.com/contact' } });
-    expect(saved.toast?.type).toBe('success');
-    expect(validateBlockResponse(saved, {})).toEqual({ valid: true, errors: [] });
+    const saved=await h.transport.invokeRoute('mcp/organizers/create',{name:'Association',website:'https://example.com',contactUrl:'https://example.com/contact'});
+    expect(saved).toMatchObject({ok:true});
     const list = await h.transport.invokeRoute('mcp/organizers/list', {}) as { organizers: OrganizerRecord[] };
     const organizer = list.organizers[0]!;
     await expect(h.transport.invokeRoute('mcp/organizers/update', { id: organizer.id, expectedUpdatedAt: 'old', patch: { name: 'Lost edit' } })).resolves.toMatchObject({ ok: false });
     await expect(h.transport.invokeRoute('mcp/organizers/update', { id: organizer.id, expectedUpdatedAt: organizer.updatedAt, patch: { website: 'javascript:alert(1)' } })).resolves.toMatchObject({ ok: false });
     const created = await h.transport.invokeRoute('mcp/events/create', { title: 'Meet', start: '2026-10-10', end: '2026-10-10', allDay: true, organizerId: organizer.id, organizer: 'Fallback' }) as { event: EventRecord };
-    const editor = await invoke({ type: 'block_action', action_id: 'edit-event', value: created.event.id });
-    expect(validateBlockResponse(editor, {})).toEqual({ valid: true, errors: [] });
-    expect(JSON.stringify(editor)).toContain(organizer.id);
+    expect(created.event.organizerId).toBe(organizer.id);
     await h.transport.invokeRoute('mcp/events/publish', { id: created.event.id });
     const updated = await h.transport.invokeRoute('mcp/events/update', { id: created.event.id, patch: { start: '2026-10-11', end: '2026-10-11', status: 'rescheduled' } }) as { event: EventRecord };
     expect(updated.event.previousStartDate).toBe('2026-10-10');

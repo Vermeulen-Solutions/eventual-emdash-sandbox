@@ -24,6 +24,7 @@ jobs:
       - run: npm run profile
       - run: npm run bundle
       - run: npm run budget
+      - run: npm run test:package
       - run: npm ci
         working-directory: examples/astro-events
       - run: npm run check && npm test && npm run test:page

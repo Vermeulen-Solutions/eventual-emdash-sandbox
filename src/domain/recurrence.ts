@@ -224,6 +224,7 @@ export function expandEventsInDateRange(
   for (const event of events) {
     if (event.recurrence) expanded.push(...expandRecurringEvent(event, from, through));
     else if (overlaps(event, from, through)) expanded.push(event);
+    if (expanded.length > 10000) throw new Error('Occurrence limit exceeded; narrow the date range.');
   }
   return expanded.sort((left, right) => left.start.localeCompare(right.start));
 }

@@ -8,7 +8,8 @@ interface JsonSchema {
 	type?: "object" | "string" | "integer" | "number" | "boolean" | "array" | "null";
 	properties?: Record<string, JsonSchema>;
 	required?: string[];
-	additionalProperties?: boolean;
+	additionalProperties?: boolean | JsonSchema;
+	maxProperties?: number;
 	minLength?: number;
 	maxLength?: number;
 	minimum?: number;
@@ -192,6 +193,14 @@ const savedSchemas = { events: savedEvent, venues: obj({ ...venueFields, ...time
 // validate each against the complete collection-specific schema below.
 const transferInput = obj({ collection: enm(['events', 'venues', 'organizers']), source: str(1, 200), mode: enm(['copy', 'restore']), records: arr(obj({ sourceId: str(1, 200), data: { type: 'object', additionalProperties: true } }, ['sourceId', 'data']), 10, 1) }, ['collection', 'source', 'records']);
 const exportRecords = obj({ collection: enm(['events', 'venues', 'organizers']), cursor: str(1, 2000), limit: int(1, 10) }, ['collection']);
+const migrateToNative = obj({
+	locale: str(1, 20),
+	venueCollection: str(1, 100),
+	dryRun: bool,
+	cursor: str(1, 4000),
+	limit: int(1, 100),
+	venueMapping: { type: "object", additionalProperties: str(1,200), maxProperties:1000 },
+});
 
 // EmDash 1.0.1's declaration only lists Zod, but the installed CLI and host
 // also accept JSON Schema. Keep this compatibility assertion at the boundary;
@@ -206,6 +215,7 @@ export const mcpSchemas = {
 	getSettings: noInput, updateSettings,
 	listOrganizers: noInput, createOrganizer, updateOrganizer,
 	previewImport: transferInput, importRecords: transferInput, exportRecords,
+	migrateToNative,
 };
 
 /** Validate the JSON Schema vocabulary used by our tool definitions. */
@@ -226,8 +236,9 @@ function matches(schema: JsonSchema, value: unknown): boolean {
 		case "object": {
 			if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 			const record = value as Record<string, unknown>;
+			if (schema.maxProperties !== undefined && Object.keys(record).length > schema.maxProperties) return false;
 			const properties = schema.properties;
-			if (!properties) return schema.additionalProperties === true;
+			if (!properties) return schema.additionalProperties === true || typeof schema.additionalProperties==='object' && Object.values(record).every(value=>matches(schema.additionalProperties as JsonSchema,value));
 			return (schema.required ?? []).every((key) => Object.hasOwn(record, key) && record[key] !== undefined)
 				&& Object.keys(record).every((key) => Object.hasOwn(properties, key) && (record[key] === undefined || matches(properties[key]!, record[key])));
 		}
@@ -274,6 +285,12 @@ export const mcpTools = {
 	deleteVenue: { description: "Delete an unassigned Eventual venue. Assigned venues cannot be deleted.", route: "mcp/venues/delete", input: mcpInput(venueId), destructive: true },
 	getSettings: { description: "Read Eventual settings, including the default timezone for new events.", route: "mcp/settings/get", input: mcpInput(noInput), destructive: false },
 	updateSettings: { description: "Set Eventual's default IANA timezone for new events.", route: "mcp/settings/update", input: mcpInput(updateSettings), destructive: true },
+	migrateToNative: {
+		description: "Migrate legacy Eventual plugin storage records (venues, events, recurrence rules, exceptions) to native EmDash collections with Portable Text and target locale. Supports dryRun preview.",
+		route: "mcp/transfer/migrateToNative",
+		input: mcpInput(migrateToNative),
+		destructive: true,
+	},
 };
 
 export type McpEventInput = {

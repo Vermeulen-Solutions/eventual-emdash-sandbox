@@ -9,7 +9,7 @@ export function formatVenueAddress(venue: VenueFields): string {
     venue.postalCode,
     venue.country,
   ]
-    .map((part) => part.trim())
+    .map((part) => part?.trim())
     .filter(Boolean)
     .join(", ");
 }

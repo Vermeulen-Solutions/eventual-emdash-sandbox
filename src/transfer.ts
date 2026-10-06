@@ -7,6 +7,8 @@ import { exceptionIdsMatchRecurrence, scheduledOccurrence } from './domain/recur
 import { safeHttpUrl } from './domain/venue';
 import { validateMcpInput, validateSavedRecord } from './mcp-schemas';
 import type { EventualContext } from './storage';
+import { migrateToNative, type MigrateToNativeOptions } from './domain/migration';
+import { nativeSchema } from './domain/native-source';
 
 type Collection = 'events' | 'venues' | 'organizers';
 type RecordData = EventRecord | VenueRecord | OrganizerRecord;
@@ -77,6 +79,7 @@ async function prepare(ctx: EventualContext, input: TransferInput, data: RecordD
 }
 
 export async function importRecords(ctx: EventualContext, input: TransferInput, write: boolean) {
+	if (write && await nativeSchema(ctx)) return {ok:false,error:'NATIVE_COLLECTIONS_ACTIVE',details:'Import into native collections using EmDash content tools.'};
   if (!validateMcpInput(write ? 'importRecords' : 'previewImport', input) || new TextEncoder().encode(JSON.stringify(input)).length > 65536) return { ok: false, error: 'VALIDATION_ERROR', maxBytes: 65536 };
   const rows = [];
   const seen = new Set<string>();
@@ -109,4 +112,12 @@ export const transferRoutes = {
     if (new TextEncoder().encode(JSON.stringify(records)).length > 65536) return { ok: false, error: 'EXPORT_PAGE_TOO_LARGE', details: 'Retry with limit 1; oversized individual records require a host storage export.' };
     return { ok: true, collection: input.collection, records, ...(page.hasMore ? { nextCursor: page.cursor } : {}) };
   } },
+  'mcp/transfer/migrateToNative': {
+    permission: 'plugins:manage' as const,
+    handler: async (route: { input: unknown }, ctx: EventualContext) => {
+      const input = route.input ?? {};
+      if (!validateMcpInput('migrateToNative', input)) return { ok: false, error: 'VALIDATION_ERROR' };
+      return migrateToNative(ctx, input as MigrateToNativeOptions);
+    },
+  },
 };

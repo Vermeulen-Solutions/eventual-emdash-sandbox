@@ -1,31 +1,35 @@
 import { calendarLocation, calendarStatus, calendarEventUrl } from "../../astro/event-details";
 import type { EventRecord } from "./event";
 import type { CalendarCancellation } from "../storage";
+import { portableTextToPlainText } from "./portable-text";
 
 export function formatCalendarFeed(
 	events: EventRecord[],
 	cancellations: CalendarCancellation[],
 	host: string,
 	generatedAt = new Date(),
+	calendarName?: string,
 ): string {
-	const activeIds = new Set(events.map((event) => event.id));
-	const uniqueCancellations = new Map(
-		cancellations
-			.filter((item) => !activeIds.has(item.id))
-			.map((item) => [item.id, item]),
-	);
+	const activeUids = new Set(events.map((event) => eventUid(event, host)));
+	const uniqueCancellations = new Map<string,CalendarCancellation>();
+	for (const item of cancellations) {
+		const uid=eventUid(item,host); const old=uniqueCancellations.get(uid);
+		if (!activeUids.has(uid) && (!old || item.cancelledAt>old.cancelledAt)) uniqueCancellations.set(uid,item);
+	}
 	const lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
 		"PRODID:-//Vermeulen Solutions//Eventual Calendar//EN",
 		"CALSCALE:GREGORIAN",
 		"METHOD:PUBLISH",
-		"X-WR-CALNAME:Eventual events",
+		`X-WR-CALNAME:${escapeText(calendarName || "Eventual events")}`,
 		...events.flatMap((event) => eventLines(event, host, generatedAt)),
 		...[...uniqueCancellations.values()].flatMap((item) => cancellationLines(item, host, generatedAt)),
 		"END:VCALENDAR",
 	];
-	return `${lines.flatMap(foldLine).join("\r\n")}\r\n`;
+	const result = `${lines.flatMap(foldLine).join("\r\n")}\r\n`;
+	if (utf8Encoder.encode(result).length > 4*1024*1024) throw new Error('Calendar output exceeds 4 MiB; narrow the subscription.');
+	return result;
 }
 
 const utf8Encoder = new TextEncoder();
@@ -34,16 +38,17 @@ function eventLines(event: EventRecord, host: string, generatedAt: Date): string
 	const modifiedAt = parseDate(event.updatedAt) ?? generatedAt;
 	const statusLine = `STATUS:${calendarStatus(event)}`;
 	const locationText = calendarLocation(event);
-	const eventUrl = calendarEventUrl(event);
+	const eventUrl = calendarEventUrl({...event,externalUrl:event.publicUrl || event.externalUrl});
+	const description = portableTextToPlainText(event.description);
 	return [
 		"BEGIN:VEVENT",
-		`UID:${eventUid(event.id, host)}`,
+		`UID:${escapeText(eventUid(event, host))}`,
 		`DTSTAMP:${formatUtc(generatedAt)}`,
 		`LAST-MODIFIED:${formatUtc(modifiedAt)}`,
-		`SEQUENCE:${Math.max(0, modifiedAt.getTime())}`,
+		`SEQUENCE:${sequence(event.calendarSequence, modifiedAt)}`,
 		statusLine,
 		`SUMMARY:${escapeText(event.title)}`,
-		...(event.description ? [`DESCRIPTION:${escapeText(event.description)}`] : []),
+		...(description ? [`DESCRIPTION:${escapeText(description)}`] : []),
 		...(locationText ? [`LOCATION:${escapeText(locationText)}`] : []),
 		...(eventUrl ? [`URL:${eventUrl}`] : []),
 		...(event.categories.length ? [`CATEGORIES:${event.categories.map(escapeText).join(",")}`] : []),
@@ -57,10 +62,10 @@ function cancellationLines(item: CalendarCancellation, host: string, generatedAt
 	const modifiedAt = parseDate(item.cancelledAt) ?? generatedAt;
 	return [
 		"BEGIN:VEVENT",
-		`UID:${eventUid(item.id, host)}`,
+		`UID:${escapeText(eventUid(item, host))}`,
 		`DTSTAMP:${formatUtc(generatedAt)}`,
 		`LAST-MODIFIED:${formatUtc(modifiedAt)}`,
-		`SEQUENCE:${Math.max(0, modifiedAt.getTime())}`,
+		`SEQUENCE:${sequence(item.calendarSequence, modifiedAt)}`,
 		"STATUS:CANCELLED",
 		"SUMMARY:Cancelled event",
 		`X-EVENTUAL-TIMEZONE:${escapeText(item.timezone)}`,
@@ -80,13 +85,39 @@ function dateLines(start: string, end: string, allDay: boolean): string[] {
 	const startDate = parseDate(start);
 	const endDate = parseDate(end);
 	return startDate && endDate
-		? [`DTSTART:${formatUtc(startDate)}`, `DTEND:${formatUtc(endDate)}`]
+		? [`DTSTART:${formatUtc(startDate)}`, ...(endDate>startDate ? [`DTEND:${formatUtc(endDate)}`] : [])]
 		: [];
 }
 
-function eventUid(id: string, host: string): string {
+export function eventUid(
+	item: string | { id: string; translationGroup?: string; eventId?: string; calendarUid?: string },
+	host: string,
+): string {
+	let id = typeof item === "string" ? item : item.id;
+	if (typeof item !== "string" && item.id.startsWith("cancellation_") && item.eventId) {
+		id = item.eventId;
+	}
+	const translationGroup = typeof item === "string" ? undefined : item.translationGroup;
+
+	let stableId = id;
+	if (translationGroup) {
+		const hashIndex = id.indexOf("#");
+		const recurrencePart = hashIndex >= 0 ? id.slice(hashIndex) : "";
+		stableId = `eventual-${translationGroup}${recurrencePart}`;
+	}
 	const safeHost = host.trim().replace(/[^a-zA-Z0-9.-]/g, "-").toLowerCase() || "eventual.invalid";
-	return `${encodeURIComponent(id)}@${safeHost}`;
+	if (typeof item !== 'string' && item.calendarUid) {
+		const split = item.calendarUid.lastIndexOf('@');
+		if (split < 1 || /[\r\n\u0000-\u0020]/.test(item.calendarUid)) throw new Error('Invalid stored calendar UID.');
+		const recurrencePart = id.includes('#') ? encodeURIComponent(id.slice(id.indexOf('#'))) : '';
+		return item.calendarUid.slice(0,split) + recurrencePart + item.calendarUid.slice(split);
+	}
+	return `${encodeURIComponent(stableId)}@${safeHost}`;
+}
+
+function sequence(value: number | undefined, date: Date): number {
+	const result = value ?? Math.floor(date.getTime()/1000);
+	return Math.min(2147483647, Math.max(0, Math.floor(result)));
 }
 
 function escapeText(value: string): string {

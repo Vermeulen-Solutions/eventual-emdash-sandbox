@@ -1,40 +1,29 @@
 ---
 import type { PublicEvent } from "./feed";
+import { eventPageUrl, displayEventDate } from './event-list';
 
 interface Props {
   events: PublicEvent[];
   basePath?: string;
   heading?: string;
+  locale?: string;
+  emptyMessage?: string;
 }
 
-const { events, basePath = "/events", heading } = Astro.props;
-
-function localDate(instant: string, timezone: string): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date(instant));
-  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${value("year")}-${value("month")}-${value("day")}`;
-}
+const { events, basePath = "/events", heading, locale = Astro.currentLocale, emptyMessage = 'No events found.' } = Astro.props;
 
 function eventUrl(event: PublicEvent): string {
-  const url = new URL(`${basePath.replace(/\/$/, "")}/${encodeURIComponent(event.id)}`, "https://eventual.invalid");
-  url.searchParams.set("from", event.allDay ? event.start : localDate(event.start, event.timezone));
-  url.searchParams.set("through", event.allDay ? event.end : localDate(event.end, event.timezone));
-  return `${url.pathname}${url.search}`;
+  return eventPageUrl(event,basePath);
 }
 ---
 
 {heading && <h2>{heading}</h2>}
-{events.length === 0 ? <p>No events found.</p> : (
+{events.length === 0 ? <p>{emptyMessage}</p> : (
   <ul>
     {events.map((event) => (
       <li>
         <a href={eventUrl(event)}>{event.title}</a>
-        <time datetime={event.start}>{event.allDay ? event.start : localDate(event.start, event.timezone)}</time>
+        <time datetime={event.start}>{displayEventDate(event,locale ?? event.locale ?? 'en-GB')}</time>
         {(event.venue?.name || event.location) && <span>{event.venue?.name || event.location}</span>}
       </li>
     ))}

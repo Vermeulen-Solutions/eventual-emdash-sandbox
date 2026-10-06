@@ -25,6 +25,7 @@ import { isUsableEventImage } from "./media";
 import { inspectOccurrences, validOccurrenceRange } from "./domain/occurrences";
 import { saveOrganizer } from './organizers';
 import { organizerCollection, listOrganizers } from './storage';
+import { nativeSchema } from './domain/native-source';
 
 const validEventInput = (value: unknown) => validateMcpInput("createEvent", value);
 const validEventPatch = (value: unknown) => validateMcpInput("updateEvent", value);
@@ -37,11 +38,12 @@ const validExceptionSet = (value: unknown) => validateMcpInput("setOccurrenceExc
 const validExceptionRemove = (value: unknown) => validateMcpInput("removeOccurrenceException", value);
 const validSettingsUpdate = (value: unknown) => validateMcpInput("updateSettings", value);
 
-function route(validate: (input: unknown) => boolean, run: (input: any, ctx: EventualContext) => Promise<unknown>) {
+function route(validate: (input: unknown) => boolean, run: (input: any, ctx: EventualContext) => Promise<unknown>, nativeAllowed = false) {
 	return {
 		permission: "plugins:manage" as const,
 		handler: async (routeCtx: { input: unknown }, ctx: EventualContext) => {
 			if (!validate(routeCtx.input)) return { ok: false, error: "VALIDATION_ERROR" };
+			if (!nativeAllowed && await nativeSchema(ctx)) return {ok:false,error:'NATIVE_COLLECTIONS_ACTIVE',details:'Use the EmDash content tools for events and venues. Legacy storage is retained for export.'};
 			return run(routeCtx.input, ctx);
 		},
 	};
@@ -273,10 +275,10 @@ export const mcpRoutes = {
 		if (await listEventsByVenueId(ctx, id)) return { ok: false, error: "VENUE_IN_USE" };
 		return { ok: true, deleted: await deleteVenue(ctx, id) };
 	}),
-	"mcp/settings/get": route(validEmpty, async (_input, ctx) => ({ ok: true, defaultTimezone: (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC" })),
+	"mcp/settings/get": route(validEmpty, async (_input, ctx) => ({ ok: true, defaultTimezone: (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC" }), true),
 	"mcp/settings/update": route(validSettingsUpdate, async ({ defaultTimezone }, ctx) => {
 		if (!isValidTimeZone(defaultTimezone)) return { ok: false, error: "INVALID_TIMEZONE" };
 		await ctx.settings.set("defaultTimezone", defaultTimezone);
 		return { ok: true, defaultTimezone };
-	}),
+	}, true),
 };

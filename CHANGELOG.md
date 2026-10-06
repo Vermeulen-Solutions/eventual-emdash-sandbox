@@ -2,6 +2,19 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.12.0
+
+- Transition to native EmDash collections (`events`, `venues`/`locations`) with row-per-locale internationalization (`translation_group`, `locale`).
+- Automatic synchronization of invariant schedule fields across translation siblings (`translatable: false`).
+- Rich text editing using native Portable Text (`portableText`) instead of raw markdown textareas.
+- Full compatibility with `@swiss.ky/linguadash` and core EmDash revisions, drafts, and scheduled publishing.
+- Separation of shared schedule exceptions (`exceptions`) and localized editorial overrides (`occurrence_content`).
+- Inclusive civil dates (`start_date`, `end_date`) for all-day events and RFC 5545 exclusive DTEND conversion.
+- Resumable non-destructive migration engine (`migrateToNative`) with dry-run preview, lease-based concurrency locking, and token-based recovery.
+- Stable cross-locale and migration calendar UIDs, logical RFC SEQUENCE counters, and committed-state cancellation reconciliation.
+- Single native authority: native collections are authoritative when installed, preventing stale legacy storage resurrection.
+- Exported typed blueprints (`eventual/schema`) and localized Astro components (`eventual/astro`).
+
 ## 0.11.1
 
 - Allow EmDash Editors to manage Eventual events, venues, organizers, and settings through the Editor-level `content:edit_any` permission. MCP management tools and plugin installation remain restricted to administrators.

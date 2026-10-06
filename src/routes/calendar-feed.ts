@@ -1,25 +1,90 @@
 import { expandEventsInDateRange } from "../domain/recurrence";
 import { formatCalendarFeed } from "../domain/icalendar";
-import { eventLocation } from "../domain/venue";
-import { listCalendarCancellations, listEvents, listVenuesById, type EventualContext } from "../storage";
-
-const SUBSCRIPTION_WINDOW_DAYS = 366;
-
-function addDays(date: string, count: number): string {
-	const result = new Date(`${date}T00:00:00Z`);
-	result.setUTCDate(result.getUTCDate() + count);
-	return result.toISOString().slice(0, 10);
+import { eventRecordToPublicEvent } from "../domain/event-expansion";
+import {
+  nativeSchema,
+  readEventSource,
+  resolveEventVenues,
+  selectEventLocales,
+  hydrateNativeAssets,
+} from "../domain/native-source";
+import {
+  calendarHost,
+  reconcileNativeCalendar,
+} from "../domain/native-calendar";
+import { categoryKey } from "../domain/category";
+import { listCalendarCancellations, type EventualContext } from "../storage";
+export interface CalendarFeedOptions {
+  locale?: string;
+  strict?: boolean;
+  category?: string;
+  calendarName?: string;
 }
-
-export async function handleCalendarFeed(ctx: EventualContext, host: string): Promise<string> {
-	const from = new Date().toISOString().slice(0, 10);
-	const through = addDays(from, SUBSCRIPTION_WINDOW_DAYS - 1);
-	const storedEvents = await listEvents(ctx, { published: true, through });
-	const occurrences = expandEventsInDateRange(storedEvents, from, through);
-	const venues = await listVenuesById(ctx, occurrences.flatMap((event) => event.venueId ? [event.venueId] : []));
-	const events = occurrences.map((event) => ({
-		...event,
-		location: eventLocation(event.venueId ? venues.get(event.venueId) : undefined, event.location),
-	}));
-	return formatCalendarFeed(events, await listCalendarCancellations(ctx), host);
+export const filterAndDeduplicateEvents = (
+  events: import("../domain/event").EventRecord[],
+  options?: CalendarFeedOptions,
+) => selectEventLocales(events, options?.locale, options?.strict);
+export async function handleCalendarFeed(
+  ctx: EventualContext,
+  host: string,
+  options?: CalendarFeedOptions,
+): Promise<string> {
+  const from = new Date().toISOString().slice(0, 10);
+  const end = new Date(from + "T00:00:00Z");
+  end.setUTCDate(end.getUTCDate() + 365);
+  const through = end.toISOString().slice(0, 10);
+  const schema = await nativeSchema(ctx);
+  const source = schema
+    ? { native: true, schema, events: [] }
+    : await readEventSource(ctx, through);
+  const state = source.native
+    ? await reconcileNativeCalendar(ctx)
+    : { events: source.events, cancellations: [] };
+  const selected = selectEventLocales(
+    state.events,
+    options?.locale,
+    options?.strict,
+  );
+  const expanded = expandEventsInDateRange(selected, from, through);
+  if (expanded.length > 10000)
+    throw new Error("Too many calendar occurrences.");
+  const category = options?.category ? categoryKey(options.category) : "";
+  const occurrences = category
+    ? expanded.filter((event) =>
+        event.categories.some((value) => categoryKey(value) === category),
+      )
+    : expanded;
+  const venues =
+    ("venues" in state && state.venues) ||
+    (await resolveEventVenues(ctx, occurrences, source.schema));
+  const hydrated = source.native
+    ? await hydrateNativeAssets(ctx, occurrences)
+    : occurrences;
+  const events = hydrated.map((event) => ({
+    ...event,
+    location: eventRecordToPublicEvent(event, venues).location,
+  }));
+  const legacy = ctx.storage?.calendar_cancellations
+    ? await listCalendarCancellations(ctx)
+    : [];
+  const cancellations = [...state.cancellations, ...legacy].filter(
+    (item) =>
+      Date.parse(item.cancelledAt) > Date.now() - 366 * 86400000 &&
+      (!category ||
+        item.categories?.some((value) => categoryKey(value) === category)) &&
+      (!item.feedCategory || item.feedCategory === category) &&
+      (item.locale
+        ? options?.strict && options.locale?.toLowerCase() === item.locale
+        : !options?.strict ||
+          !options.locale ||
+          !item.locales ||
+          item.locales.includes(options.locale.toLowerCase())),
+  );
+  return formatCalendarFeed(
+    events,
+    cancellations,
+    await calendarHost(ctx, host),
+    undefined,
+    options?.calendarName,
+  );
 }

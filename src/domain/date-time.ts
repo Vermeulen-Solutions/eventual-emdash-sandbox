@@ -45,9 +45,12 @@ function parseWallDateTime(value: string): DateParts | null {
   return { ...date, hour, minute };
 }
 
+const zoneFormatters = new Map<string, Intl.DateTimeFormat>();
 function partsInZone(instant: Date, timezone: string): DateParts | null {
   try {
-    const parts = new Intl.DateTimeFormat("en", {
+    let formatter = zoneFormatters.get(timezone);
+    if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en", {
       timeZone: timezone,
       calendar: "gregory",
       numberingSystem: "latn",
@@ -57,7 +60,11 @@ function partsInZone(instant: Date, timezone: string): DateParts | null {
       hour: "2-digit",
       minute: "2-digit",
       hourCycle: "h23",
-    }).formatToParts(instant);
+    });
+    if (zoneFormatters.size >= 128) zoneFormatters.delete(zoneFormatters.keys().next().value!);
+    zoneFormatters.set(timezone,formatter);
+    }
+    const parts = formatter.formatToParts(instant);
     const get = (type: Intl.DateTimeFormatPartTypes) =>
       Number(parts.find((part) => part.type === type)?.value);
     const result = {

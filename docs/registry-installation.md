@@ -1,25 +1,19 @@
 ## Install and upgrade
 
-Requires EmDash 1.0.1+ and a sandbox runner. Install from the Registry. Editors (`content:edit_any`) can manage Eventual events, venues, organizers and settings; MCP tools and plugin installation remain admin-only.
+Requires EmDash 1.0.1+ and a sandbox runner. Eventual 0.12.0 links to core's editor; the custom editor is retired. Installation does not create schemas or migrate records.
 
-Before upgrading, back up the database, media and encryption key. Version 0.11.0 adds organizer storage and an event organizer index. Review the updated storage contract. Existing events remain readable with compatible defaults.
+Review capabilities. Apply eventual/schema blueprints through the site's schema workflow, configure locales, then preview and execute administrator-only migrateToNative batches. Existing locations need unique indexed legacy_id and legacy_metadata JSON fields and must match events.venue. See the native-modernization guide.
 
-Create one-off or recurring events, choose physical/virtual/hybrid attendance and set their lifecycle status. Meeting URLs must use HTTP or HTTPS. Draft duplication resets publication and schedule history. Admin forms detect stale edits; bulk deletion requires confirmation.
+Legacy storage is retained. Published events/venues are explicitly published; drafts stay drafts. Generated IDs and durable recovery protect retries. Preview cannot predict IDs or other plugins' policies. Completed native records are not overwritten or republished.
 
-## Agent access and transfer
+Installing events changes authority immediately, including while empty. Native sites use core content tools; legacy CRUD/imports are gated. Export and settings remain available. Sites without events retain legacy feeds/MCP, but have no custom plugin editor.
 
-In Admin → Plugins, expand Eventual and enable Agent access. Review and enable the MCP tools you need, including new organizer and transfer tools.
+## Feeds and Astro
 
-Exports are paginated. Imports support preview, insert-only writes and retry protection, capped at ten records and 64 KiB per request. They omit settings, media and calendar cancellation tombstones and do not replace a complete site backup.
+JSON: /_emdash/api/plugins/eventual/publicEvents. Calendar: /_emdash/api/plugins/eventual/calendar. Both support locale, strict and category filters. Untranslated fallback titles carry a language prefix unless strict mode is enabled. UIDs survive translation/migration; removed publication/occurrences and removed strict-locale/category subscriptions receive matching cancellations.
 
-## Visitor pages
+Install the source package for eventual/astro, EventList and JSON-LD helpers. The sandbox plugin does not provision public pages. The Astro example offers seven visitor layouts.
 
-Eventual serves public JSON and iCalendar. The subscription URL is `/_emdash/api/plugins/eventual/calendar`.
+## Permissions
 
-Installing the plugin does not create public pages. Adapt the [Astro example](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/tree/main/examples/astro-events), or use the source package's `eventual/astro` helpers and EventList component. Event detail pages can include Schema.org JSON-LD.
-
-## Permissions and privacy
-
-The plugin requests `media:read` and `media:bytes:read` for event images, with no outbound hosts. Events, venues, organizers and cancellations use plugin-owned storage. EmDash offers storage deletion separately during uninstall.
-
-Meeting links appear publicly in feeds, calendars and JSON-LD. Do not store private credentials in these links.
+Capabilities support content read/write/publication, revision/schema read, content policies and media read/bytes read. No schema-write privilege or outbound hosts are requested. Migration/MCP requires plugins:manage; the companion page requires content:edit_any. Migration never deletes legacy storage.

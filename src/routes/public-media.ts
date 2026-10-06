@@ -2,6 +2,7 @@ import { pluginResponse } from "emdash/plugin";
 
 import { isPublicEventImageType, MAX_PUBLIC_EVENT_IMAGE_BYTES } from "../domain/image";
 import { getEvent, type EventualContext } from "../storage";
+import { nativeSchema } from '../domain/native-source';
 
 function notFound() {
 	return pluginResponse({
@@ -12,6 +13,7 @@ function notFound() {
 }
 
 export async function handlePublicEventImage(input: unknown, ctx: EventualContext) {
+	if (await nativeSchema(ctx)) return notFound();
 	if (typeof input !== "object" || input === null || Array.isArray(input)) return notFound();
 	const eventId = (input as { eventId?: unknown }).eventId;
 	if (typeof eventId !== "string" || eventId.length < 1 || eventId.length > 128) return notFound();

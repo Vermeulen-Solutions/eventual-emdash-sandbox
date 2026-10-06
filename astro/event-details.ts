@@ -1,6 +1,6 @@
 /** Shared output rules for sandbox feeds and headless consumers. */
 export function safeWebUrl(value: string, base?: string): string {
-	if (!value.trim()) return "";
+	if (typeof value !== 'string' || !value.trim()) return "";
 	try {
 		const url = base ? new URL(value, base) : new URL(value);
 		return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";

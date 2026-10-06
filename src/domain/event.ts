@@ -52,6 +52,7 @@ export interface EventFields {
   categories: string[];
   venueId?: string;
   published: boolean;
+  locale?: string;
 }
 
 export type EventOverride = Partial<
@@ -72,6 +73,7 @@ export type EventOverride = Partial<
     | "imageUrl"
     | "imageMediaId"
     | "categories"
+    | "locale"
   >
 >;
 
@@ -91,6 +93,12 @@ export interface EventRecord extends EventFields {
   /** Up to ten previous series schedules, newest first; never copied to duplicates. */
   scheduleHistory?: Array<{ start: string; end: string; allDay: boolean; timezone: string; changedAt: string }>;
   previousStartDate?: string;
+  translationGroup?: string;
+  calendarUid?: string;
+  calendarSequence?: number;
+  slug?: string;
+  publicUrl?: string;
+  organizerDetails?: { id: string; name: string; website: string; contactUrl: string };
 }
 
 export interface EventDraft {

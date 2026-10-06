@@ -2,7 +2,9 @@ import { expandEventsInDateRange } from "../domain/recurrence";
 import { isDateOnly } from "../domain/date-time";
 import { categoryKey } from "../domain/category";
 import { formatPublicEvent } from "../public-event";
-import { EventScanLimitError, listEvents, listVenuesById, listOrganizersById, type EventualContext } from "../storage";
+import { EventScanLimitError, listVenuesById, listOrganizersById, type EventualContext } from "../storage";
+import { readEventSource, resolveEventVenues, selectEventLocales, hydrateNativeAssets } from '../domain/native-source';
+import { eventRecordToPublicEvent } from '../domain/event-expansion';
 
 const MAX_PUBLIC_EVENT_RANGE_DAYS = 366;
 
@@ -17,9 +19,10 @@ function addDays(date: string, count: number): string {
 }
 
 export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
-	if (!isRecord(input) || ["from", "through", "category"].some((key) => input[key] !== undefined && typeof input[key] !== "string")) {
+	if (!isRecord(input) || ["from", "through", "category", "locale"].some((key) => input[key] !== undefined && typeof input[key] !== "string") || input.strict !== undefined && typeof input.strict !== 'boolean' && input.strict !== 'true' && input.strict !== 'false') {
 		return { ok: false, error: "INVALID_QUERY" };
 	}
+	try { if (input.locale) Intl.getCanonicalLocales(input.locale as string); } catch { return {ok:false,error:'INVALID_QUERY'}; }
 	const today = new Date().toISOString().slice(0, 10);
 	const from = (input.from as string | undefined) ?? today;
 	const through = (input.through as string | undefined) ?? addDays(from, 180);
@@ -32,8 +35,10 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 	}
 
 	let storedEvents;
+	let source;
 	try {
-		storedEvents = await listEvents(ctx, { published: true, through });
+		source = await readEventSource(ctx,through);
+		storedEvents = selectEventLocales(source.events,input.locale as string|undefined,input.strict === true || input.strict === 'true');
 	} catch (error) {
 		if (error instanceof EventScanLimitError) return { ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: error.limit };
 		throw error;
@@ -43,6 +48,12 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 	const visible = category
 		? expanded.filter((event) => event.categories.some((item) => categoryKey(item) === category))
 		: expanded;
+	if (visible.length>10000) return {ok:false,error:'OCCURRENCE_LIMIT_EXCEEDED'};
+	if (source!.native) {
+		const venues=await resolveEventVenues(ctx,visible,source!.schema);
+		const hydrated=await hydrateNativeAssets(ctx,visible);
+		return {ok:true,from,through,events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url))};
+	}
 	const [venues, organizers] = await Promise.all([
 		listVenuesById(ctx, visible.flatMap(event => event.venueId ? [event.venueId] : [])),
 		listOrganizersById(ctx, visible.flatMap(event => event.organizerId ? [event.organizerId] : [])),

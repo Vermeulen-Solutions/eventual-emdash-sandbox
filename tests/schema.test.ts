@@ -123,4 +123,25 @@ describe("Schema.org JSON-LD generation", () => {
 		expect(jsonLd).not.toHaveProperty("image");
 		expect(jsonLd).not.toHaveProperty("url");
 	});
+
+	it("converts Portable Text description into plain text for Schema.org", () => {
+		const ptEvent: PublicEvent = {
+			...baseEvent,
+			description: JSON.stringify([
+				{
+					_type: "block",
+					style: "normal",
+					children: [{ text: "Session details with " }, { text: "Link", marks: ["l1"] }],
+					markDefs: [{ _key: "l1", _type: "link", href: "https://example.com" }],
+				},
+			]),
+		};
+		const jsonLd = eventToJsonLd(ptEvent);
+		expect(jsonLd["description"]).toBe("Session details with Link (https://example.com)");
+	});
+	it('preserves already extracted literal text in JSON-LD',()=>{
+		const description='Keep **literal notation** and <a> symbols.';
+		expect(eventToJsonLd({...baseEvent,description}).description).toBe(description);
+		expect(eventToJsonLd({...baseEvent,description:'["Literal JSON example"]'}).description).toBe('["Literal JSON example"]');
+	});
 });

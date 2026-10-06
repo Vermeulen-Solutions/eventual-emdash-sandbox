@@ -1,5 +1,6 @@
 import { safeWebUrl } from "./event-details";
 import type { PublicEvent } from "./feed";
+import { portableTextToPlainText } from "../src/domain/portable-text";
 
 export interface EventJsonLdOptions {
 	/** HTTP(S) base used to resolve relative image, event, and meeting URLs. */
@@ -55,11 +56,17 @@ export function eventToJsonLd(event: PublicEvent, options?: EventJsonLdOptions):
 		eventAttendanceMode: attendanceMode,
 	};
 
-	if (event.description) record.description = event.description;
+	// Public feeds already contain plain text. Only serialized block trees need
+	// decoding here; a second Markdown pass would erase literal punctuation.
+	if (event.description) {
+		let description:unknown=event.description;
+		if(typeof description==='string' && description.trim().startsWith('['))try {const parsed=JSON.parse(description);if(Array.isArray(parsed) && parsed.every(block=>block && typeof block==='object' && typeof block._type==='string'))description=parsed;} catch {}
+		record.description=Array.isArray(description) ? portableTextToPlainText(description) : description;
+	}
 	if (event.status === 'rescheduled' && event.previousStartDate) record.previousStartDate = event.previousStartDate;
 	const image = safeWebUrl(event.imageUrl, options?.siteUrl);
 	if (image) record.image = image;
-	const url = safeWebUrl(event.externalUrl, options?.siteUrl);
+	const url = safeWebUrl(event.publicUrl || event.externalUrl, options?.siteUrl);
 	if (url) record.url = url;
 	if (locations.length) record.location = locations.length === 1 ? locations[0] : locations;
 	if (event.organizer) record.organizer = { "@type": "Organization", name: event.organizerDetails?.name ?? event.organizer, ...(safeWebUrl(event.organizerDetails?.website ?? '', options?.siteUrl) ? { url: safeWebUrl(event.organizerDetails!.website, options?.siteUrl) } : {}) };
@@ -71,3 +78,11 @@ export function eventToJsonLd(event: PublicEvent, options?: EventJsonLdOptions):
 export function serializeJsonLd(record: Record<string, unknown>): string {
 	return JSON.stringify(record).replaceAll("<", "\\u003c");
 }
+
+export {
+	createEventsCollectionBlueprint,
+	createVenuesCollectionBlueprint,
+	type CollectionBlueprint,
+	type BlueprintField,
+	type SchemaBlueprintOptions,
+} from "../src/schema/blueprint";
