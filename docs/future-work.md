@@ -25,16 +25,9 @@ design and validation before adding sandbox code or storage commitments.
   venue and organizer data. Settings, media and calendar cancellation tombstones
   require the CMS's full backup facilities; no cross-collection transaction is
   claimed by these tools.
-- **Calendar revision migration:** the pre-existing calendar SEQUENCE uses
-  milliseconds since epoch, beyond RFC 5545's signed 32-bit INTEGER range. Design
-  a monotonic revision and migration for existing subscriptions; simply lowering
-  sequence numbers can cause subscribers to ignore updates.
 - **Series-level rescheduling:** history stores ten previous series schedules;
   moved occurrences expose their original date. A shifted whole series does not
   map every new occurrence to a previous occurrence automatically.
-- **Release preparation:** bump the plugin version, document the new organizers
-  collection and organizerId index, regenerate screenshots/registry docs, and
-  test upgrading an installed site before publishing. No release was made here.
 - **Pinned test-stack dependency audit:** npm audit reports a vulnerable undici
   7.29.0 dependency pinned exactly by the installed Miniflare test stack, with
   downstream Cloudflare tooling advisories. A targeted lock update cannot replace
@@ -43,10 +36,18 @@ design and validation before adding sandbox code or storage commitments.
   from the sandbox archive. The http-cache-semantics lock entries were updated
   in both projects; the Astro example audit is clean.
 
+## Resolved in 0.12.0
+
+- **Calendar revision migration ([#2](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/2)):**
+  Replaced legacy millisecond timestamps with true monotonic integer `SEQUENCE` values
+  and committed-state reconciliation, complying with RFC 5545 limits.
+- **Native collections adoption:** Modernized storage to native EmDash collections with
+  row-per-locale i18n and companion admin dashboard.
+
 ## GitHub tracking
 
 - [Extension roadmap (#1)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/1)
-- [Calendar SEQUENCE migration (#2)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/2)
+- [Calendar SEQUENCE migration (#2 - Resolved)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/2)
 - [Test-stack maintenance (#3)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/3)
 
-Release preparation is recorded in [0.11.0 release notes](release-notes-0.11.0.md).
+Release documentation is recorded in [0.12.0 release notes](release-notes-0.12.0.md).

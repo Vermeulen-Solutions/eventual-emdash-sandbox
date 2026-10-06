@@ -73,3 +73,16 @@ calendar subscriptions should use the host's complete backup/restore facility.
 Exports are paginated; clients must follow every cursor. Pages larger than
 64 KiB are retried with one row; oversized individual records need a host export.
 Exports are not a transactional snapshot: pause editing for a consistent backup.
+
+## Native collections & migration (v0.12.0+)
+
+Starting with Eventual v0.12.0, event data is stored in native EmDash collections (`events`, `venues` or `locations`).
+
+- **Single Native Authority:** Once the native `events` collection exists on the host site, legacy import tools (`previewImport`, `importRecords`) return `NATIVE_COLLECTIONS_ACTIVE` to prevent accidental split-brain storage.
+- **Migration Engine:** To move data from legacy Eventual storage into native collections, use the `migrateToNative` MCP tool or `POST /_emdash/api/plugins/eventual/mcp/transfer/migrateToNative`.
+  - Supports `dryRun: true` to preview counts, mappings, and potential warnings with zero database writes.
+  - Runs in bounded batches with `limit` (default 50) and cursor-based resumption via `nextCursor`.
+  - Non-destructive: legacy records are never modified or removed.
+  - Converts Markdown descriptions to schema-safe Portable Text while retaining source strings in `legacy_metadata`.
+- For complete blueprint application and migration instructions, see [Native Modernization Guide](./native-modernization.md).
+

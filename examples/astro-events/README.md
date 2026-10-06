@@ -71,6 +71,8 @@ Navigate to `http://localhost:4321/` in your browser. The root route automatical
 - **Server-Side Rendered (SSR):** Built with Astro's `@astrojs/node` adapter in standalone mode. Every page request fetches the latest event data from EmDash, ensuring real-time accuracy without rebuilds.
 - **Accessible & SEO Ready:** Includes semantic landmark regions, skip links, ARIA labels, polite screen reader announcements, and JSON-LD structured data in the document `<head>`.
 - **Localization:** Supports multi-language labels (English, Dutch, French included) and locale-aware week layouts (Monday-first vs Sunday-first).
+- **Native Multilingual Feeds (v0.12.0+):** Communicates with Eventual 0.12.0's native feeds via `locale` and `strict` query parameters. Uses `expandEventOccurrences` to expand occurrences across language siblings with localized titles, Portable Text, and fallback handling.
+
 
 ---
 
