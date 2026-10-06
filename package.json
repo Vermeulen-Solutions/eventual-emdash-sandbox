@@ -2,6 +2,7 @@
 	"name": "eventual",
 	"version": "0.12.0",
 	"license": "MIT",
+	"homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
 	"private": true,
 	"type": "module",
 	"packageManager": "npm@11.19.0",
