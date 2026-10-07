@@ -187,7 +187,7 @@ const { events } = await fetchPublicFeed(
 
 ### Included Visitor Views
 
-Visitors can switch between seven viewing formats via query parameter (e.g., `/events?view=calendar`):
+Visitors can switch between seven viewing formats via query parameter (e.g., `/events?view=month`):
 
 | View | Query Param | Description |
 | :--- | :--- | :--- |
@@ -257,7 +257,7 @@ GET /_emdash/api/plugins/eventual/publicEvents?from=YYYY-MM-DD&through=YYYY-MM-D
 ```http
 GET /_emdash/api/plugins/eventual/calendar?locale=fr&strict=true&category=Music
 ```
-- Raw `text/calendar` feed covering a inclusive window from today through 365 days later.
+- Raw `text/calendar` feed covering an inclusive window from today through 365 days later.
 - Respects daylight-saving adjustments and supported daily/weekly/monthly recurrence rules.
 - Emits RFC 5545 compliant monotonic integer `SEQUENCE` values.
 - Emits `STATUS:CANCELLED` tombstones when occurrences are cancelled or unpublished, with stable identities for client reconciliation. Refresh/removal behavior remains calendar-client specific.
