@@ -2,6 +2,11 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.13.1 - 2026-10-08
+
+- Route public featured event image requests to the plugin's public image streamer endpoint (`/_emdash/api/plugins/eventual/publicEventImage?eventId=<eventId>`) instead of private CMS media asset URLs (`/_emdash/api/media/asset/`), preventing 401 Unauthorized errors on unauthenticated Astro frontends.
+- Hydrate `event.imageUrl` from `featuredMediaId` / `imageMediaId` in `hydrateNativeAssets`, `formatPublicEvent`, and `eventRecordToPublicEvent`.
+
 ## 0.13.0 - 2026-10-07 (breaking)
 
 - Requires EmDash >=1.2.0 <2.0.0. Native content types own events, venues, organizers, rich text, translations, drafts, revisions and publication.

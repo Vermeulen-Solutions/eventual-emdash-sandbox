@@ -7,6 +7,7 @@ import { nativeEntryToEventRecord } from "./event-expansion";
 import { normalizeVenueRecord, type NormalizedVenue } from "./venue-adapter";
 import { referenceTarget, eventSchema } from "./native-references";
 import { safeHttpUrl } from "./venue";
+import { publicEventImageUrl } from "./image";
 import {
   listEvents,
   listVenuesById,
@@ -208,75 +209,42 @@ export async function hydrateNativeAssets(
   events: EventRecord[],
 ): Promise<EventRecord[]> {
   const urls = new Map<string, string>();
-  const images = new Map<string, string>();
   const organizers = new Map<
     string,
     NonNullable<EventRecord["organizerDetails"]>
   >();
-  const organizerIds = [
-    ...new Set(
-      events.flatMap((event) => (event.organizerId ? [event.organizerId] : [])),
-    ),
-  ];
+  const organizerIds = [...new Set(events.flatMap((e) => e.organizerId ? [e.organizerId] : []))];
   if (organizerIds.length) {
     const target = referenceTarget(await eventSchema(ctx), "organizer_ref");
-    for (const [key, entry] of await localizedReferences(
-      ctx,
-      target,
-      events,
-      (event) => event.organizerId,
-    )) {
+    for (const [key, entry] of await localizedReferences(ctx, target, events, (e) => e.organizerId)) {
       organizers.set(key, {
         id: entry.id,
         name: String(entry.data.name ?? entry.data.title ?? ""),
         website: safeHttpUrl(String(entry.data.website ?? "")),
-        contactUrl: safeHttpUrl(
-          String(entry.data.contact_url ?? entry.data.contactUrl ?? ""),
-        ),
+        contactUrl: safeHttpUrl(String(entry.data.contact_url ?? entry.data.contactUrl ?? "")),
       });
     }
   }
-  const ids = [...new Set(events.map((event) => event.id.split("#")[0]!))];
-  const collection = (await eventSchema(ctx))?.slug ?? 'events';
-  for (let i = 0; i < ids.length; i += 20)
-    await Promise.all(
-      ids.slice(i, i + 20).map(async (id) => {
-        const url = await ctx.content?.getPublicUrl?.(collection, id);
-        if (url) urls.set(id, url);
-      }),
-    );
-  const mediaIds = [
-    ...new Set(
-      events.flatMap((event) =>
-        event.imageMediaId && !event.imageUrl ? [event.imageMediaId] : [],
-      ),
-    ),
-  ];
-  for (let i = 0; i < mediaIds.length; i += 20)
-    await Promise.all(
-      mediaIds.slice(i, i + 20).map(async (id) => {
-        const media = await ctx.media?.get(id);
-        if (media) images.set(id, media.url);
-      }),
-    );
-  return events.map((event) => ({
-    ...event,
-    organizer:
-      event.organizer ||
-      (
-        organizers.get(
-          (event.organizerId ?? "") + "|" + (event.locale ?? "").toLowerCase(),
-        ) ?? organizers.get(event.organizerId ?? "")
-      )?.name ||
-      event.organizerDetails?.name ||
-      "",
-    organizerDetails:
-      organizers.get(
-        (event.organizerId ?? "") + "|" + (event.locale ?? "").toLowerCase(),
-      ) ??
-      organizers.get(event.organizerId ?? "") ??
-      event.organizerDetails,
-    publicUrl: urls.get(event.id.split("#")[0]!) ?? event.publicUrl,
-    imageUrl: event.imageUrl || images.get(event.imageMediaId ?? "") || "",
-  }));
+  const ids = [...new Set(events.map((e) => e.id.split("#")[0]!))];
+  const collection = (await eventSchema(ctx))?.slug ?? "events";
+  if (ctx.content?.getPublicUrl) {
+    for (let i = 0; i < ids.length; i += 20)
+      await Promise.all(ids.slice(i, i + 20).map(async (id) => {
+        const u = await ctx.content!.getPublicUrl!(collection, id);
+        if (u) urls.set(id, u);
+      }));
+  }
+  const pId = ctx.plugin?.id ?? "eventual";
+  return events.map((e) => {
+    const org = organizers.get((e.organizerId ?? "") + "|" + (e.locale ?? "").toLowerCase()) ?? organizers.get(e.organizerId ?? "");
+    return {
+      ...e,
+      organizer: e.organizer || org?.name || e.organizerDetails?.name || "",
+      organizerDetails: org ?? e.organizerDetails,
+      publicUrl: urls.get(e.id.split("#")[0]!) ?? e.publicUrl,
+      imageUrl: (e.featuredMediaId || e.imageMediaId)
+        ? publicEventImageUrl(pId, e.id)
+        : (e.imageUrl || ""),
+    };
+  });
 }

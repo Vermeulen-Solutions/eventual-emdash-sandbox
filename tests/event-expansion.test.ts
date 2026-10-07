@@ -156,4 +156,35 @@ describe("expandEventOccurrences", () => {
 
 		expect(occurrences).toHaveLength(0);
 	});
+
+	it("hydrates featured media to publicEventImage endpoint", () => {
+		const entry = {
+			id: "evt-with-image",
+			data: {
+				id: "evt-with-image",
+				title: "Event With Poster",
+				start: "2026-10-15T10:00:00.000Z",
+				end: "2026-10-15T12:00:00.000Z",
+				all_day: false,
+				timezone: "UTC",
+				status: "published",
+				featured_image: { id: "media_poster_123" },
+			},
+		};
+		const record = nativeEntryToEventRecord(entry);
+		expect(record).not.toBeNull();
+		expect(record?.featuredMediaId).toBe("media_poster_123");
+		expect(record?.imageMediaId).toBe("media_poster_123");
+
+		const publicEvent = eventRecordToPublicEvent(record!, undefined, "https://example.com");
+		expect(publicEvent.imageUrl).toBe(
+			"https://example.com/_emdash/api/plugins/eventual/publicEventImage?eventId=evt-with-image",
+		);
+
+		const relativeEvent = eventRecordToPublicEvent(record!);
+		expect(relativeEvent.imageUrl).toBe(
+			"/_emdash/api/plugins/eventual/publicEventImage?eventId=evt-with-image",
+		);
+	});
 });
+

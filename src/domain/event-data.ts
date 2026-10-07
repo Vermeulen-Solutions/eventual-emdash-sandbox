@@ -126,6 +126,7 @@ export function prepareEventData(
   }
 
   const categories = normalizeCategories(draft.categories);
+  const mediaId = (draft.featuredMediaId || draft.imageMediaId || "").trim();
   return {
     data: {
       title,
@@ -140,8 +141,8 @@ export function prepareEventData(
       organizer: draft.organizer.trim(),
       ...(draft.organizerId ? { organizerId: draft.organizerId } : {}),
       externalUrl: safeHttpUrl(draft.externalUrl),
-      imageUrl: draft.imageMediaId.trim() ? "" : safeHttpUrl(draft.imageUrl),
-      ...(draft.imageMediaId.trim() ? { imageMediaId: draft.imageMediaId.trim() } : {}),
+      imageUrl: mediaId ? "" : safeHttpUrl(draft.imageUrl),
+      ...(mediaId ? { imageMediaId: mediaId, featuredMediaId: mediaId } : {}),
       categories,
       ...(draft.venueId ? { venueId: draft.venueId } : {}),
       published: draft.published,
@@ -175,7 +176,8 @@ export function eventToDraft(event: EventRecord): EventDraft {
     organizerId: event.organizerId,
     externalUrl: event.externalUrl,
     imageUrl: event.imageUrl,
-    imageMediaId: event.imageMediaId ?? "",
+    imageMediaId: event.featuredMediaId ?? event.imageMediaId ?? "",
+    featuredMediaId: event.featuredMediaId ?? event.imageMediaId ?? undefined,
     categories: event.categories.join(", "),
     venueId: event.venueId ?? "",
     published: event.published,

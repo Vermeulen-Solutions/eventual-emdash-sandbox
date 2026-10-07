@@ -52,7 +52,7 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 	if (source!.native) {
 		const venues=await resolveEventVenues(ctx,visible,source!.schema);
 		const hydrated=await hydrateNativeAssets(ctx,visible);
-		return {ok:true,from,through,events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url))};
+		return {ok:true,from,through,events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url,ctx.plugin.id))};
 	}
 	const [venues, organizers] = await Promise.all([
 		listVenuesById(ctx, visible.flatMap(event => event.venueId ? [event.venueId] : [])),

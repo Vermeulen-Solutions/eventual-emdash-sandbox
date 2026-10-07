@@ -49,6 +49,7 @@ export interface EventFields {
   externalUrl: string;
   imageUrl: string;
   imageMediaId?: string;
+  featuredMediaId?: string;
   categories: string[];
   venueId?: string;
   published: boolean;
@@ -72,6 +73,7 @@ export type EventOverride = Partial<
     | "externalUrl"
     | "imageUrl"
     | "imageMediaId"
+    | "featuredMediaId"
     | "categories"
     | "locale"
   >
@@ -120,6 +122,7 @@ export interface EventDraft {
   externalUrl: string;
   imageUrl: string;
   imageMediaId: string;
+  featuredMediaId?: string;
   categories: string;
   venueId: string;
   published: boolean;

@@ -39,7 +39,6 @@ export function formatPublicEvent(
 	organizer?: OrganizerRecord,
 ): PublicEvent {
 	const location = eventLocation(venue, event.location);
-	const baseEventId = event.id.split("#", 1)[0]!;
 	const result: PublicEvent = {
 		...(event.locale ? { locale: event.locale } : {}),
 		...(event.translationGroup ? { translationGroup: event.translationGroup } : {}),
@@ -62,7 +61,9 @@ export function formatPublicEvent(
 			: (event.organizerDetails ? { organizerDetails: event.organizerDetails } : {})),
 		...(event.status === 'rescheduled' && event.previousStartDate ? { previousStartDate: event.previousStartDate } : {}),
 		externalUrl: event.externalUrl,
-		imageUrl: event.imageUrl || (event.imageMediaId ? publicEventImageUrl(pluginId, baseEventId) : ""),
+		imageUrl: (event.featuredMediaId || event.imageMediaId)
+			? (event.imageUrl?.includes("publicEventImage") ? event.imageUrl : publicEventImageUrl(pluginId, event.id))
+			: (event.imageUrl || ""),
 		categories: normalizeCategories(event.categories),
 		venue: venue ? { id: venue.id, name: venue.name, address: formatVenueAddress(venue), addressParts: { street: venue.street, street2: venue.street2, locality: venue.locality, region: venue.region, postalCode: venue.postalCode, country: venue.country } } : null,
 		directionsUrl: directionsUrl(location),

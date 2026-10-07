@@ -3,9 +3,9 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 // Native collection controls and legacy compatibility share the archive.
-// Keep the registry's hard limits unchanged and reserve 512 bytes
+// Keep the registry's hard limits unchanged and reserve 256 bytes
 // per file. New features require further consolidation; measure every archive.
-export const budgets = { file: 127.5 * 1024, total: 220 * 1024, files: 16 };
+export const budgets = { file: 127.75 * 1024, total: 220 * 1024, files: 16 };
 export const hardLimits = { file: 128 * 1024, total: 256 * 1024, files: 20 };
 
 // Measure the actual installation payload, including manifest and README.

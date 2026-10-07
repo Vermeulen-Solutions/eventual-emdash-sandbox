@@ -566,8 +566,14 @@ describe("Native modernization through the EmDash production runtime", {timeout:
       through: "2026-11-30",
     })) as any;
     expect(feed.events[0].imageUrl).toContain(
-      "/_emdash/api/media/asset/" + media.id,
+      "/_emdash/api/plugins/eventual/publicEventImage?eventId=" + saved.data.item.id,
     );
+    const direct = await h.actions.routes.request("publicEventImage", {
+      method: "GET",
+      url: feed.events[0].imageUrl,
+    });
+    expect(direct.status).toBe(200);
+    expect((await direct.arrayBuffer()).byteLength).toBe(8);
     expect(feed.events[0].publicUrl).toContain("/events/");
     const alias = await h.actions.routes.request("publicEventImage", {
       method: "GET",

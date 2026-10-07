@@ -8,13 +8,13 @@ import { getEvent, type EventualContext } from "../storage";
 import { nativeSchema, listNative } from "../domain/native-source";
 import { nativeEntryToEventRecord } from "../domain/event-expansion";
 
-function notFound() {
-  return pluginResponse({
-    status: 404,
+const textResponse = (status: number, value: string) =>
+  pluginResponse({
+    status,
     headers: { "content-type": "text/plain; charset=utf-8" },
-    body: { kind: "text", value: "Not found" },
+    body: { kind: "text", value },
   });
-}
+const notFound = () => textResponse(404, "Not found");
 
 export async function handlePublicEventImage(
   input: unknown,
@@ -25,29 +25,32 @@ export async function handlePublicEventImage(
   const eventId = (input as { eventId?: unknown }).eventId;
   if (typeof eventId !== "string" || eventId.length < 1 || eventId.length > 128)
     return notFound();
+  const [baseId, occ] = eventId.split("#");
   const schema = await nativeSchema(ctx);
   const record = schema
     ? (await listNative(ctx, schema.slug, true)).find(
-        (item) => item.id === eventId || item.data.legacy_id === eventId,
+        (i) => [eventId, baseId].includes(i.id) || [eventId, baseId].includes(i.data.legacy_id as string),
       )
     : undefined;
-  const event = schema
+  let event = schema
     ? nativeEntryToEventRecord(record)
-    : await getEvent(ctx, eventId);
-  if (!event?.published || !event.imageMediaId || !ctx.media?.readBytes)
+    : (await getEvent(ctx, eventId)) ?? (await getEvent(ctx, baseId!));
+  if (event && occ) {
+    const ex = event.exceptions?.find((e) => e.recurrenceId === occ);
+    const m = ex?.overrides?.featuredMediaId || ex?.overrides?.imageMediaId;
+    if (m) event = { ...event, featuredMediaId: m, imageMediaId: m };
+  }
+  const mediaId = event?.featuredMediaId || event?.imageMediaId;
+  if (!event?.published || !mediaId || !ctx.media?.readBytes)
     return notFound();
-  const media = await ctx.media.get(event.imageMediaId);
+  const media = await ctx.media.get(mediaId);
   if (!media || !isPublicEventImageType(media.mimeType)) return notFound();
   if (media.size !== null && media.size > MAX_PUBLIC_EVENT_IMAGE_BYTES) {
-    return pluginResponse({
-      status: 413,
-      headers: { "content-type": "text/plain; charset=utf-8" },
-      body: { kind: "text", value: "Event image is too large" },
-    });
+    return textResponse(413, "Event image is too large");
   }
 
   try {
-    const file = await ctx.media.readBytes(event.imageMediaId, {
+    const file = await ctx.media.readBytes(mediaId, {
       maxBytes: MAX_PUBLIC_EVENT_IMAGE_BYTES,
     });
     if (

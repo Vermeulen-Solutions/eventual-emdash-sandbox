@@ -139,6 +139,7 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
           ? text((venue as Record<string, unknown>).id)
           : "";
     const categories = readCategories(data.categories);
+    const mediaId = text(image?.id ?? data.featuredMediaId ?? data.featured_media_id ?? data.imageMediaId);
     return {
       id,
       title: text(data.title).trim(),
@@ -175,10 +176,9 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
         data.organizer_details,
       ) as EventRecord["organizerDetails"],
       venueId: reference,
-      imageUrl: text(
-        image?.src ?? image?.url ?? data.image_url ?? data.imageUrl,
-      ),
-      imageMediaId: text(image?.id ?? data.imageMediaId),
+      imageUrl: mediaId ? "" : text(data.image_url ?? data.imageUrl ?? image?.src ?? image?.url),
+      imageMediaId: mediaId,
+      featuredMediaId: mediaId || undefined,
       categories,
       createdAt:
         timestamp(outer.createdAt ?? data.created_at ?? data.createdAt) ||
@@ -217,6 +217,7 @@ export function eventRecordToPublicEvent(
   record: EventRecord,
   venueMap?: Map<string, NormalizedVenue>,
   siteUrl?: string,
+  pluginId = "eventual",
 ): PublicEvent {
   const venue = localizedVenue(venueMap, record);
   const normalized = venue
@@ -232,7 +233,8 @@ export function eventRecordToPublicEvent(
         updatedAt: "",
       }
     : undefined;
-  let imageUrl = record.imageUrl;
+  const formatted = formatPublicEvent(record, normalized, pluginId);
+  let imageUrl = formatted.imageUrl || record.imageUrl;
   if (siteUrl && imageUrl) {
     try {
       imageUrl = new URL(imageUrl, siteUrl).href;
@@ -241,7 +243,7 @@ export function eventRecordToPublicEvent(
     }
   }
   return {
-    ...formatPublicEvent(record, normalized),
+    ...formatted,
     description: portableTextToPlainText(record.description),
     ...(record.descriptionBlocks
       ? { descriptionBlocks: record.descriptionBlocks }

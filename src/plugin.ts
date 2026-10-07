@@ -1,4 +1,3 @@
-import * as text from './ui/i18n';
 import { pluginResponse, pluginRoute, type SandboxedPlugin } from "emdash/plugin";
 
 import { handleAdmin } from "./admin";
