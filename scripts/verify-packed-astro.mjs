@@ -32,7 +32,7 @@ writeFileSync(
     name: "eventual-package-check",
     private: true,
     type: "module",
-    dependencies: { react: "19.2.4", "react-dom": "19.2.4", emdash: "1.0.1", astro: "7.3.2", "@astrojs/node": "11.1.5", "@astrojs/react": "6.0.5", "@emdash-cms/sandbox-workerd": "0.9.1" },
+    dependencies: { react: "19.2.4", "react-dom": "19.2.4", emdash: "1.2.0", astro: "7.3.2", "@astrojs/node": "11.1.5", "@astrojs/react": "6.0.5", "@emdash-cms/sandbox-workerd": "0.9.3" },
     overrides: { sharp: "0.35.5", "undici@7.29.0": "7.29.1" },
   }),
 );
@@ -52,11 +52,8 @@ writeFileSync(
   join(work, "astro.config.mjs"),
   "import {defineConfig} from 'astro/config'; export default defineConfig({output:'static',site:'https://consumer.example'});\n",
 );
-writeFileSync(
-  join(work, "verify-editor.mjs"),
-  `import {eventualEditor,createPlugin} from './node_modules/eventual/astro/descriptor.mjs'; import {eventualEditorCompatibility} from 'eventual/admin/compat'; import {checkEditorVersions,emdashWithEventual} from 'eventual/install'; import eventual from 'eventual'; if(eventualEditor().version!==eventual.version || Object.keys(createPlugin().routes).length || !eventualEditorCompatibility().transform) throw Error('Packed editor companion failed'); checkEditorVersions(); emdashWithEventual({sandboxed:[eventual]}); emdashWithEventual({});`,
-);
-run(join(work, "verify-editor.mjs"), [], work);
+writeFileSync(join(work,'verify-editor.mjs'),"import eventual from 'eventual'; import emdash from 'emdash/astro'; if(typeof emdash!=='function'||!eventual.adminPages.some(page=>page.path==='/venues'))throw Error('Self-contained descriptor failed'); emdash({sandboxed:[eventual]});");
+run(join(work,'verify-editor.mjs'),[],work);
 const installedSchema=JSON.parse(run(join(work,"node_modules/eventual/scripts/export-native-schema.mjs"),[],work));
 if(!installedSchema.collections.some(collection=>collection.slug === "events")) throw new Error("Installed schema CLI failed.");
 writeFileSync(
@@ -74,7 +71,7 @@ if(events.length!==2 || !events.some(event=>event.id==='cms-all-day') || !events
 if(!createEventsCollectionBlueprint().supports.includes('scheduling'))throw new Error('Packed schema export failed');
 const ld=serializeJsonLd(eventToJsonLd(events.find(event=>event.id==='cms-id'),{siteUrl:'https://consumer.example'}));
 ---
-<html lang={locale}><head><title>Package check</title><script type="application/ld+json" set:html={ld}/></head><body><EventList events={events} locale={locale} /></body></html>
+<html lang={locale}><head><meta charset="utf-8"/><title>Package check</title><script type="application/ld+json" set:html={ld}/></head><body><EventList events={events} locale={locale} /></body></html>
 `,
 );
 run(resolve(root, "node_modules/astro/bin/astro.mjs"), ["build"], work);

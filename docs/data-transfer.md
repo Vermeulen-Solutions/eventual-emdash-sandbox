@@ -1,4 +1,6 @@
-# Eventual data transfer
+# Eventual 0.13.0 data transfer
+
+**Breaking upgrade:** [Read the 0.13.0 guide](upgrade-0.13.0.md). Legacy imports below apply only before native authority is active. Native exports are native-content-v1 inspection exports, not full backups or legacy-import input. Explicit migration needs --legacy-compatibility schemas.
 
 Import/export uses the authenticated MCP tools `exportRecords`, `previewImport`,
 and `importRecords`, all restricted to `plugins:manage`. JSON parsing, CSV and ICS
@@ -74,11 +76,11 @@ Exports are paginated; clients must follow every cursor. Pages larger than
 64 KiB are retried with one row; oversized individual records need a host export.
 Exports are not a transactional snapshot: pause editing for a consistent backup.
 
-## Native collections & migration (v0.12.0+)
+## Native collections and explicit prototype migration (0.13.0)
 
-Starting with Eventual v0.12.0, event data is stored in native EmDash collections (`events`, `venues` or `locations`).
+Eventual 0.13.0 uses the collections selected in settings, including custom event, venue/location and organizer names.
 
-- **Single Native Authority:** Once the native `events` collection exists on the host site, legacy import tools (`previewImport`, `importRecords`) return `NATIVE_COLLECTIONS_ACTIVE` to prevent accidental split-brain storage.
+- **Single Native Authority:** Once native collections are authoritative on the host site, legacy import tools (`previewImport`, `importRecords`) return `NATIVE_COLLECTIONS_ACTIVE` to prevent accidental split-brain storage.
 - **Migration Engine:** To move data from legacy Eventual storage into native collections, use the `migrateToNative` MCP tool or `POST /_emdash/api/plugins/eventual/mcp/transfer/migrateToNative`.
   - Supports `dryRun: true` to preview counts, mappings, and potential warnings with zero database writes.
   - Runs in bounded batches with `limit` (default 50) and cursor-based resumption via `nextCursor`.

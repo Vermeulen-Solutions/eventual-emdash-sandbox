@@ -13,7 +13,7 @@ import { nativeEntryToEventRecord } from "./event-expansion";
 import { calendarHost, reconcileNativeCalendar } from "./native-calendar";
 import { eventUid } from "./icalendar";
 import { listNative } from "./native-source";
-import { referenceTarget, referenceField } from "./native-references";
+import { eventSchema, referenceTarget, referenceField } from "./native-references";
 
 export interface MigrateToNativeOptions {
   locale?: string;
@@ -111,7 +111,7 @@ export async function migrateToNative(
       throw new Error("Use a canonical BCP 47 locale.");
     if (dryRun)
       result.warnings = [
-        "Native IDs are assigned during execution. Site locale configuration and other plugins' save/publication policies are checked by EmDash during execution.",
+        "Execution assigns native IDs and checks site locales and other plugins' content policies.",
       ];
     if (
       !ctx.schema ||
@@ -123,7 +123,7 @@ export async function migrateToNative(
         "Native schema, content write and publication APIs are required.",
       );
     const schemas = await ctx.schema.listCollections();
-    const eventsSchema = schemas.find((schema) => schema.slug === "events");
+    const eventsSchema = await eventSchema(ctx);
     if (!eventsSchema)
       throw new Error("Apply the Eventual events blueprint before migrating.");
     const reference = referenceTarget(eventsSchema,"venue");
@@ -194,7 +194,7 @@ export async function migrateToNative(
       lease = await ctx.kv.getVersioned(lockKey);
     }
     const existingVenues = await listNative(ctx, result.venueCollection);
-    const existingEvents = await listNative(ctx, "events");
+    const existingEvents = await listNative(ctx, eventsSchema.slug);
     const indexes = new Map<string, Map<string, ContentItem>>([
       [
         result.venueCollection,
@@ -205,7 +205,7 @@ export async function migrateToNative(
         ),
       ],
       [
-        "events",
+        eventsSchema.slug,
         new Map(
           existingEvents
             .filter((item) => typeof item.data.legacy_id === "string")
@@ -328,13 +328,13 @@ export async function migrateToNative(
         const row = await ctx.content!.get(collection, ledger.id);
         if (!row)
           throw new Error(
-            "Migrated native item was removed; restore it explicitly instead of resurrecting legacy data.",
+            "Native item removed; restore it explicitly.",
           );
         existing = row;
       }
       if (existing) {
         if (
-          collection === "events" &&
+          collection === eventsSchema.slug &&
           existing.locale &&
           existing.locale !== locale
         )
@@ -463,9 +463,10 @@ export async function migrateToNative(
             payload = venuePayload(row, legacyId);
             published = true;
           } else {
-            collection = "events";
+            collection = eventsSchema.slug;
             schema = eventsSchema;
             const event = row as unknown as EventRecord;
+            if(Object.keys(event.translations ?? {}).length) throw new Error('Manual translations need explicit native locale rows. Migration skipped; source retained.');
             let nativeVenue = event.venueId
               ? (mapping.get(event.venueId) ??
                 (

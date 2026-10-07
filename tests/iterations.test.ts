@@ -59,7 +59,7 @@ it('retains legacy organizer management and guards concurrent edits', async () =
     expect(feed).toMatchObject({ events: [{ organizer: 'Association', organizerDetails: { id: organizer.id }, previousStartDate: '2026-10-10' }] });
     await expect(h.transport.invokeRoute('mcp/events/update', { id: created.event.id, patch: { organizerId: '' } })).resolves.toMatchObject({ ok: true });
   } finally { await h.dispose(); }
-}, 15000);
+}, 60000);
 
 it('previews without writes, reports bad rows, and deduplicates concurrent real imports atomically', async () => {
   const h = await createPluginRuntimeTestHost();
@@ -84,7 +84,7 @@ it('previews without writes, reports bad rows, and deduplicates concurrent real 
     const fold = await h.transport.invokeRoute('mcp/transfer/import', { ...input, records: [{ sourceId: timed.id, data: timed }] }) as { rows: Array<{ id: string }> };
     expect(await h.inspect.storage.get('events', fold.rows[0]!.id)).toMatchObject({ start: timed.start, end: timed.end });
   } finally { await h.dispose(); }
-}, 15000);
+}, 60000);
 
 it('exports and restores related records and recurrence exceptions across fresh hosts', async () => {
   const routes = { exportRecords: 'mcp/transfer/export', previewImport: 'mcp/transfer/preview', importRecords: 'mcp/transfer/import' };

@@ -1,3 +1,4 @@
+import { TIMEZONE_ERROR, TIMEZONE_UNAVAILABLE, DST_ERROR } from './messages';
 export interface DateValidationError {
   start?: string;
   end?: string;
@@ -123,7 +124,7 @@ export function localDateTimeToInstant(
   const desired = parseWallDateTime(value);
   if (!desired) return { error: "Enter a valid date and time." };
   if (!isValidTimeZone(timezone)) {
-    return { error: "Enter a valid IANA timezone, such as Europe/Paris." };
+    return { error: TIMEZONE_ERROR };
   }
 
 	const wantedEpoch = utcEpoch(desired);
@@ -143,14 +144,14 @@ export function localDateTimeToInstant(
 		if (candidateParts && sameParts(candidateParts, desired)) possibleInstants.add(candidate);
 	}
 	if (!timezoneWorked) {
-		return { error: "The selected timezone could not be applied." };
+		return { error: TIMEZONE_UNAVAILABLE };
 	}
 	if (possibleInstants.size) {
 		return { value: new Date(Math.min(...possibleInstants)).toISOString() };
 	}
 	{
 		return {
-			error: "That local time does not exist because of a daylight-saving change.",
+			error: DST_ERROR,
 		};
 	}
 }
@@ -196,7 +197,7 @@ export function normalizeEventDates(input: {
   }
 
   if (!isValidTimeZone(input.timezone)) {
-    errors.timezone = "Enter a valid IANA timezone, such as Europe/Paris.";
+    errors.timezone = TIMEZONE_ERROR;
     return { errors };
   }
   const start = localDateTimeToInstant(input.start, input.timezone);

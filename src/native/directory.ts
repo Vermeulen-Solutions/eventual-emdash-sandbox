@@ -2,7 +2,7 @@ import type { PluginContentItem } from "emdash";
 import { normalizeVenueRecord } from "../domain/venue-adapter";
 
 /** One choice per translation group; keep a saved row ID unchanged. */
-export function directoryChoices(entries: PluginContentItem[], locale: string, selected: string | undefined, search = "", venue = false) {
+export function directoryChoices(entries: PluginContentItem[], locale: string, selected: string | undefined, search = "", venue = false, limit = 80) {
   const groups = new Map<string, PluginContentItem[]>();
   for (const item of entries) {
     const key = item.translationGroup || item.id;
@@ -20,7 +20,7 @@ export function directoryChoices(entries: PluginContentItem[], locale: string, s
   }).sort((a, b) => a.label.localeCompare(b.label));
   const query = search.trim().normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   const matches = choices.filter(item => !query || item.label.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().includes(query));
-  const visible = matches.slice(0, 80);
+  const visible = matches.slice(0, limit);
   const current = choices.find(item => item.value === selected);
   if (current && !visible.includes(current)) visible.push(current);
   return { choices: visible, current, matches: matches.length };

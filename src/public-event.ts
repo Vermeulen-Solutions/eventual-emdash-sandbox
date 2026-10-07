@@ -41,6 +41,8 @@ export function formatPublicEvent(
 	const location = eventLocation(venue, event.location);
 	const baseEventId = event.id.split("#", 1)[0]!;
 	const result: PublicEvent = {
+		...(event.locale ? { locale: event.locale } : {}),
+		...(event.translationGroup ? { translationGroup: event.translationGroup } : {}),
 		id: event.id,
 		updatedAt: event.updatedAt,
 		title: event.title,

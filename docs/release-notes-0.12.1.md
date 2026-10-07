@@ -1,3 +1,9 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
+> Historical two-package proposal — superseded. Do not follow the installation or publication commands below. The current unpublished candidate uses native EmDash 1.2 collections, a sandbox saved-entry panel and optional schema setup only. See [Collection setup](collection-setup.md) and [Registry installation](registry-installation.md). Publication remains on hold.
+
+> **Superseded installation proposal:** The current candidate is self-contained. Do not follow a two-package installation requirement below. See [self-contained architecture](./self-contained-plugin.md) and [current installation](./registry-installation.md). Historical evidence below refers to the earlier companion candidate; publication is on hold.
+
 # Eventual 0.12.1
 
 This recovery release restores friendly editing after the initial native-collection modernization. Current public styling is preserved. The registry backend and matching host package must be installed together.

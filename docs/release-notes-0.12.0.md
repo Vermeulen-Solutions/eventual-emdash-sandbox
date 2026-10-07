@@ -1,3 +1,5 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
 # Eventual 0.12.0 release candidate
 
 This release candidate moves event content into native EmDash collections while restoring friendly recurrence and occurrence editing. It has not been published by the audit/refinement work. The backend registry archive and matching Astro host package must be delivered together.

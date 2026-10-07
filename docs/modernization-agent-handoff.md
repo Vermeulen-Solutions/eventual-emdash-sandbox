@@ -1,3 +1,5 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
 # Eventual modernization: implementation repair and completion handoff
 
 **Current continuation:** Read [release-refinements-2026-10-07.md](release-refinements-2026-10-07.md) for the final installation, French interface, venue selection, package acceptance and remaining deployment work. The prior handoff below is historical.

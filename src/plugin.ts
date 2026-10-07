@@ -1,8 +1,9 @@
+import * as text from './ui/i18n';
 import { pluginResponse, pluginRoute, type SandboxedPlugin } from "emdash/plugin";
-import type { BlockResponse } from "@emdash-cms/blocks";
 
-import { handleAdmin } from "./native-admin";
-import { handleScheduleEditorPanel } from "./native/schedule-panel";
+import { handleAdmin } from "./admin";
+import { localizeResponse } from "./ui/localize";
+import { handleSavedSchedulePanel } from './native/saved-panel';
 import { handlePublicEvents } from "./routes/public-events";
 import { handlePublicEventImage } from "./routes/public-media";
 import { handleCalendarFeed } from "./routes/calendar-feed";
@@ -11,10 +12,6 @@ import { mcpRoutes } from "./mcp";
 import { transferRoutes } from './transfer';
 import { EventScanLimitError } from "./storage";
 import { handleContentBeforeSave, handleContentBeforeDelete, handleContentBeforePublish, handleContentBeforeUnpublish } from "./hooks/content-hooks";
-const editorUi = (response: BlockResponse) => {
-  if (response.blocks[0]) response.blocks[0].block_id = "eventual-ui";
-  return response;
-};
 
 const plugin: SandboxedPlugin = {
 	hooks: {
@@ -29,11 +26,11 @@ const plugin: SandboxedPlugin = {
 		...transferRoutes,
 		admin: {
 			permission: "content:edit_any",
-            handler: async (routeCtx, ctx) => editorUi(await handleAdmin(routeCtx.input, ctx, routeCtx.user)),
+            handler: async (routeCtx, ctx) => localizeResponse(await handleAdmin(routeCtx.input, {...ctx,site:{...ctx.site,url:ctx.site.url || new URL(routeCtx.request.url).origin}}, routeCtx.user), routeCtx.ui?.locale),
 		},
 		"admin/editor/schedule": {
 			permission: "content:edit_any",
-			handler: async (routeCtx, ctx) => editorUi(await handleScheduleEditorPanel(routeCtx, ctx)),
+			handler: async (routeCtx,ctx) => localizeResponse(await handleSavedSchedulePanel(routeCtx,ctx), routeCtx.ui?.locale),
 		},
 		publicEvents: pluginRoute({
 			public: true,

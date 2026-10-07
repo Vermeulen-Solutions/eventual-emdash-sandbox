@@ -18,3 +18,14 @@ export function normalizeCategories(values: string | string[]): string[] {
 export function categoryKey(value: string): string {
 	return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
+
+/** New native forms use comma-separated text; older schemas stored JSON arrays. */
+export function readCategories(value: unknown): string[] {
+  if (value == null || value === "") return [];
+  if (typeof value === "string" && value.trim().startsWith("["))
+    value = JSON.parse(value);
+  if (typeof value === "string") return normalizeCategories(value);
+  if (!Array.isArray(value) || value.some(item => typeof item !== "string"))
+    throw new Error("Categories must be comma-separated text or an array of names.");
+  return normalizeCategories(value);
+}

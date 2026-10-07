@@ -7,16 +7,17 @@ import { measureArchive, checkBudget, budgets, hardLimits } from "./bundle-budge
 const root=process.cwd(), npm=process.env.npm_execpath;
 if (!npm) throw new Error("Use npm run release:prepare.");
 const acceptance=JSON.parse(readFileSync("reports/editor-installation.json","utf8"));
+if(acceptance.unexpectedBrowserErrors !== 0 || !Array.isArray(acceptance.knownUpstreamDiagnostics)) throw new Error('Complete browser console inspection with explicit upstream diagnostics.');
 const browser=JSON.parse(readFileSync("reports/browser-acceptance.json","utf8"));
-const publicVisual=JSON.parse(readFileSync("reports/public-visual/capture.json","utf8"));
-if(!publicVisual.passed || publicVisual.errors.length || publicVisual.captures.length<20) throw new Error("Complete the desktop/mobile public visual acceptance run first.");
-if(!acceptance.passed || browser.stats.unexpected || browser.stats.flaky || browser.stats.skipped || browser.stats.expected<2) throw new Error("Pass both packed browser acceptance workflows first.");
-for(const path of ["reports/refinement-unit.log","reports/refinement-unit-new-york.log"]) {
+if(acceptance.frontendVisual?.screenshots?.length<2 || !acceptance.frontendVisual?.screenshots?.every(path=>existsSync(path))) throw new Error('Complete current packed frontend component screenshots first.');
+if(!acceptance.passed || acceptance.architecture !== 'native-collections' || acceptance.emdashVersion !== '1.2.0' || !acceptance.selfContained || acceptance.frontendCompanion !== false || browser.stats.unexpected || browser.stats.flaky || browser.stats.skipped || browser.stats.expected<2) throw new Error("Pass the native-collection browser workflows on EmDash 1.2 first.");
+for(const path of ["reports/native-full-tests.log","reports/native-full-tests-new-york.log"]) {
   const log=readFileSync(path,"utf8");
-  if(!/Tests\s+170 passed/.test(log) || /Unhandled Error|Test Files.*failed/.test(log)) throw new Error("Complete the clean plugin acceptance run: "+path);
+  const count=Number(log.match(/Tests\s+(\d+) passed/)?.[1] ?? 0);
+  if(count<181 || /Unhandled Error|Test Files.*failed/.test(log)) throw new Error("Complete the clean plugin acceptance run: "+path);
 }
-if(!/pass 17/.test(readFileSync("reports/refinement-tooling.log","utf8"))) throw new Error("Complete the tooling acceptance run.");
-if(/error TS\d+/.test(readFileSync("reports/refinement-typecheck.log","utf8"))) throw new Error("Fix TypeScript errors before packaging.");
+if(Number(readFileSync("reports/native-tooling.log","utf8").match(/pass (\d+)/)?.[1] ?? 0)<20) throw new Error("Complete the tooling acceptance run.");
+if(/error TS\d+/.test(readFileSync("reports/native-typecheck.log","utf8"))) throw new Error("Fix TypeScript errors before packaging.");
 const pkg=JSON.parse(readFileSync("package.json","utf8"));
 function run(script,args) {
   const result=spawnSync(process.execPath,[script,...args],{cwd:root,encoding:"utf8",windowsHide:true});
@@ -30,16 +31,16 @@ const measured=measureArchive(readFileSync(archive));
 const errors=[...checkBudget(measured),...checkBudget(measured,hardLimits)];
 if(errors.length) throw new Error(errors.join("\n"));
 const manifest=JSON.parse(readFileSync("dist/manifest.json","utf8"));
-if(manifest.version !== pkg.version) throw new Error("Backend and host versions differ.");
-const destination=resolve("dist/host");mkdirSync(destination,{recursive:true});
+if(manifest.version !== pkg.version) throw new Error("Manifest and package versions differ.");
+const destination=resolve("dist/source");mkdirSync(destination,{recursive:true});
 const [packed]=JSON.parse(run(npm,["pack","--json","--ignore-scripts","--pack-destination",destination]));
-for(const required of ["package/astro/install.mjs","package/astro/editor-compat.mjs","package/astro/editor-i18n.mjs","package/astro/admin.mjs","package/astro/blueprint.mjs","package/astro/blueprint.d.mts","package/scripts/upgrade-native-editor.mjs","package/docs/editor-upgrade.md"]) {
-  if(!packed.files.some(file=>"package/"+file.path === required)) throw new Error("Host package missing "+required);
+for(const required of ["package/dist/index.mjs","package/dist/plugin.mjs","package/astro/feed.ts","package/astro/blueprint.mjs"]) {
+  if(!packed.files.some(file=>"package/"+file.path === required)) throw new Error("Optional source package missing "+required);
 }
 function artifact(path) { const bytes=readFileSync(path);return {path,bytes:bytes.length,sha256:createHash("sha256").update(bytes).digest("hex")}; }
 const artifacts=[artifact(archive),artifact(join(destination,packed.filename))];
-if(artifacts[1].sha256 !== acceptance.sha256) throw new Error("Host package differs from the browser-tested archive. Rerun test:package and test:editor after final changes.");
-const report={version:pkg.version,preparedAt:new Date().toISOString(),published:false,registryPayload:{...measured,budgets,hardLimits,errors:[]},artifacts,hostPackageFiles:packed.files.map(file=>file.path),acceptanceEvidence:["reports/refinement-unit.log","reports/refinement-tooling.log","reports/refinement-typecheck.log","reports/packed-astro.json","reports/browser-acceptance.json"].map(path=>({path,exists:existsSync(path),modified:existsSync(path)?statSync(path).mtime.toISOString():null})),note:"Artifact preparation does not certify unrun external subscriber, live translation-service or deployed D1 checks. See the release handoff and test logs."};
+if(artifacts[1].sha256 !== acceptance.sha256) throw new Error("Source package differs from the browser-tested archive. Rerun test:package and test:editor after final changes.");
+const report={version:pkg.version,preparedAt:new Date().toISOString(),published:false,selfContained:true,frontendCompanionRequired:false,registryPayload:{...measured,budgets,hardLimits,errors:[]},artifacts,optionalSourcePackageFiles:packed.files.map(file=>file.path),acceptanceEvidence:["reports/native-full-tests.log","reports/native-full-tests-new-york.log","reports/native-tooling.log","reports/native-typecheck.log","reports/packed-astro.json","reports/browser-acceptance.json"].map(path=>({path,exists:existsSync(path),modified:existsSync(path)?statSync(path).mtime.toISOString():null})),note:"Native schemas are a one-time administrator setup; no frontend companion is required. The source package and schema exporter are optional for site developers. External subscriber and deployed D1 checks are not certified; see the handoff."};
 mkdirSync("reports",{recursive:true});writeFileSync("reports/release-preparation.json",JSON.stringify(report,null,2)+"\n");
-writeFileSync("dist/SHA256SUMS",artifacts.map(item=>`${item.sha256}  ${item.path === archive ? archive.split(/[\\/]/).pop() : "host/"+packed.filename}`).join("\n")+"\n");
+writeFileSync("dist/SHA256SUMS",artifacts.map(item=>`${item.sha256}  ${item.path === archive ? archive.split(/[\\/]/).pop() : "source/"+packed.filename}`).join("\n")+"\n");
 console.log(JSON.stringify({version:report.version,published:false,registryPayload:report.registryPayload,artifacts},null,2));

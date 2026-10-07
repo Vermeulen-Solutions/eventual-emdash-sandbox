@@ -1,151 +1,127 @@
-import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
-const fixtures = JSON.parse(readFileSync(process.env.EVENTUAL_BROWSER_FIXTURES, "utf8"));
-test("French UI, grouped venues, native drafts and occurrence actions work in a packed installation", async ({ page, context }) => {
-  const errors=[];
-  page.on("pageerror", error => {errors.push(error.message);console.error("Browser error:", error.message);});
-  page.on("console", message => { if (message.type() === "error") console.error("Browser console:", message.text()); });
-  const origin = process.env.EVENTUAL_TEST_ORIGIN;
-  await context.addCookies([{name:"emdash-locale",value:"fr",url:origin+"/_emdash"}]);
-  await page.goto("/_emdash/api/auth/dev-bypass?redirect="+encodeURIComponent("/_emdash/admin/content/events/"+fixtures.eventId));
-  await expect(page.locator("#field-title")).toHaveValue("Repeat");
-  await page.getByRole("button",{name:"Commencer",exact:true}).click();
-  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
-  await expect(page.getByRole("button",{name:"Quand",exact:true})).toBeVisible();
-  await page.getByRole("button",{name:"Où",exact:true}).click();
-  await page.getByRole("combobox",{name:"Lieu enregistré",exact:true}).click();
-  // Content locale is English although admin UI is French: the English label
-  // is intentional, and both venue translations occupy one shared choice.
-  await expect(page.getByRole("option",{name:/School/})).toHaveCount(1);
-  await page.getByRole("option",{name:/School/}).click();
-  await page.getByRole("button",{name:"Proposer le lieu et l’organisation",exact:true}).click();
-  const review=page.getByRole("dialog",{name:/Vérifier les modifications proposées|Review proposed changes/});
-  await expect(review).toBeVisible();
-  await review.getByRole("button",{name:/Appliquer|Accepter/}).click();
-  await expect(page.locator("#field-title")).toHaveValue("Repeat");
-  await expect.poll(async()=>{
-    const response=await context.request.get("/_emdash/api/content/events/"+fixtures.eventId);
-    return (await response.json()).data?.item?.draftRevisionId;
-  }).toBeTruthy();
-  await page.reload();
-  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
-  await page.getByRole("button",{name:"Où",exact:true}).click();
-  await expect(page.getByRole("combobox",{name:"Lieu enregistré",exact:true})).toHaveValue(/School/);
-  await page.getByRole("button",{name:"Répétition",exact:true}).click();
-  await page.getByRole("radio",{name:"Chaque semaine",exact:true}).click();
-  await page.getByLabel("Toutes les … semaines",{exact:true}).fill("2");
-  await page.getByLabel("Dernière date de répétition",{exact:true}).fill(fixtures.through);
-  await page.getByRole("checkbox",{name:"Lundi",exact:true}).check();
-  await page.getByRole("button",{name:"Proposer la répétition",exact:true}).click();
-  await expect(review).toBeVisible();
-  await review.getByRole("button",{name:/Appliquer|Accepter/}).click();
-  await expect(page.getByText(/Toutes les 2 semaines, le lundi jusqu’au/)).toBeVisible();
-  // Changing attendance only changes presentation; retained online URLs survive.
-  const attendance=page.locator("#field-location_type");
-  await attendance.selectOption("virtual");
-  await expect(page.locator("#field-virtual_url").locator("xpath=ancestor::details")).toBeVisible();
-  await attendance.selectOption("physical");
-  await expect(page.locator("#field-virtual_url").locator("xpath=ancestor::details")).toBeHidden();
-  await attendance.selectOption("virtual");
-  const details=page.locator("#field-virtual_url").locator("xpath=ancestor::details");
-  await details.locator("summary").click();
-  await expect(page.locator("#field-virtual_url")).toHaveValue("https://example.org/meeting");
-  await attendance.selectOption("physical");
-  await page.getByRole("button",{name:/Publier maintenant|Publish now/,exact:true}).click();
-  await page.getByRole("dialog").getByRole("button",{name:/Publier maintenant|Publish now/,exact:true}).click();
-  await expect.poll(async()=>{
-    const response=await context.request.get(`/_emdash/api/plugins/eventual/publicEvents?from=${fixtures.from}&through=${fixtures.through}&locale=en`);
-    const body=await response.json();return body.events?.filter(event=>event.title==="Repeat").length ?? body.data?.events?.filter(event=>event.title==="Repeat").length;
-  }).toBe(2);
-  const calendar=await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en");
-  expect(calendar.ok()).toBeTruthy();expect(await calendar.text()).toContain("SUMMARY:Repeat");
-  const baseline=await calendar.text();
-  const firstUid=/UID:([^\r\n]+)/.exec(baseline)[1];
-  await page.getByRole("button",{name:"Dates individuelles",exact:true}).click();
-  await page.getByRole("button",{name:"Gérer cette date",exact:true}).first().click();
-  await page.getByRole("button",{name:"Annuler cette date",exact:true}).click();
-  await page.getByRole("dialog").getByRole("button",{name:"Annuler la date",exact:true}).click();
-  await expect(review).toBeVisible();await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
-  // A reviewed draft must not cancel the live occurrence prematurely.
-  expect(await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).not.toContain("STATUS:CANCELLED");
-  await page.getByRole("button",{name:"Publier les modifications",exact:true}).click();
-  await page.getByRole("dialog").getByRole("button",{name:"Publier les modifications",exact:true}).click();
-  await expect.poll(async()=>await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).toContain("STATUS:CANCELLED");
-  const cancelled=await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text();
-  expect(cancelled).toContain("UID:"+firstUid);
-  const dates=page.getByRole("button",{name:"Dates individuelles",exact:true});
-  if(await dates.getAttribute("aria-expanded")!=="true") await dates.click();
-  await page.getByRole("button",{name:"Gérer cette date",exact:true}).first().click();
-  await page.getByRole("button",{name:"Rétablir la date d’origine",exact:true}).click();
-  await expect(review).toBeVisible();await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
-  await page.getByRole("button",{name:"Publier les modifications",exact:true}).click();
-  await page.getByRole("dialog").getByRole("button",{name:"Publier les modifications",exact:true}).click();
-  await expect.poll(async()=>await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).not.toContain("STATUS:CANCELLED");
-  expect(await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).toContain("UID:"+firstUid);
-  await expect(page.getByRole("link",{name:"Créer un lieu",exact:true})).toHaveAttribute("href",origin+"/_emdash/admin/content/venues/new");
-  // Reload proves persistence and clears transient animated core notifications.
-  await page.reload();
-  await expect(page.locator("#field-title")).toHaveValue("Repeat");
-  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
-  await page.getByRole("button",{name:"Où",exact:true}).click();
-  await expect(page.getByRole("combobox",{name:"Lieu enregistré",exact:true})).toHaveValue(/School/);
-  await page.locator("#field-title").scrollIntoViewIfNeeded();
-  const when=page.getByRole("button",{name:"Quand",exact:true});
-  if(await when.getAttribute("aria-expanded")==="true") await when.click();
-  const scrollSchedule=async()=>page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).evaluate(element=>{
-    let parent=element.parentElement;
-    while(parent) {
-      if(/auto|scroll/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight>parent.clientHeight) {
-        parent.scrollTop+=element.getBoundingClientRect().top-parent.getBoundingClientRect().top-12;break;
-      }
-      parent=parent.parentElement;
-    }
-  });
-  await scrollSchedule();
-  await page.screenshot({path:"reports/refined-editor-desktop.png",fullPage:true});
-  await page.setViewportSize({width:390,height:844});
-  await page.getByRole("button",{name:"Paramètres",exact:true}).click();
-  const panel=page.getByRole("button",{name:"Dates, lieu et répétition",exact:true});
-  if(await panel.getAttribute("aria-expanded")!=="true") await panel.click();
-  await expect(page.getByRole("button",{name:"Où",exact:true})).toBeVisible();
-  const where=page.getByRole("button",{name:"Où",exact:true});
-  if(await where.getAttribute("aria-expanded")!=="true") await where.click();
-  if(await when.getAttribute("aria-expanded")==="true") await when.click();
-  await scrollSchedule();
-  await expect(page.getByRole("combobox",{name:"Lieu enregistré",exact:true})).toHaveValue(/School/);
-  await page.screenshot({path:"reports/refined-editor-mobile.png",fullPage:true});
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-  expect(errors).toEqual([]);
+import {test,expect} from '@playwright/test';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+const fixtures=JSON.parse(readFileSync(process.env.EVENTUAL_BROWSER_FIXTURES,'utf8'));
+const origin=process.env.EVENTUAL_TEST_ORIGIN;
+const folder='images/registry-0.13.0';mkdirSync(folder,{recursive:true});
+const picker=(page,label)=>page.getByRole('combobox',{name:label,exact:true});
+const choose=async(page,label,option)=>{await picker(page,label).click();await page.getByRole('option',{name:option,exact:true}).click();};
+// EmDash 1.2 emits these three React diagnostics from its stock renderer.
+// Keep the exact upstream exceptions visible; all other errors fail acceptance.
+const upstreamDiagnostic=message=>/^In HTML, (?:%s )?<form> cannot be a descendant of <form>\./.test(message)
+ || /^<form> cannot contain a nested <form>\./.test(message)
+ || message.startsWith('In HTML, %s cannot be a descendant of <%s>.')&&message.includes('This will cause a hydration error.%s <form> form ')
+ || message==='<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. form <form>'
+ || message.includes('Each child in a list should have a unique "key" prop.')&&message.includes('ComboboxList');
+test.beforeEach(async({page},info)=>{
+ const errors=[],known=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ page.on('console',message=>{if(message.type()==='error') (upstreamDiagnostic(message.text())?known:errors).push(message.text());});
+ info.consoleEvidence={errors,known};
 });
-test("a new event can save its first draft and cannot publish a draft venue",async({page,context})=>{
-  const origin=process.env.EVENTUAL_TEST_ORIGIN;
-  const anonymous=await context.request.post("/_emdash/api/plugins/eventual/mcp/transfer/migrateToNative",{data:{dryRun:true}});
-  expect([401,403]).toContain(anonymous.status());
-  await context.addCookies([{name:"emdash-locale",value:"fr",url:origin+"/_emdash"}]);
-  await page.goto("/_emdash/api/auth/dev-bypass?redirect="+encodeURIComponent("/_emdash/admin/content/events/new?locale=fr"));
-  await page.locator("#field-title").fill("Nouvel événement");
-  await page.getByRole("button",{name:"Enregistrer",exact:true}).click();
-  await expect(page).toHaveURL(/content\/events\/(?!new)[^/?]+/);
-  const id=new URL(page.url()).pathname.split("/").pop();
-  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
-  await page.getByLabel("Date de début",{exact:true}).fill(fixtures.firstDate);
-  await page.getByLabel("Date de fin (dernier jour inclus si journée entière)",{exact:true}).fill(fixtures.firstDate);
-  await page.getByLabel("Heure de début",{exact:true}).fill("12:00");
-  await page.getByLabel("Heure de fin",{exact:true}).fill("13:00");
-  await page.getByRole("button",{name:"Proposer les dates",exact:true}).click();
-  const review=page.getByRole("dialog",{name:"Vérifier les modifications proposées"});
-  await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
-  await page.getByRole("button",{name:"Où",exact:true}).click();
-  await page.getByRole("combobox",{name:"Lieu enregistré",exact:true}).click();
-  await page.getByRole("option",{name:/Lieu en préparation/}).click();
-  await page.getByRole("button",{name:"Proposer le lieu et l’organisation",exact:true}).click();
-  await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
-  await expect(page.getByText("Publiez cet élément avant de publier l’événement.",{exact:true})).toBeVisible();
-  await page.getByRole("button",{name:"Publier maintenant",exact:true}).click();
-  const rejected=page.waitForResponse(response=>response.url().includes(`/content/events/${id}/publish`) && response.request().method()==="POST");
-  await page.getByRole("dialog").getByRole("button",{name:"Publier maintenant",exact:true}).click();
-  expect((await rejected).ok()).toBe(false);
-  await expect(page.getByText(/Publiez d’abord le lieu sélectionné/)).toBeVisible();
-  const item=await (await context.request.get(`/_emdash/api/content/events/${id}`)).json();
-  expect(item.data.item.status).toBe("draft");
+test.afterEach(async({},info)=>{
+ const evidence=info.consoleEvidence;
+ writeFileSync('reports/browser-console-'+info.title.split(' ')[0].toLowerCase()+'.json',JSON.stringify(evidence,null,2)+'\n');
+ expect(evidence.errors,'Unexpected browser console or page errors').toEqual([]);
+});
+const savePanel=async(page,label)=>{
+ const url=page.url(),navigations=[];
+ const listener=frame=>{if(frame===page.mainFrame())navigations.push(frame.url());};
+ page.on('framenavigated',listener);
+ try {
+  const response=page.waitForResponse(response=>response.url().includes('/panel/event-schedule')&&response.request().method()==='POST');
+  await page.getByRole('button',{name:label,exact:true}).click();
+  const saved=await response;expect(saved.ok()).toBe(true);
+  expect((await saved.json()).data.toast?.type).toBe('success');
+  await expect(page.getByText('Brouillon des dates enregistré.',{exact:true})).toBeVisible();
+  await expect(page.locator('[contenteditable=true]')).toContainText('Annonce riche préservée');
+  expect(page.url()).toBe(url);expect(navigations,'Panel save must not submit/reload the outer editor form').toEqual([]);
+ } finally {page.off('framenavigated',listener);}
+};
+const login=async(page,context,locale)=>{await context.addCookies([{name:'emdash-locale',value:locale,url:origin+'/_emdash'}]);await page.goto('/_emdash/api/auth/dev-bypass?redirect='+encodeURIComponent('/_emdash/admin/plugins/eventual/settings'));const welcome=page.getByRole('dialog').getByRole('button',{name:locale==='fr'?'Commencer':'Get Started',exact:true});await welcome.waitFor({state:'visible',timeout:15000}).then(()=>welcome.click()).catch(()=>{});};
+test('French settings connect native content types and rich editor',async({page,context})=>{
+ await login(page,context,'fr');
+ await choose(page,'Collection des événements','Events (activities)');
+ await choose(page,'Collection des lieux','Venues (locations)');
+ await choose(page,'Collection des organisations','Organizers (hosts)');
+ const settingsSaved=page.waitForResponse(response=>response.url().endsWith('/plugins/eventual/admin')&&response.request().method()==='POST');
+ await page.getByRole('button',{name:'Enregistrer les paramètres',exact:true}).click();
+ await settingsSaved;
+ await expect(page.getByText('Paramètres non enregistrés',{exact:true})).toHaveCount(0);
+ await page.reload();
+ await expect(picker(page,'Collection des événements')).toContainText('Events (activities)');
+ await page.screenshot({path:folder+'/native-fr-settings.png',fullPage:true});
+ await page.goto('/_emdash/admin/content/activities');
+ await page.getByText('Rencontre des voisins',{exact:true}).click();
+ await expect(page.locator('[contenteditable=true]')).toBeVisible();
+ await expect(page.locator('[contenteditable=true]')).toContainText('Annonce riche préservée');
+ await expect(page.locator('[contenteditable=true] strong')).toContainText('Annonce riche préservée');
+ await page.getByRole('button',{name:'Dates, venue & repeat',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Enregistrer les dates',exact:true})).toBeVisible();
+ await savePanel(page,'Enregistrer les dates');
+ await page.getByRole('button',{name:'Où',exact:true}).click();
+ await picker(page,'Lieu enregistré').click();
+ await page.getByRole('option',{name:/École communale/}).click();
+ await picker(page,'Organisation enregistrée').click();
+ await page.getByRole('option',{name:/^Association de quartier \[FR\]$/}).click();
+ await savePanel(page,'Enregistrer le lieu et l’organisation');
+ await page.reload();
+ await expect(page.locator('[contenteditable=true]')).toContainText('Annonce riche préservée');
+ await page.getByRole('button',{name:'Dates, venue & repeat',exact:true}).click();
+ await page.getByRole('button',{name:'Où',exact:true}).click();
+ await expect(picker(page,'Lieu enregistré')).toHaveValue(/École communale/);
+ await expect(picker(page,'Organisation enregistrée')).toHaveValue('Association de quartier [FR]');
+ await page.getByRole('button',{name:'Répétition',exact:true}).click();
+ await choose(page,'Répétition','Chaque semaine');
+ await expect(page.getByText('Jours de la semaine',{exact:true})).toBeVisible();
+ await page.getByRole('checkbox',{name:'Lundi',exact:true}).check();
+ await page.getByText('Dernière date de répétition',{exact:true}).locator('..').locator('input[type=date]').fill(fixtures.through);
+ await savePanel(page,'Enregistrer la répétition');
+ await page.reload();
+ await page.getByRole('button',{name:'Dates, venue & repeat',exact:true}).click();
+ await page.getByRole('button',{name:'Répétition',exact:true}).click();
+ await expect(picker(page,'Répétition')).toContainText('Chaque semaine');
+ await expect(page.getByRole('checkbox',{name:'Lundi',exact:true})).toBeChecked();
+ await page.getByRole('button',{name:'Dates individuelles',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Annuler la date',exact:true})).toHaveCount(4);
+ const cancel=page.waitForResponse(response=>response.url().includes('/panel/event-schedule')&&response.request().method()==='POST');
+ await page.getByRole('button',{name:'Annuler la date',exact:true}).first().click();expect((await cancel).ok()).toBe(true);
+ await page.getByRole('button',{name:'Dates individuelles',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Rétablir la date',exact:true})).toHaveCount(1);
+ const restore=page.waitForResponse(response=>response.url().includes('/panel/event-schedule')&&response.request().method()==='POST');
+ await page.getByRole('button',{name:'Rétablir la date',exact:true}).click();expect((await restore).ok()).toBe(true);
+ await page.getByRole('button',{name:'Dates individuelles',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Rétablir la date',exact:true})).toHaveCount(0);
+ await expect(page.locator('[contenteditable=true] strong')).toContainText('Annonce riche préservée');
+ await page.screenshot({path:folder+'/native-fr-editor-desktop.png',fullPage:true});
+ const feed=locale=>'/_emdash/api/plugins/eventual/publicEvents?'+new URLSearchParams({from:fixtures.from,through:fixtures.through,locale});
+ const before=await page.request.get(feed('fr'));expect(before.ok()).toBe(true);const draftFeed=await before.json();expect(draftFeed.success).toBe(true);expect(draftFeed.data.ok).toBe(true);expect(draftFeed.data.events).toEqual([]);
+ const publishLabel=/^(Publish now|Publier maintenant)$/;
+ await page.getByRole('button',{name:publishLabel}).first().click();
+ const publication=page.waitForResponse(response=>response.url().includes('/content/activities/')&&new URL(response.url()).pathname.endsWith('/publish')&&response.request().method()==='POST');
+ await page.getByRole('dialog').getByRole('button',{name:publishLabel}).click();expect((await publication).ok()).toBe(true);
+ const live=await page.request.get(feed('fr'));expect(live.ok()).toBe(true);const liveFeed=await live.json();expect(liveFeed.success).toBe(true);expect(liveFeed.data.ok).toBe(true);const events=liveFeed.data.events;
+ expect(events).toHaveLength(4);
+ expect(events.every(event=>event.title==='Rencontre des voisins'&&event.venue?.name==='École communale'&&event.organizer==='Association de quartier')).toBe(true);
+ expect(events[0].descriptionBlocks[0].children[0].marks).toContain('strong');
+ const strict=await page.request.get(feed('en')+'&strict=true');expect((await strict.json()).data.events).toEqual([]);
+ const fallback=await page.request.get(feed('en'));expect((await fallback.json()).data.events[0].title).toBe('[FR] Rencontre des voisins');
+ const calendar=async locale=>(await page.request.get('/_emdash/api/plugins/eventual/calendar?locale='+locale)).text();
+ const frenchCalendar=await calendar('fr'),englishCalendar=await calendar('en');
+ expect(frenchCalendar).toContain('SUMMARY:Rencontre des voisins');expect(frenchCalendar).toContain('École communale');
+ expect([...frenchCalendar.matchAll(/^UID:(.+)$/gm)].map(match=>match[1])).toEqual([...englishCalendar.matchAll(/^UID:(.+)$/gm)].map(match=>match[1]));
+ // The packed Astro component example has its existing plain styling; no theme is installed.
+ await page.goto('/component-preview');await expect(page.getByRole('link',{name:'Concert é',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.characterSet)).toBe('UTF-8');
+ await expect(page.locator('time')).toHaveCount(2);
+ await page.screenshot({path:folder+'/native-public-component-fr-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:folder+'/native-public-component-fr-mobile.png',fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
+});
+test('English companion links directly to configured collections',async({page,context})=>{
+ await login(page,context,'en');await choose(page,'Event collection','Events (activities)');await choose(page,'Venue collection','Venues (locations)');await choose(page,'Organizer collection','Organizers (hosts)');const saved=page.waitForResponse(response=>response.url().endsWith('/plugins/eventual/admin')&&response.request().method()==='POST');await page.getByRole('button',{name:'Save settings',exact:true}).click();await saved;await expect(page.getByText('Settings not saved',{exact:true})).toHaveCount(0);await page.goto('/_emdash/admin/plugins/eventual/events');
+ await expect(page.getByRole('link',{name:'Create event',exact:true})).toHaveAttribute('href',/content\/activities\/new/);
+ await expect(page.getByRole('link',{name:'Manage venues',exact:true})).toHaveAttribute('href',/content\/locations$/);
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:folder+'/native-en-workspace-mobile.png',fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
 });

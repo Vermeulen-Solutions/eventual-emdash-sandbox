@@ -1,3 +1,5 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
 # Eventual 0.12.0: installation, French editing and release handoff
 
 Date: 7 October 2026. Repository: `C:\dev\eventual-em\eventual-emdash-sandbox`. This is the follow-up to [the recovery audit](recovery-audit-2026-10-07.md), in the user's requested order: complete installation, French interface and venue polish, compatibility/upgrade checks, release acceptance and packaging.

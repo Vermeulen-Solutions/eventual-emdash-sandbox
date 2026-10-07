@@ -61,15 +61,20 @@ export function putEvent(ctx: EventualContext, event: EventRecord): Promise<Even
 	return writeEventAndCancellations(ctx, event);
 }
 
+export function nextUpdatedAt(previous?: string): string {
+	return new Date(Math.max(Date.now(), Date.parse(previous ?? '') + 1 || 0)).toISOString();
+}
+
 export async function putEventIfUnchanged(ctx: EventualContext, event: EventRecord, expectedUpdatedAt: string): Promise<boolean> {
 	const collection = eventCollection(ctx);
 	const previous = await collection.getVersioned(event.id);
 	if (!previous || previous.value.updatedAt !== expectedUpdatedAt) return false;
+	event = { ...event, updatedAt: nextUpdatedAt(previous.value.updatedAt) };
 	event = withScheduleHistory(previous.value, event);
 	const result = await collection.compareAndSet(event.id, previous.revision, event);
 	if (!result.applied) return false;
 	const activeIds = await syncCalendarCancellations(ctx, previous.value, event);
-	if (activeIds.length) await cancellationCollection(ctx).deleteMany(activeIds);
+	for(let i=0;i<activeIds.length;i+=100) await cancellationCollection(ctx).deleteMany(activeIds.slice(i,i+100));
 	return true;
 }
 
@@ -78,7 +83,7 @@ async function writeEventAndCancellations(ctx: EventualContext, event: EventReco
 	event = withScheduleHistory(previous, event);
 	const activeIds = await syncCalendarCancellations(ctx, previous, event);
 	await eventCollection(ctx).put(event.id, event);
-	if (activeIds.length) await cancellationCollection(ctx).deleteMany(activeIds);
+	for(let i=0;i<activeIds.length;i+=100) await cancellationCollection(ctx).deleteMany(activeIds.slice(i,i+100));
 	return event;
 }
 
@@ -100,8 +105,12 @@ async function syncCalendarCancellations(
 	const previousOccurrences = previous?.published ? expandEventsInDateRange([previous], today, through) : [];
 	const nextOccurrences = next?.published ? expandEventsInDateRange([next], today, through) : [];
 	const nextIds = new Set(nextOccurrences.map((occurrence) => occurrence.id));
-	const activeIds = [...nextIds];
+	const localeKey = (locale: string, id: string) => 'locale:' + locale.toLowerCase() + ':' + id;
+	const activeIds = [...nextIds, ...nextOccurrences.flatMap(item=>Object.keys(next?.translations ?? {}).map(locale=>localeKey(locale,item.id)))];
 	const removed = previousOccurrences.filter((occurrence) => !nextIds.has(occurrence.id));
+	const removedLocales = Object.keys(previous?.translations ?? {}).filter(locale=>!Object.hasOwn(next?.translations ?? {},locale));
+	const localized = next ? previousOccurrences.flatMap(item=>removedLocales.map(locale=>({item,locale}))) : [];
+	for(const {item,locale} of localized) await cancellationCollection(ctx).put(localeKey(locale,item.id),{id:item.id,eventId:previous!.id,start:item.start,end:item.end,allDay:item.allDay,timezone:item.timezone,cancelledAt:new Date().toISOString(),locale:locale.toLowerCase(),categories:item.categories,calendarUid:previous!.calendarUid,translationGroup:previous!.translationGroup,calendarSequence:next?.calendarSequence});
 	if (removed.length) {
 		const cancelledAt = new Date().toISOString();
 		await cancellationCollection(ctx).putMany(removed.map((occurrence) => ({
@@ -115,8 +124,10 @@ async function syncCalendarCancellations(
 				timezone: occurrence.timezone,
 				cancelledAt,
 				translationGroup: occurrence.translationGroup ?? previous!.translationGroup,
+				calendarUid: previous!.calendarUid,
+				calendarSequence: next?.calendarSequence ?? (previous!.calendarSequence ?? Math.floor(Date.parse(previous!.updatedAt)/1000)) + 1,
 				categories: occurrence.categories,
-				locales: occurrence.locale ? [occurrence.locale.toLowerCase()] : undefined,
+				locales: occurrence.locale ? [occurrence.locale.toLowerCase(), ...Object.keys(previous!.translations ?? {}).map(locale=>locale.toLowerCase())] : undefined,
 			},
 		})));
 	}
@@ -152,6 +163,7 @@ export async function putVenueIfUnchanged(ctx: EventualContext, venue: VenueReco
 	const collection = venueCollection(ctx);
 	const previous = await collection.getVersioned(venue.id);
 	if (!previous || previous.value.updatedAt !== expectedUpdatedAt) return false;
+	venue = {...venue,updatedAt:nextUpdatedAt(previous.value.updatedAt)};
 	return (await collection.compareAndSet(venue.id, previous.revision, venue)).applied;
 }
 

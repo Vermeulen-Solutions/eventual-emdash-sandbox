@@ -85,6 +85,8 @@ export interface EventException {
 }
 
 export interface EventRecord extends EventFields {
+  /** Built-in manual translations in standalone mode; schedule stays on this one record. */
+  translations?: Record<string, { title: string; description: string; location: string; organizer: string }>;
   id: string;
   recurrence?: EventRecurrence;
   exceptions: EventException[];

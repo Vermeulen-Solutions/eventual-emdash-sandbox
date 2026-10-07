@@ -1,28 +1,20 @@
+## 0.13.0 - breaking native-content release
+
+**Breaking from 0.12.x and earlier; EmDash >=1.2.0 <2.0.0 required.** Back up and follow the [upgrade guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md). Updating the plugin does not create or convert schemas.
+
+- Native content types own Portable Text, media, locales, drafts, revisions and publishing. The self-contained sandbox adds schedule/recurrence/occurrence controls.
+- Select event, venue and organizer collections. Compatible locations and custom names are supported.
+- Saved-entry panel: timed/all-day dates, daily/weekly/monthly rules, native directories and 90-day occurrence changes. Edits remain drafts.
+- Clean new-site schemas: 19 event fields, no default prototype metadata/snapshots/history, one comma-separated category input and no duplicate panel control. Existing fields are not deleted automatically.
+- Optional schema exporter/MCP guide; no mandatory Eventual frontend or second runtime package. Remove historical eventual/install adapters from EmDash 1.2 hosts.
+- Native MCP inspection/export, dependency guards, safe duplication and explicit non-destructive migration with opt-in compatibility schemas.
+- Multilingual strict/fallback JSON/ICS, stable UIDs, cancellation notices, UTF-8 folding, rich description blocks and optional Astro/JSON-LD.
+
+Legacy data remains, but private forms are removed. Native sources are authoritative while empty; plan activation/migration together. Preserve migrated calendar identity. Internal fields remain visible in stock core; no hidden Advanced renderer is claimed. Styling is unchanged.
+
 ## 0.12.1
 
-- Native multilingual event/venue/organizer collections, Portable Text, drafts, revisions and core publishing.
-- Friendly daily/weekly/monthly recurrence controls, local dates, 90-day occurrence cancellation/restoration/rescheduling and localized copy; no routine JSON editing.
-- English/French admin presentation, optional-field disclosures, readable draft review and compact occurrence rows.
-- Venue/organizer choices group translations, show addresses and draft warnings, retain selected IDs and search by name/address. Publication requires published dependencies.
-- One eventual/install host integration with exact core compatibility checks, compiled schema exports and a backed-up SQLite schema/reference upgrade CLI.
-- Live native MCP/export, safe draft duplication, bounded schedule history and 500-exception capacity.
-- Paginated multilingual JSON/ICS, stable UIDs, logical SEQUENCE, committed-state cancellations and localized Astro/JSON-LD.
-- Non-destructive resumable migration with structural preview and recovery.
-- Packed-package browser acceptance, SQLite upgrades and UTC/New York tests; measured registry payload budgets.
-
-Requires matching backend and host packages. Tested core EmDash/Admin/Block Kit 1.0.1; see installation for host versions. Existing schemas need upgrading. Native events changes feed authority even while empty. Legacy storage is retained. Public styling is preserved.
-
-## 0.12.0
-
-Initial native collection modernization; superseded by 0.12.1's editor/reference recovery and installation fixes.
-
-## 0.11.1
-
-Editor-level admin permission; MCP management remains administrator-only.
-
-## 0.11.0
-
-Attendance/lifecycle states, saved organizers, structured addresses, media, schedule history, transfer tools, calendar states and Astro/JSON-LD helpers.
+Unreleased two-package proposal, superseded by 0.13.0; do not install its draft host artifacts on EmDash 1.2.
 
 ## Earlier releases
 

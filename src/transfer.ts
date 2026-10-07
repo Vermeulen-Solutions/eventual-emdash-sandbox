@@ -98,11 +98,13 @@ async function prepare(
   );
   if (!fields.data) throw new Error(fields.error);
   const imported: EventRecord = {
+    ...event,
     ...fields.data,
     id,
     createdAt: event.createdAt,
     updatedAt: now,
   };
+  if(input.mode !== 'restore') for(const key of ['calendarUid','translationGroup','calendarSequence','scheduleHistory','previousStartDate','publicUrl'] as const) delete imported[key];
   for (const key of ["venueId", "organizerId"] as const) {
     const reference = event[key];
     if (!reference) continue;
@@ -282,7 +284,7 @@ export const transferRoutes = {
             ? referenceTarget(schema, "venue")
             : input.collection === "organizers"
               ? referenceTarget(schema, "organizer_ref")
-              : "events";
+              : schema.slug;
         const page = await ctx.content!.list(target, {
           limit: input.limit ?? 5,
           cursor: input.cursor,

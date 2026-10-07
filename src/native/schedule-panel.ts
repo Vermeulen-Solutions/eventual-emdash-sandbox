@@ -38,7 +38,6 @@ import {
   referenceField,
 } from "../domain/native-references";
 import { listNative } from "../domain/native-source";
-import { normalizeCategories } from "../domain/category";
 import {
   plainTextToPortableText,
   portableTextToPlainText,
@@ -151,7 +150,7 @@ function scheduleValues(fields: Record<string, unknown>) {
     end: local(allDay ? fields.end_date : fields.end, allDay, timezone),
   };
 }
-function scheduleFields(
+export function scheduleFields(
   fields: Record<string, unknown>,
   prefix = "",
   submitted?: Record<string, unknown>,
@@ -255,12 +254,12 @@ function compileSchedule(values: Record<string, unknown>, prefix = "") {
 }
 
 /** Only the host's editor identity is authoritative. Mutations patch the current draft. */
-export async function handleScheduleEditorPanel(
+export async function computeSchedulePanel(
   route: Pick<SandboxedRouteContext, "input" | "ui" | "request">,
   ctx: EventualContext,
-): Promise<BlockResponse> {
+) {
   const entry = route.ui?.entry;
-  if (!entry || entry.collection !== "events")
+  if (!entry || entry.collection !== (await eventSchema(ctx))?.slug && entry.collection !== "events")
     return {
       blocks: [
         {
@@ -273,11 +272,11 @@ export async function handleScheduleEditorPanel(
   const request = object(route.input);
   let fields = object(object(request.draft).fields);
   if (!request.draft) {
-    const item = await ctx.content?.get("events", entry.id);
+    const item = await ctx.content?.get(entry.collection, entry.id);
     fields = item?.data ?? {};
     if (item?.draftRevisionId) {
       const revision = await ctx.content?.getRevision?.(
-        "events",
+        entry.collection,
         entry.id,
         item.draftRevisionId,
       );
@@ -306,7 +305,6 @@ export async function handleScheduleEditorPanel(
   }
   const values = object(request.values);
   let effect: EditorDraftPatchEffect | undefined;
-  let message: string | undefined;
   let error: string | undefined;
   let selectedId = text(request.value) || text(values.recurrence_id);
   let offset = 0;
@@ -336,7 +334,6 @@ export async function handleScheduleEditorPanel(
           ? [set("recurrence", compiled.rule)]
           : [clear("recurrence")],
       );
-      message = "Repeat settings ready for review.";
     } else if (action === "apply-schedule") {
       const next = compileSchedule(values);
       effect = patch([
@@ -345,10 +342,9 @@ export async function handleScheduleEditorPanel(
           ? [clear("start"), clear("end")]
           : [clear("start_date"), clear("end_date")]),
       ]);
-      message = "Dates ready for review.";
     } else if (action === "apply-details") {
       const schema = await eventSchema(ctx);
-      for (const field of ["venue", "organizer_ref"] as const) {
+      for (const field of (["venue", "organizer_ref"] as const).filter(field => Object.hasOwn(values,field))) {
         if (
           schema &&
           !schema.fields.some(
@@ -367,15 +363,10 @@ export async function handleScheduleEditorPanel(
           );
       }
       effect = patch([
-        set(
-          "categories",
-          normalizeCategories(text(values.categories).split(/[,\n]/)),
-        ),
-        ...(["venue", "organizer_ref"] as const).map((key) =>
+        ...(["venue", "organizer_ref"] as const).filter(key=>Object.hasOwn(values,key)).map((key) =>
           set(referenceField(schema, key), text(values[key])),
         ),
       ]);
-      message = "Venue, organizer and categories ready for review.";
     } else if (action === "search-directories") {
       // Read-only search; the current draft remains untouched.
     } else if (action === "page-occurrences") {
@@ -484,7 +475,6 @@ export async function handleScheduleEditorPanel(
           ),
         ]);
       }
-      if (effect) message = "Date changes ready for review.";
     } else if (action) throw new Error("Unknown action. Reload the panel.");
     if (effect) {
       const next = { ...fields };
@@ -517,7 +507,6 @@ export async function handleScheduleEditorPanel(
       fields = next;
       if (!effect.operations.length) {
         effect = undefined;
-        message = "These settings already match the draft.";
       }
     }
   } catch (err) {
@@ -525,27 +514,15 @@ export async function handleScheduleEditorPanel(
       err instanceof Error ? err.message : "Changes could not be applied.";
     effect = undefined;
   }
-  const response = await renderPanel(fields, ctx, {
-    selectedId,
-    offset,
-    windowStart,
-    search: text(values.directory_search),
-    values: error ? values : undefined,
-    locale: entry.locale ?? "",
-    uiLocale: route.ui?.locale || "en",
-    error,
-    message,
-    action: text(request.action_id),
-    origin: ctx.site?.url || new URL(route.request.url).origin,
-  });
-  return {
-    ...response,
-    ...(effect
-      ? {
-          patch: effect,
-        }
-      : {}),
-  };
+  return {fields,effect,state:{selectedId,offset,windowStart,search:text(values.directory_search),values:error?values:undefined,locale:entry.locale ?? '',uiLocale:route.ui?.locale || 'en',error,action:text(request.action_id),origin:ctx.site?.url || new URL(route.request.url).origin}};
+}
+export async function handleScheduleEditorPanel(route:Pick<SandboxedRouteContext,'input'|'ui'|'request'>,ctx:EventualContext):Promise<BlockResponse> {
+ const result=await computeSchedulePanel(route,ctx);
+ if('blocks' in result) return result as BlockResponse;
+ const action=result.state.action;
+ const message=result.state.error?undefined:result.effect?({'apply-recurrence':'Repeat settings ready for review.','apply-schedule':'Dates ready for review.','apply-details':'Venue and organizer ready for review.'}[action] ?? 'Date changes ready for review.'):action?.startsWith('apply-')?'These settings already match the draft.':undefined;
+ const response=await renderPanel(result.fields,ctx,{...result.state,message});
+ return {...response,...(result.effect?{patch:result.effect}:{})};
 }
 
 async function renderPanel(
@@ -735,7 +712,7 @@ async function renderPanel(
         state.search,
       ),
     ]),
-    form("apply-details", "Apply venue, organizer & categories", [
+    form("apply-details", "Apply venue and organizer", [
       {
         type: "combobox",
         action_id: "venue",
@@ -754,13 +731,6 @@ async function renderPanel(
         ),
         placeholder: "Search organizers",
       },
-      input(
-        "categories",
-        "Categories (separate with commas)",
-        state.values?.categories ??
-          (parseJson(fields.categories) as string[] | undefined)?.join(", ") ??
-          "",
-      ),
     ]),
   );
   for (const [field, directory] of [["venue", venues], ["organizer_ref", organizers]] as const) {

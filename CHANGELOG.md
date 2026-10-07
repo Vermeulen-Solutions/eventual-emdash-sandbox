@@ -2,25 +2,24 @@
 
 All notable changes to Eventual are documented here.
 
-## 0.12.1
+## 0.13.0 - 2026-10-07 (breaking)
 
-- Transition to native EmDash collections (`events`, `venues`/`locations`) with row-per-locale internationalization (`translation_group`, `locale`).
-- Automatic synchronization of invariant schedule fields across translation siblings (`translatable: false`).
-- Rich text editing using native Portable Text (`portableText`) instead of raw markdown textareas.
-- Native translation rows and Portable Text are available to translation plugins. Live `@swiss.ky/linguadash` service acceptance remains untested; core drafts, revisions and publishing are covered separately.
-- Separation of shared schedule exceptions (`exceptions`) and localized editorial overrides (`occurrence_content`).
-- Inclusive civil dates (`start_date`, `end_date`) for all-day events and RFC 5545 exclusive DTEND conversion.
-- Resumable non-destructive migration engine (`migrateToNative`) with dry-run preview, lease-based concurrency locking, and token-based recovery.
-- Stable cross-locale and migration calendar UIDs, logical RFC SEQUENCE counters, and committed-state cancellation reconciliation.
-- Single native authority: native collections are authoritative when installed, preventing stale legacy storage resurrection.
-- Exported typed blueprints (`eventual/schema`) and localized Astro components (`eventual/astro`).
-- Friendly recurrence/occurrence editing, grouped venue choices, human draft review and English/French admin presentation; optional fields are collapsed and technical metadata stays stored but hidden.
-- A single `eventual/install` host integration, exact tested core/toolchain guards, compiled schema exports and an offline backed-up SQLite schema/reference upgrade tool. Backend and host packages must match.
-- Browser acceptance against a freshly installed tarball; the final release evidence is in `docs/release-refinements-2026-10-07.md`.
+- Requires EmDash >=1.2.0 <2.0.0. Native content types own events, venues, organizers, rich text, translations, drafts, revisions and publication.
+- Self-contained sandbox schedule/recurrence/occurrence controls; no mandatory Eventual frontend/host package.
+- Configurable collections, validated directory references, dependency guards, native MCP inspection/export and safe duplication.
+- Clean default schemas: 19 event fields, comma-separated categories in core, no duplicate category control or default prototype metadata.
+- Optional schema exporter/MCP setup prompt and explicit opt-in non-destructive migration compatibility.
+- Multilingual JSON/ICS, stable UIDs, cancellation notices, rich description blocks and optional localized Astro/JSON-LD helpers.
+- Breaking upgrades require backup, host/schema review, collection selection and explicit legacy migration. Existing schemas are not automatically stripped or converted. Preserve migrated calendar identity. See [upgrade guide](docs/upgrade-0.13.0.md) and [release notes](docs/release-notes-0.13.0.md).
+- Existing styling is preserved. Internal fields remain visible in stock core; no hidden Advanced renderer or complete concurrent-write transaction is claimed.
+
+## 0.12.1 - unreleased proposal, superseded by 0.13.0
+
+The earlier two-package recovery proposal was not released. Its installation and hidden-field claims are superseded by 0.13.0. Do not install its draft host artifacts on EmDash 1.2.
 
 ## 0.12.0
 
-- Initial native-collection modernization. The 0.12.1 recovery release restores editor workflows and fixes native references, installation and publication contracts; use its upgrade runbook.
+Initial native-collection modernization. Upgrade through the breaking 0.13.0 runbook; a plugin update alone does not provision schemas or migrate data.
 
 ## 0.11.1
 

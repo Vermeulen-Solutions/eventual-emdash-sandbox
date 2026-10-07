@@ -1,6 +1,6 @@
 {
   "name": "eventual",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "license": "MIT",
   "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
   "type": "module",
@@ -48,10 +48,15 @@
     "src/storage.ts",
     "src/public-event.ts",
     "docs/native-modernization.md",
+    "docs/registry-installation.md",
+    "docs/self-contained-plugin.md",
     "scripts/export-native-schema.mjs",
     "scripts/upgrade-native-editor.mjs",
     "scripts/check-editor-installation.mjs",
-    "docs/editor-upgrade.md"
+    "docs/editor-upgrade.md",
+    "docs/collection-setup.md",
+    "docs/upgrade-0.13.0.md",
+    "docs/release-notes-0.13.0.md"
   ],
   "scripts": {
     "validate": "emdash-plugin validate",
@@ -74,23 +79,24 @@
   "peerDependencies": {
     "astro": "~7.3.2",
     "vite": "~8.3.0",
-    "@emdash-cms/admin": "1.0.1",
-    "emdash": "1.0.1",
+    "@emdash-cms/admin": ">=1.2.0 <2.0.0",
+    "emdash": ">=1.2.0 <2.0.0",
     "kysely": "^0.29.0",
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@emdash-cms/plugin-cli": "0.13.1",
-    "@emdash-cms/plugin-test": "0.2.6",
+    "@emdash-cms/plugin-cli": "0.13.3",
+    "@emdash-cms/plugin-test": "0.2.8",
     "@playwright/test": "1.58.2",
-    "emdash": "1.0.1",
+    "emdash": "1.2.0",
     "ical.js": "^2.2.1",
     "typescript": "^5.9.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "@emdash-cms/admin": "1.2.0"
   },
   "dependencies": {
     "@lingui/core": "5.9.5",
-    "@emdash-cms/blocks": "1.0.1",
+    "@emdash-cms/blocks": "1.2.0",
     "zod": "4.5.4"
   },
   "allowScripts": {
@@ -117,5 +123,9 @@
   "overrides": {
     "sharp": "0.35.5",
     "undici@7.29.0": "7.29.1"
+  },
+  "description": "Native event collections for EmDash: Portable Text, localization, recurrence, saved venues and multilingual iCalendar feeds.",
+  "bin": {
+    "eventual-schema": "scripts/export-native-schema.mjs"
   }
 }

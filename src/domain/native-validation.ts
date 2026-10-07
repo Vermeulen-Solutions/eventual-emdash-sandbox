@@ -8,6 +8,7 @@ import { validRecurrence } from "./recurrence-rule";
 import { exceptionIdsMatchRecurrence, scheduledOccurrence } from "./recurrence";
 import type { EventRecord } from "./event";
 import { safeWebUrl } from "../../astro/event-details";
+import { readCategories } from "./category";
 
 function validInstant(value: unknown): value is string {
   if (
@@ -355,13 +356,7 @@ export function normalizeNativeSchedule(
     throw new Error("Invalid schedule history.");
   result.all_day = allDay;
   result.timezone = timezone;
-  const categories = parseJson(data.categories);
-  if (
-    categories != null &&
-    (!Array.isArray(categories) ||
-      categories.some((value) => typeof value !== "string"))
-  )
-    throw new Error("Categories must be an array of strings.");
+  readCategories(data.categories);
   if (
     data.calendar_uid != null &&
     (typeof data.calendar_uid !== "string" ||

@@ -65,13 +65,15 @@ Navigate to `http://localhost:4321/` in your browser. The root route automatical
 
 ---
 
+Eventual 0.13.0 is a breaking upgrade. Follow [the upgrade guide](../../docs/upgrade-0.13.0.md). This example is optional public rendering, not an editor installation requirement.
+
 ## How It Works
 
 - **Zero-JavaScript by Default:** Everything—filtering, month navigation, view switching, and calendar disclosures—uses standard HTML links, GET forms, and native `<details>` elements. There are no client-side bundles or heavy calendar libraries.
 - **Server-Side Rendered (SSR):** Built with Astro's `@astrojs/node` adapter in standalone mode. Every page request fetches the latest event data from EmDash, ensuring real-time accuracy without rebuilds.
 - **Accessible & SEO Ready:** Includes semantic landmark regions, skip links, ARIA labels, polite screen reader announcements, and JSON-LD structured data in the document `<head>`.
 - **Localization:** Supports multi-language labels (English, Dutch, French included) and locale-aware week layouts (Monday-first vs Sunday-first).
-- **Native Multilingual Feeds (v0.12.0+):** Communicates with Eventual 0.12.0's native feeds via `locale` and `strict` query parameters. Uses `expandEventOccurrences` to expand occurrences across language siblings with localized titles, Portable Text, and fallback handling.
+- **Native Multilingual Feeds (v0.13.0):** Communicates with Eventual 0.13.0's native feeds via `locale` and `strict` query parameters. Uses `expandEventOccurrences` to expand occurrences across language siblings with localized titles, Portable Text, and fallback handling.
 
 
 ---

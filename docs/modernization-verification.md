@@ -1,3 +1,5 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
 # Recovery audit verification — 7 October 2026
 
 Follow-up installation/French/venue acceptance and final release artifacts are recorded in [release-refinements-2026-10-07.md](release-refinements-2026-10-07.md). Counts below describe the earlier recovery pass, not the final separated plugin/example runs.

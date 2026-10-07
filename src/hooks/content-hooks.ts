@@ -16,13 +16,14 @@ import {
   referenceId,
 } from "../domain/native-references";
 import { listNative } from "../domain/native-source";
+import { eventCollectionName, COLLECTION_SETTINGS_KEY, type CollectionBindings } from '../domain/collections';
 export type { ContentHookEvent, ContentDeleteEvent } from "emdash/plugin";
 
 export async function handleContentBeforeSave(
   event: ContentHookEvent,
   ctx: PluginContext,
 ): Promise<Record<string, unknown> | void> {
-  if (event.collection !== "events") return;
+  if (event.collection !== await eventCollectionName(ctx)) return;
   // EmDash passes patches and inherits shared fields for new translations AFTER this hook.
   if (!scheduleKeys.some((key) => Object.hasOwn(event.content, key)))
     return event.content;
@@ -39,13 +40,13 @@ export async function handleContentBeforeSave(
     let previous: Record<string, unknown> = {};
     let currentStatus: string | undefined;
     if (event.id) {
-      const current = await ctx.content?.get("events", event.id);
+      const current = await ctx.content?.get(event.collection, event.id);
       currentStatus = current?.status;
       if (current) previous = current.data;
       // Validate against the latest editable draft, not the live publication.
       if (current?.draftRevisionId && ctx.content?.getRevision) {
         const revision = await ctx.content.getRevision(
-          "events",
+          event.collection,
           event.id,
           current.draftRevisionId,
         );
@@ -97,7 +98,7 @@ export async function handleContentBeforeSave(
     }
 
     if (event.id) {
-      const current = await ctx.content?.get("events", event.id);
+      const current = await ctx.content?.get(event.collection, event.id);
       if (current && current.status === "published" && current.data) {
         const liveData = current.data as Record<string, unknown>;
         const liveAllDay = Boolean(liveData.all_day);
@@ -126,6 +127,8 @@ export async function handleContentBeforeSave(
             liveAllDay !== nextAllDay ||
             liveTz !== nextTz)
         ) {
+          const schema = (await ctx.schema?.listCollections())?.find(item => item.slug === event.collection);
+          const hasField = (slug: string) => schema?.fields.some(item => item.slug === slug);
           const rawHistory = parseJson(
             liveData.schedule_history ?? patch.schedule_history,
           );
@@ -138,7 +141,7 @@ export async function handleContentBeforeSave(
             historyList[0]?.allDay === liveAllDay &&
             historyList[0]?.timezone === liveTz;
 
-          if (!isDuplicateTransition) {
+          if (hasField("schedule_history") && !isDuplicateTransition) {
             const newEntry = {
               start: liveStart,
               end: liveEnd,
@@ -150,7 +153,7 @@ export async function handleContentBeforeSave(
               [newEntry, ...historyList].slice(0, 10),
             );
           }
-          patch.previous_start_date = liveStart;
+          if (hasField("previous_start_date")) patch.previous_start_date = liveStart;
           if (
             liveData.event_status !== "cancelled" &&
             (!Object.hasOwn(event.content, "event_status") ||
@@ -177,7 +180,7 @@ export async function handleContentBeforePublish(
   event: ContentPolicyEvent,
   ctx?: PluginContext,
 ): Promise<void | { cancel: true; reason: string }> {
-  if (event.collection !== "events") return;
+  if (event.collection !== (ctx ? await eventCollectionName(ctx) : 'events')) return;
   try {
     const data =
       event.content.data && typeof event.content.data === "object"
@@ -228,6 +231,8 @@ async function dependencyReason(
   id: unknown,
   ctx: PluginContext,
 ): Promise<string | undefined> {
+  const bindings=await ctx.settings?.get<CollectionBindings>(COLLECTION_SETTINGS_KEY);
+  if(bindings && ![bindings.venues,bindings.organizers].includes(collection)) return;
   const schema = await eventSchema(ctx);
   if (!schema) return;
   const venueTarget = referenceTarget(schema, "venue");
@@ -241,7 +246,7 @@ async function dependencyReason(
     const siblings = await ctx.content.getTranslations(collection, id);
     for (const sibling of siblings.translations) ids.add(sibling.id);
   }
-  for (const event of await listNative(ctx, "events")) {
+  for (const event of await listNative(ctx, schema.slug)) {
     if (event.status !== "published" && event.status !== "scheduled") continue;
     const variants = [event.data];
     if (
@@ -250,7 +255,7 @@ async function dependencyReason(
       ctx.content?.getRevision
     ) {
       const draft = await ctx.content.getRevision(
-        "events",
+        schema.slug,
         event.id,
         event.draftRevisionId,
       );
@@ -309,7 +314,7 @@ export async function handleContentBeforeDelete(
   event: ContentDeleteEvent,
   ctx: PluginContext,
 ): Promise<void> {
-  if (event.collection === "events") {
+  if (event.collection === await eventCollectionName(ctx)) {
     await reconcileNativeCalendar(ctx);
     return;
   }

@@ -27,7 +27,7 @@ export async function handlePublicEventImage(
     return notFound();
   const schema = await nativeSchema(ctx);
   const record = schema
-    ? (await listNative(ctx, "events", true)).find(
+    ? (await listNative(ctx, schema.slug, true)).find(
         (item) => item.id === eventId || item.data.legacy_id === eventId,
       )
     : undefined;

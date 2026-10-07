@@ -25,16 +25,11 @@ design and validation before adding sandbox code or storage commitments.
   venue and organizer data. Settings, media and calendar cancellation tombstones
   require the CMS's full backup facilities; no cross-collection transaction is
   claimed by these tools.
-- **Series-level rescheduling:** history stores ten previous series schedules;
+- **Core editor organization:** supported field visibility/grouping would remove duplicate schedule controls without a mandatory host frontend package.
+- **Series-level rescheduling:** native revisions retain history; optional prototype schemas keep ten previous series schedules;
   moved occurrences expose their original date. A shifted whole series does not
   map every new occurrence to a previous occurrence automatically.
-- **Pinned test-stack dependency audit:** npm audit reports a vulnerable undici
-  7.29.0 dependency pinned exactly by the installed Miniflare test stack, with
-  downstream Cloudflare tooling advisories. A targeted lock update cannot replace
-  that exact dependency. Upgrade the test stack in a separate compatibility
-  change rather than forcing an untested override. These modules are excluded
-  from the sandbox archive. The http-cache-semantics lock entries were updated
-  in both projects; the Astro example audit is clean.
+- **Test-stack maintenance:** continue auditing locked workerd/Miniflare dependencies and verifying cold sandbox startup when updating them. The root undici entry uses 7.29.1; Miniflare still carries a separate exactly pinned 7.29.0 test dependency. That test-stack upgrade needs its own compatibility work. Test-only dependencies are excluded from the sandbox archive. Production-only dependency audit passed with zero reported vulnerabilities for this release.
 
 ## Resolved in 0.12.0
 
@@ -50,4 +45,4 @@ design and validation before adding sandbox code or storage commitments.
 - [Calendar SEQUENCE migration (#2 - Resolved)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/2)
 - [Test-stack maintenance (#3)](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/3)
 
-Release documentation is recorded in [0.12.0 release notes](release-notes-0.12.0.md).
+Current release details are in [0.13.0 release notes](release-notes-0.13.0.md) and its [breaking upgrade guide](upgrade-0.13.0.md).

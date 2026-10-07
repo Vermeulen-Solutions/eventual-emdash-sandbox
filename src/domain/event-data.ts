@@ -1,3 +1,4 @@
+import { EXTERNAL_URL_ERROR } from './messages';
 import { instantToLocalDateTime, isDateOnly, normalizeEventDates } from "./date-time";
 import { normalizeCategories } from "./category";
 import type {
@@ -80,7 +81,7 @@ export function prepareEventData(
   const title = draft.title.trim();
   if (!title) return { error: "Event title is required." };
   if (draft.externalUrl.trim() && !safeHttpUrl(draft.externalUrl)) {
-    return { error: "External URL must use HTTP or HTTPS." };
+    return { error: EXTERNAL_URL_ERROR };
   }
   if (draft.virtualUrl?.trim() && !safeHttpUrl(draft.virtualUrl)) {
     return { error: "Virtual URL must use HTTP or HTTPS." };

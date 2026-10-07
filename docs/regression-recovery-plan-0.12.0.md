@@ -1,3 +1,5 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
 # Eventual 0.12 regression recovery: implementation handoff
 
 **Date:** 7 October 2026. **Repository:** `C:\dev\eventual-em\eventual-emdash-sandbox`.

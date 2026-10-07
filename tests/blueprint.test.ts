@@ -3,11 +3,21 @@ import {
 	createEventsCollectionBlueprint,
 	createVenuesCollectionBlueprint,
 	createOrganizersCollectionBlueprint,
+	createEventRelations,
 } from "../src/schema/blueprint";
 import { normalizeVenueRecord } from "../src/domain/venue-adapter";
 import {validateSeed,type SeedFile} from 'emdash/seed';
 
 describe("Schema Blueprints", () => {
+  it("keeps prototype compatibility metadata out of new content forms", () => {
+    const events = createEventsCollectionBlueprint();
+    for (const slug of ["legacy_id", "legacy_metadata", "calendar_uid", "organizer_details", "image_url", "schedule_history", "previous_start_date"])
+      expect(events.fields.some(field => field.slug === slug), slug).toBe(false);
+    expect(events.fields.find(field => field.slug === "categories")).toMatchObject({type:"string",translatable:false});
+    for (const blueprint of [createVenuesCollectionBlueprint(), createOrganizersCollectionBlueprint()])
+      expect(blueprint.fields.some(field => field.slug.startsWith("legacy_"))).toBe(false);
+    expect(createEventsCollectionBlueprint({legacyCompatibility:true}).fields.find(field => field.slug === "legacy_id")).toMatchObject({unique:true,indexed:true});
+  });
 	it('exports valid, typed EmDash seeds with scheduling support',()=>{
 		const seed:SeedFile={version:'1',defaultLocale:'fr',collections:[createEventsCollectionBlueprint(),createVenuesCollectionBlueprint(),createOrganizersCollectionBlueprint()]};
 		expect(validateSeed(seed)).toMatchObject({valid:true,errors:[]});
@@ -55,6 +65,17 @@ describe("Schema Blueprints", () => {
 		const organizerField = blueprint.fields.find((f) => f.slug === "organizer_ref");
 		expect(organizerField?.validation?.relation).toBe("events_organizer");
 		expect(organizerField?.validation?.targetCollection).toBe("hosts");
+	});
+
+	it("keeps custom bound reference names consistent with their relation definitions", () => {
+		const options={eventCollection:'activities',venueCollection:'locations',organizerCollection:'hosts',bindRelations:true};
+		const blueprint=createEventsCollectionBlueprint(options);
+		const relations=createEventRelations(options);
+		expect(relations.map(relation=>[relation.slug,relation.parentCollection,relation.childCollection])).toEqual([
+			['activities_venue','activities','locations'],['activities_organizer','activities','hosts']
+		]);
+		expect(blueprint.fields.find(field=>field.slug==='venue')?.validation?.relation).toBe(relations[0].slug);
+		expect(blueprint.fields.find(field=>field.slug==='organizer_ref')?.validation?.relation).toBe(relations[1].slug);
 	});
 
 	it("creates venues blueprint with localized directions", () => {

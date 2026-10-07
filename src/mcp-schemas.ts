@@ -179,14 +179,14 @@ const listOccurrences = obj({
 	through: dateStr,
 	limit: int(1, 100),
 }, ["id"]);
-const updateSettings = obj({ defaultTimezone: str(1, 100) }, ["defaultTimezone"]);
+const updateSettings = obj({ defaultTimezone: str(1, 100), collections: obj({events:str(1,63),venues:str(0,63),organizers:str(0,63)},['events','venues','organizers']) }, ["defaultTimezone"]);
 const organizerFields = { name: str(1, 200), website: str(0, 2048), contactUrl: str(0, 2048) };
 const createOrganizer = obj(organizerFields, ['name']);
 const updateOrganizer = obj({ id: str(1, 200), expectedUpdatedAt: str(1, 32), patch: obj(organizerFields) }, ['id', 'expectedUpdatedAt', 'patch']);
 const timestamps = { id: str(1, 200), createdAt: str(1, 32), updatedAt: str(1, 32) };
 const history = obj({ start: str(1, 32), end: str(1, 32), allDay: bool, timezone: str(1, 100), changedAt: str(1, 32) }, ['start', 'end', 'allDay', 'timezone', 'changedAt']);
 const savedException = obj({ recurrenceId: str(1, 16), status: enm(['cancelled', 'modified']), overrides: obj({ ...exceptionOverride.properties, imageMediaId: str(0, 200) }) }, ['recurrenceId', 'status']);
-const savedEvent = obj({ ...eventFields, ...timestamps, published: bool, exceptions: arr(savedException, 500), scheduleHistory: arr(history, 10), previousStartDate: str(1, 32) }, ['id', 'title', 'description', 'start', 'end', 'allDay', 'timezone', 'location', 'organizer', 'externalUrl', 'imageUrl', 'categories', 'published', 'exceptions', 'createdAt', 'updatedAt']);
+const savedEvent = obj({ ...eventFields, ...timestamps, calendarSequence:int(0,2147483647), calendarUid:str(1,500), locale:str(1,40), translations:{type:'object',maxProperties:20,additionalProperties:obj({title:str(1,500),description:str(0,10000),location:str(0,500),organizer:str(0,500)},['title','description','location','organizer'])}, published: bool, exceptions: arr(savedException, 500), scheduleHistory: arr(history, 10), previousStartDate: str(1, 32) }, ['id', 'title', 'description', 'start', 'end', 'allDay', 'timezone', 'location', 'organizer', 'externalUrl', 'imageUrl', 'categories', 'published', 'exceptions', 'createdAt', 'updatedAt']);
 const savedSchemas = { events: savedEvent, venues: obj({ ...venueFields, ...timestamps }, Object.keys({ ...venueFields, ...timestamps })), organizers: obj({ ...organizerFields, ...timestamps }, Object.keys({ ...organizerFields, ...timestamps })) };
 // Record payloads come from exportRecords or the host converters. Advertise an
 // opaque object to avoid repeating the entire storage schema in the manifest;
@@ -259,25 +259,33 @@ export function validateMcpInput(name: keyof typeof mcpSchemas, value: unknown):
 
 /** Transfer envelopes are validated separately so bad records have row errors. */
 export function validateSavedRecord(collection: keyof typeof savedSchemas, data: unknown): boolean {
-	return matches(savedSchemas[collection], data);
+	if (!matches(savedSchemas[collection], data)) return false;
+	if (collection === 'events') {
+		const event = data as {locale?:string; translations?:Record<string,unknown>};
+		try {
+			const locales=Object.keys(event.translations ?? {});
+			return (!event.locale || Intl.getCanonicalLocales(event.locale)[0] === event.locale) && locales.every(locale=>Intl.getCanonicalLocales(locale)[0] === locale && locale.toLowerCase() !== event.locale?.toLowerCase());
+		} catch {return false;}
+	}
+	return true;
 }
 
 export const mcpTools = {
-	previewImport: { description: 'Validate up to 10 JSON records without writing. Reports errors and existing IDs per row; imported events are always drafts. Restore preserves IDs; copy uses stable source IDs.', route: 'mcp/transfer/preview', input: mcpInput(transferInput), destructive: false },
-	importRecords: { description: 'Import up to 10 validated records as drafts, inserting only absent IDs atomically. Existing records are skipped, never overwritten. Import venues and organizers before events. Preview first.', route: 'mcp/transfer/import', input: mcpInput(transferInput), destructive: false },
-	exportRecords: { description: 'Export a page of stored JSON event, venue, or organizer records, including drafts and recurrence exceptions. Follow nextCursor until absent. This is a data export, not a media or site backup.', route: 'mcp/transfer/export', input: mcpInput(exportRecords), destructive: false },
+	previewImport: { description: 'Preview up to 10 JSON records, without writes. Reports row errors/existing IDs. Events become drafts. Restore retains IDs; copy remaps IDs.', route: 'mcp/transfer/preview', input: mcpInput(transferInput), destructive: false },
+	importRecords: { description: 'Import up to 10 records, inserting absent IDs only. Events become drafts. Preview first; import venues/organizers before events.', route: 'mcp/transfer/import', input: mcpInput(transferInput), destructive: false },
+	exportRecords: { description: 'Export JSON records including drafts/exceptions. Follow nextCursor until absent. Media and site configuration are excluded.', route: 'mcp/transfer/export', input: mcpInput(exportRecords), destructive: false },
 	listOrganizers: { description: 'List saved organizers and their public website and contact URL.', route: 'mcp/organizers/list', input: mcpInput(noInput), destructive: false },
 	createOrganizer: { description: 'Create a saved organizer with public HTTP(S) URLs. Do not include private contact details.', route: 'mcp/organizers/create', input: mcpInput(createOrganizer), destructive: false },
-	updateOrganizer: { description: 'Update an organizer using its expectedUpdatedAt version to prevent lost edits.', route: 'mcp/organizers/update', input: mcpInput(updateOrganizer), destructive: true },
+	updateOrganizer: { description: 'Update an organizer, guarded by expectedUpdatedAt.', route: 'mcp/organizers/update', input: mcpInput(updateOrganizer), destructive: true },
 	listEvents: { description: "List published Eventual occurrences in a date range; set includeDrafts to include drafts.", route: "mcp/events/list", input: mcpInput(listEvents), destructive: false },
 	getEvent: { description: "Get an Eventual event series, including recurrence rules and occurrence exceptions.", route: "mcp/events/get", input: mcpInput(eventId), destructive: false },
-	listOccurrences: { description: "Inspect saved event occurrences, including cancellations and moved dates, in up to 366 inclusive dates. Returns original recurrenceIds for exception tools, local schedules, and truncation metadata; drafts are included.", route: "mcp/events/occurrences", input: mcpInput(listOccurrences), destructive: false },
-	createEvent: { description: "Create an unpublished Eventual event. Timed values use local YYYY-MM-DDTHH:mm in the supplied IANA timezone.", route: "mcp/events/create", input: mcpInput(event), destructive: false },
-	updateEvent: { description: "Update event fields while retaining valid recurrence exceptions. Timed values use local YYYY-MM-DDTHH:mm in the event timezone.", route: "mcp/events/update", input: mcpInput(updateEvent), destructive: true },
+	listOccurrences: { description: "Inspect occurrences across up to 366 inclusive dates, including drafts/cancellations/moved dates. Returns recurrenceIds, local schedules and truncation.", route: "mcp/events/occurrences", input: mcpInput(listOccurrences), destructive: false },
+	createEvent: { description: "Create an unpublished event. Times use local YYYY-MM-DDTHH:mm in the supplied IANA timezone.", route: "mcp/events/create", input: mcpInput(event), destructive: false },
+	updateEvent: { description: "Update event fields, retaining valid exceptions. Times use local YYYY-MM-DDTHH:mm in the event timezone.", route: "mcp/events/update", input: mcpInput(updateEvent), destructive: true },
 	publishEvent: { description: "Publish an Eventual event and its active occurrences.", route: "mcp/events/publish", input: mcpInput(eventId), destructive: true },
-	unpublishEvent: { description: "Unpublish an Eventual event while retaining its data and calendar cancellation tombstones.", route: "mcp/events/unpublish", input: mcpInput(eventId), destructive: true },
+	unpublishEvent: { description: "Unpublish an event, retaining data and calendar cancellations.", route: "mcp/events/unpublish", input: mcpInput(eventId), destructive: true },
 	deleteEvent: { description: "Permanently delete an Eventual event and retain calendar cancellation tombstones.", route: "mcp/events/delete", input: mcpInput(eventId), destructive: true },
-	setOccurrenceException: { description: "Cancel or modify one scheduled occurrence. recurrenceId is the original local date or local datetime; replacement times use the replacement timezone.", route: "mcp/events/exception/set", input: mcpInput(exceptionSet), destructive: true },
+	setOccurrenceException: { description: "Cancel/modify an occurrence by original local recurrenceId. Replacement times use the replacement timezone.", route: "mcp/events/exception/set", input: mcpInput(exceptionSet), destructive: true },
 	removeOccurrenceException: { description: "Restore one occurrence by removing its cancellation or modification exception.", route: "mcp/events/exception/remove", input: mcpInput(exceptionRemove), destructive: true },
 	listVenues: { description: "List saved Eventual venues and their structured addresses.", route: "mcp/venues/list", input: mcpInput(noInput), destructive: false },
 	createVenue: { description: "Create a saved Eventual venue.", route: "mcp/venues/create", input: mcpInput(venue), destructive: false },
@@ -286,7 +294,7 @@ export const mcpTools = {
 	getSettings: { description: "Read Eventual settings, including the default timezone for new events.", route: "mcp/settings/get", input: mcpInput(noInput), destructive: false },
 	updateSettings: { description: "Set Eventual's default IANA timezone for new events.", route: "mcp/settings/update", input: mcpInput(updateSettings), destructive: true },
 	migrateToNative: {
-		description: "Migrate legacy Eventual plugin storage records (venues, events, recurrence rules, exceptions) to native EmDash collections with Portable Text and target locale. Supports dryRun preview.",
+		description: "Optionally migrate plugin storage to native collections with Portable Text and target locale. Preview with dryRun; legacy data is retained.",
 		route: "mcp/transfer/migrateToNative",
 		input: mcpInput(migrateToNative),
 		destructive: true,

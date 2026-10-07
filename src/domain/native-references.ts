@@ -1,5 +1,6 @@
 import type { CollectionSchemaInfo } from "emdash";
 import type { EventualContext } from "../storage";
+import { collectionBindings } from './collections';
 
 export function referenceId(value: unknown): string | undefined {
   if (typeof value === "string") return value.trim() || undefined;
@@ -36,7 +37,5 @@ export function referenceField(
 }
 
 export async function eventSchema(ctx: EventualContext) {
-  return (await ctx.schema?.listCollections())?.find(
-    (item) => item.slug === "events",
-  );
+  return (await collectionBindings(ctx)).schema;
 }

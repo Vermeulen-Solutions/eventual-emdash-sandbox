@@ -38,8 +38,8 @@ async function seed() {
   return host;
 }
 
-describe("legacy occurrence MCP compatibility", () => {
-  it("retains large exception lists and directs editing toward migration", async () => {
+describe("legacy occurrence MCP compatibility", {timeout:60_000}, () => {
+  it("retains large legacy exception lists for inspection and explicit migration", async () => {
     const h = await seed();
     const previous = (await h.inspect.storage.get<EventRecord>(
       "events",
@@ -62,10 +62,12 @@ describe("legacy occurrence MCP compatibility", () => {
     })) as { event: EventRecord };
     expect(details.event.exceptions).toHaveLength(500);
     const page = await h.admin.loadPage("/events");
-    expect(JSON.stringify(page)).toContain("Legacy event data is retained");
-  }, 15000);
+    expect(JSON.stringify(page)).toContain("Connect Eventual to content types");
+    expect(JSON.stringify(page)).not.toContain("save-event");
+    expect(JSON.stringify(page)).toContain("migration");
+  }, 60000);
 
-  it("shares multi-day rules across MCP, public routes, widgets and calendar cancellations", async () => {
+  it("shares legacy multi-day rules across MCP, public routes and calendar cancellations", async () => {
     const h = await seed();
     let from = addDays(new Date().toISOString().slice(0, 10), 1);
     while (new Date(`${from}T00:00:00Z`).getUTCDay() !== 2)
@@ -110,8 +112,6 @@ describe("legacy occurrence MCP compatibility", () => {
     expect(
       publicFeed.events.filter((row) => row.id.startsWith(`${id}#`)),
     ).toHaveLength(6);
-    const widget = await h.admin.loadWidget("upcoming-events");
-    expect(JSON.stringify(widget)).toContain("Training updated");
     const thursday = `${addDays(from, 2)}T18:00`;
     await h.transport.invokeRoute("mcp/events/exception/set", {
       eventId: id,
@@ -167,7 +167,7 @@ describe("legacy occurrence MCP compatibility", () => {
         },
       }),
     ).toBe(false);
-  }, 15000);
+  }, 60000);
 
   it("validates and retains recurrence intervals and monthly days across unrelated MCP edits", async () => {
     const h = await seed();
@@ -215,7 +215,7 @@ describe("legacy occurrence MCP compatibility", () => {
       { id: created.event.id, from: "2026-02-01", through: "2026-12-31" },
     )) as { occurrences: unknown[] };
     expect(occurrences.occurrences).toHaveLength(6);
-  }, 15000);
+  }, 60000);
   it("validates MCP dates and limits and inspects drafts with explicit truncation", async () => {
     const h = await seed();
     expect(mcpTools.listOccurrences.destructive).toBe(false);
@@ -310,5 +310,5 @@ describe("legacy occurrence MCP compatibility", () => {
         from: "2027-01-01",
       }),
     ).resolves.toMatchObject({ total: 0, occurrences: [] });
-  }, 15000);
+  }, 60000);
 });

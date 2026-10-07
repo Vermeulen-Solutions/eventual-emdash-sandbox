@@ -27,13 +27,16 @@ export interface CollectionBlueprint {
     fields: BlueprintField[];
 }
 export interface SchemaBlueprintOptions {
+    eventCollection?: string;
     venueCollection?: string;
     organizerCollection?: string;
     bindRelations?: boolean;
+    /** Opt in only when importing private-storage records from older prototypes. */
+    legacyCompatibility?: boolean;
 }
 export declare function createEventsCollectionBlueprint(options?: SchemaBlueprintOptions): CollectionBlueprint;
-export declare function createVenuesCollectionBlueprint(): CollectionBlueprint;
-export declare function createOrganizersCollectionBlueprint(): CollectionBlueprint;
+export declare function createVenuesCollectionBlueprint(options?: SchemaBlueprintOptions): CollectionBlueprint;
+export declare function createOrganizersCollectionBlueprint(options?: SchemaBlueprintOptions): CollectionBlueprint;
 export interface BlueprintRelation {
     slug: string;
     parentCollection: string;

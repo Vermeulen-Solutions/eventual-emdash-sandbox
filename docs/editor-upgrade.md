@@ -1,3 +1,15 @@
+# Current upgrade path: Eventual 0.13.0 (breaking)
+
+Follow [upgrade-0.13.0.md](upgrade-0.13.0.md) for the full procedure. The older runbook below is historical.
+
+Use the sandbox plugin and native content types; no frontend companion is required. Follow [Collection setup](collection-setup.md). Existing schemas must retain description:portableText and correct translatable flags. Settings selections do not upgrade a schema. Preserve existing content and apply explicit additive schema changes with core administrator tools. Remove historical eventual/install and source-transform adapters from the host configuration when upgrading to 1.2; do not run the older offline updater against 1.2 without separately porting and testing it. The historical compatibility exports reject unknown versions by design.
+
+The sandbox panel works on saved native entries, writing schedules to core drafts. Save announcement changes before opening it and reload after panel saves. Publish and translate in core. Legacy private data is retained for explicit preview/migration. No automatic conversion back to private forms occurs.
+
+## Archived 1.0.1 runbook — not the current installation procedure
+
+> **Superseded installation proposal:** The 0.13.0 is self-contained. Do not follow a two-package installation requirement below. See [self-contained architecture](./self-contained-plugin.md) and [current installation](./registry-installation.md). Historical evidence below refers to the earlier companion candidate; publication is on hold.
+
 # Install the friendly Eventual editor on an existing site
 
 This runbook covers the 0.12.1 recovery release on EmDash 1.0.1, Admin 1.0.1 and Block Kit 1.0.1, tested with Node 24, Astro 7.3.2/7.3.5, Vite 8.3.x and React 19. The integration accepts Astro 7.3.x starting at 7.3.2, Vite 8.3.x and React 19.x, and rejects other core/toolchain versions. The backend registry archive and the matching installable host package are separate artifacts. A registry update alone cannot install frontend widgets or upgrade an existing schema. The host tarball is attached to the repository's v0.12.1 GitHub release; it is not an npm-registry publication.

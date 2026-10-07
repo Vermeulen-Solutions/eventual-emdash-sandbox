@@ -6,6 +6,14 @@ import {
 } from "../src/domain/event-expansion";
 
 describe("nativeEntryToEventRecord", () => {
+  it("reads friendly categories and older JSON arrays without losing filter labels", () => {
+    const entry = {id:"categories",status:"published",type:"events",data:{title:"Meeting",start:"2026-10-10T14:00:00Z",end:"2026-10-10T16:00:00Z",all_day:false,timezone:"UTC",categories:" Music, Community, music "}};
+    expect(nativeEntryToEventRecord(entry)?.categories).toEqual(["Music","Community"]);
+    entry.data.categories = '["Music","Community"]';
+    expect(nativeEntryToEventRecord(entry)?.categories).toEqual(["Music","Community"]);
+    entry.data.categories = '["Music",7]';
+    expect(nativeEntryToEventRecord(entry)).toBeNull();
+  });
 	it("converts a native EmDash content entry into an EventRecord", () => {
 		const nativeEntry = {
 			id: "match-servette",

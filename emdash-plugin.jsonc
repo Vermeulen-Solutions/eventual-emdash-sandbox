@@ -8,7 +8,7 @@
 	"author": { "name": "Jaap Vermeulen", "email": "jaap.vermeulen@gmail.com" },
 	"security": { "email": "jaap.vermeulen@gmail.com" },
 	"name": "Eventual",
-	"description": "Multilingual events with friendly recurrence and venue editing, Portable Text, iCalendar feeds, Astro helpers and safe legacy migration.",
+	"description": "Native EmDash events with rich text, localization, friendly recurrence, saved venues and multilingual calendar feeds.",
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
 		"installation": { "file": "./docs/registry-installation.md" },
@@ -16,13 +16,14 @@
 	},
 	"repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
 	"release": {
-		"requires": { "env:emdash": "1.0.1" },
+		"requires": { "env:emdash": ">=1.2.0 <2.0.0" },
 		"artifacts": {
 			"icon": { "file": "./images/registry/icon-v1.png" },
 			"banner": { "file": "./images/registry/banner-v1.png" },
 			"screenshots": [
-				{ "file": "./images/registry-0.12.0/editor-fr-desktop.png" },
-				{ "file": "./images/registry-0.12.0/editor-fr-mobile.png" },
+				{ "file": "./images/registry-0.13.0/native-fr-editor-desktop.png" },
+				{ "file": "./images/registry-0.13.0/native-fr-settings.png" },
+				{ "file": "./images/registry-0.13.0/native-en-workspace-mobile.png" },
 				{ "file": "./images/registry-0.11.0/05-public-events.jpg" },
 				{ "file": "./images/registry-0.11.0/06-hybrid-event-detail.jpg" }
 			]
@@ -42,9 +43,8 @@
 		"content:publish",
 		"content:revisions:read",
 		"schema:read",
-		"hooks.content-policy:register",
-		"admin.editor-draft:read",
-		"admin.editor-draft:patch"
+		"hooks.content-policy:register"
+
 	],
 	"allowedHosts": [],
 	"storage": {
@@ -58,53 +58,17 @@
 			{ "id": "upcoming-events", "title": "Upcoming events", "size": "half" }
 		],
 		"pages": [
-			{ "path": "/events", "label": "Eventual", "icon": "calendar" }
+			{ "path": "/events", "label": "Eventual", "icon": "calendar" },
+			{ "path": "/venues", "label": "Venues", "icon": "map-pin" },
+			{ "path": "/organizers", "label": "Organizers", "icon": "users" },
+			{ "path": "/settings", "label": "Event settings", "icon": "settings" }
 		],
 		"editorPanels": [
 			{
 				"id": "event-schedule",
 				"title": "Dates, venue & repeat",
 				"route": "admin/editor/schedule",
-				"collections": ["events"],
-				"order": 10,
-				"draft": {
-					"read": {
-						"fields": [
-							"start",
-							"end",
-							"start_date",
-							"end_date",
-							"all_day",
-							"timezone",
-							"recurrence",
-							"exceptions",
-							"occurrence_content",
-							"venue",
-							"venue_id",
-							"organizer_ref",
-							"organizer_id",
-							"categories"
-						]
-					},
-					"patch": {
-						"fields": [
-							"start",
-							"end",
-							"start_date",
-							"end_date",
-							"all_day",
-							"timezone",
-							"recurrence",
-							"exceptions",
-							"occurrence_content",
-							"venue",
-							"venue_id",
-							"organizer_ref",
-							"organizer_id",
-							"categories"
-						]
-					}
-				}
+				"order": 10
 			}
 		]
 	}

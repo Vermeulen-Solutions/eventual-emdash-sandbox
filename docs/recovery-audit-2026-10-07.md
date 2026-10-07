@@ -1,3 +1,5 @@
+> **Historical record:** Current behavior is documented in [0.13.0 release notes](release-notes-0.13.0.md) and the [breaking upgrade guide](upgrade-0.13.0.md). Host-package, hidden-field and publication-status statements below describe superseded work, not current instructions.
+
 # Eventual 0.12.0 recovery audit and implementation handoff
 
 Follow-up: [release-refinements-2026-10-07.md](release-refinements-2026-10-07.md) supersedes this report's remaining installation/presentation work and earlier verification counts. In particular, core patch review now has a scoped human/French presentation adapter; it still uses the core receipt flow.

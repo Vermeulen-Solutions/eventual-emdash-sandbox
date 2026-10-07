@@ -19,8 +19,7 @@ export async function nativeSchema(
   ctx: EventualContext,
 ): Promise<CollectionSchemaInfo | undefined> {
   if (!ctx.schema || !ctx.content) return undefined;
-  const schemas = await ctx.schema.listCollections();
-  const schema = schemas.find((item) => item.slug === "events");
+  const schema = await eventSchema(ctx);
   if (schema && !schema.fields?.some((field) => field.slug === "start"))
     throw new Error("The events collection is not an Eventual schema.");
   return schema;
@@ -55,14 +54,14 @@ export async function readEventSource(ctx: EventualContext, through?: string) {
   if (!schema) {
     return {
       native: false,
-      events: await listEvents(ctx, {
+      events: (await listEvents(ctx, {
         published: true,
         ...(through ? { through } : {}),
-      }),
+      })).map(event=>event.locale ? event : {...event,locale:ctx.site?.locale ?? 'en'}),
       schema,
     };
   }
-  const entries = await listNative(ctx, "events", true);
+  const entries = await listNative(ctx, schema.slug, true);
   const events: EventRecord[] = [];
   for (const entry of entries) {
     const event = nativeEntryToEventRecord(entry);
@@ -157,6 +156,13 @@ export function selectEventLocales(
     const key = event.translationGroup ?? event.id;
     const group = groups.get(key) ?? [];
     group.push(event);
+    // Standalone translations are editorial projections, never additional schedules.
+    for (const [language, copy] of Object.entries(event.translations ?? {})) {
+      group.push({ ...event, ...copy, locale: language, descriptionBlocks: undefined,
+        exceptions: event.exceptions.map(item => ({ ...item, overrides: item.overrides
+          ? Object.fromEntries(Object.entries(item.overrides).filter(([key]) => !['title','description','location','organizer','locale'].includes(key))) : undefined })),
+      });
+    }
     groups.set(key, group);
   }
   const result: EventRecord[] = [];
@@ -170,10 +176,10 @@ export function selectEventLocales(
       ? group.find(
           (event) => event.locale && canonical(event.locale) === requested,
         )
-      : group[0];
+      : group.find(event => !event.translations || events.includes(event)) ?? group[0];
     if (match) result.push(match);
     else if (!strict) {
-      const fallback = group[0]!;
+      const fallback = group.find(event => events.includes(event)) ?? group[0]!;
       const prefix = fallback.locale
         ? "[" + fallback.locale.toUpperCase() + "] "
         : "";
@@ -231,10 +237,11 @@ export async function hydrateNativeAssets(
     }
   }
   const ids = [...new Set(events.map((event) => event.id.split("#")[0]!))];
+  const collection = (await eventSchema(ctx))?.slug ?? 'events';
   for (let i = 0; i < ids.length; i += 20)
     await Promise.all(
       ids.slice(i, i + 20).map(async (id) => {
-        const url = await ctx.content?.getPublicUrl?.("events", id);
+        const url = await ctx.content?.getPublicUrl?.(collection, id);
         if (url) urls.set(id, url);
       }),
     );

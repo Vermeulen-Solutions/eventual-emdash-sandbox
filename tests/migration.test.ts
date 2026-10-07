@@ -19,8 +19,8 @@ async function setup() {
     site: { url: "https://audit.example.com", locale: "fr" },
     i18n: { defaultLocale: "fr", locales: ["fr", "en"] },
   });
-  await host.fixtures.collection(createEventsCollectionBlueprint() as any);
-  await host.fixtures.collection(createVenuesCollectionBlueprint() as any);
+  await host.fixtures.collection(createEventsCollectionBlueprint({legacyCompatibility:true}) as any);
+  await host.fixtures.collection(createVenuesCollectionBlueprint({legacyCompatibility:true}) as any);
   return host;
 }
 const schedule = {
@@ -55,7 +55,18 @@ const calendar = async (h: PluginRuntimeTestHost, query = "") => {
   expect(response.status).toBe(200);
   return response.text();
 };
-describe("Native modernization through the EmDash production runtime", () => {
+describe("Native modernization through the EmDash production runtime", {timeout:60_000}, () => {
+  it('rejects migration of manual translations instead of silently losing their locale rows',async()=>{
+    const h=await setup();
+    const original={...legacy,locale:'fr',translations:{en:{title:'English announcement',description:'English copy',location:'',organizer:''}}};
+    await h.fixtures.plugin.storage('events','legacy-event',original);
+    for(const dryRun of [true,false]) {
+      const response=await h.transport.invokeRoute('mcp/transfer/migrateToNative',{dryRun,locale:'fr'}) as any;
+      expect(JSON.stringify(response)).toContain('Manual translations need explicit native locale rows');
+      expect(await h.inspect.content.list('events')).toHaveLength(0);
+      expect(await h.inspect.storage.get('events','legacy-event')).toEqual(original);
+    }
+  });
   it("duplicates through the authorized workspace into a new unpublished native draft", async () => {
     const h = await setup();
     const user = await h.fixtures.user({
@@ -168,139 +179,47 @@ describe("Native modernization through the EmDash production runtime", () => {
       (await h.inspect.content.get("events", "localized-en"))!.data.venue,
     ).toBe("hall-fr");
   });
-  it("applies host-attested venue and localized copy patches, preserving live feeds until publication", async () => {
-    const h = await setup();
-    const user = await h.fixtures.user({
-      email: "panel-editor@example.com",
-      role: "editor",
-      emailVerified: true,
-    });
-    await h.fixtures.content("venues", {
-      id: "selected-venue",
-      locale: "fr",
-      status: "published",
-      data: { name: "Saved hall", street: "Published address" },
-    });
-    const original = {
-      ...schedule,
-      recurrence: { frequency: "daily", until: "2026-11-17" },
-      exceptions: [],
-      occurrence_content: [],
+  it("edits schedules through the native saved-entry panel without losing rich text or exposing drafts", async () => {
+    const h=await setup();
+    const user=await h.fixtures.user({email:'panel-editor@example.com',role:'editor',emailVerified:true});
+    await h.fixtures.content('venues',{id:'selected-venue',locale:'fr',status:'published',data:{name:'Saved hall',street:'Published address'}});
+    const description=[{_type:'block',_key:'rich',style:'normal',markDefs:[],children:[{_type:'span',_key:'bold',text:'Preserved rich text',marks:['strong']}]}];
+    await h.fixtures.content('events',{id:'panel-event',slug:'panel-event',locale:'fr',status:'published',data:{...schedule,description,recurrence:{frequency:'daily',until:'2026-11-17'},exceptions:[],occurrence_content:[]}});
+    const all=(response:any):any[]=>response.blocks.flatMap((block:any)=>[block,...(block.blocks?all({blocks:block.blocks}):[])]);
+    const load=()=>h.admin.loadEditorPanel('event-schedule','events','panel-event',{user});
+    const findForm=(response:any,id:string)=>all(response).find(block=>block.block_id===id);
+    const submit=async(id:string,values:any)=>{
+      const form=findForm(await load(),id);
+      return h.admin.submitEditorPanel('event-schedule','events','panel-event',form.submit.action_id,values,{user,blockId:form.block_id});
     };
-    await h.fixtures.content("events", {
-      id: "panel-event",
-      slug: "panel-event",
-      locale: "fr",
-      status: "published",
-      data: original,
-    });
-    const loaded = await h.admin.loadEditorPanel(
-      "event-schedule",
-      "events",
-      "panel-event",
-      { user },
-    );
-    expect(JSON.stringify(loaded)).toContain("Saved hall");
-    let current: Record<string, unknown> = { ...original };
-    const submit = async (action: string, values: Record<string, unknown>) => {
-      const allowed = [
-        "start",
-        "end",
-        "start_date",
-        "end_date",
-        "all_day",
-        "timezone",
-        "recurrence",
-        "exceptions",
-        "occurrence_content",
-        "venue",
-        "venue_id",
-        "organizer_ref",
-        "organizer_id",
-        "categories",
-      ];
-      const snapshot = Object.fromEntries(
-        Object.entries(current).filter(([key]) => allowed.includes(key)),
-      );
-      const draft = await h.admin.captureEditorDraft(
-        "events",
-        "panel-event",
-        snapshot,
-        { contentLocale: "fr" },
-      );
-      const response = await h.admin.submitEditorPanel(
-        "event-schedule",
-        "events",
-        "panel-event",
-        action,
-        values,
-        { user, draft, contentLocale: "fr" },
-      );
-      expect(response.patch, JSON.stringify(response)).toBeDefined();
-      current = await h.admin.applyEditorDraftPatch(
-        "panel",
-        "event-schedule",
-        draft,
-        response,
-        {
-          entryId: draft.entryId,
-          locale: draft.locale,
-          generation: draft.generation,
-          invocationId: draft.invocationId,
-        },
-        current,
-      );
-    };
-    await submit("apply-details", {
-      venue: "selected-venue",
-      organizer_ref: "",
-      categories: "Workshop",
-    });
-    await submit("set-occurrence-copy", {
-      recurrence_id: "2026-11-16T10:00",
-      use_title: true,
-      copy_title: "Special date",
-      use_description: true,
-      copy_description: "Occurrence announcement",
-    });
-    const save = await h.actions.content.update("events", "panel-event", {
-      data: current,
-    });
-    expect(save.success, JSON.stringify(save)).toBe(true);
-    expect(await calendar(h)).not.toContain("Published address");
-    expect(await calendar(h)).not.toContain("SUMMARY:Special date");
-    const publish = await h.actions.content.publish("events", "panel-event");
-    expect(publish.success, JSON.stringify(publish)).toBe(true);
-    const live = await calendar(h);
-    expect(live).toContain("Published address");
-    expect(live).toContain("SUMMARY:Special date");
-    expect(live).toContain("DESCRIPTION:Occurrence announcement");
-    const output = (await h.transport.invokeRoute("publicEvents", {
-      from: "2026-11-01",
-      through: "2026-11-30",
-    })) as any;
-    const occurrence = output.events.find(
-      (item: any) => item.title === "Special date",
-    );
-    expect(occurrence.description).toBe("Occurrence announcement");
-    expect(occurrence.descriptionBlocks).toEqual(expect.any(Array));
-    current = (await h.inspect.content.get("events", "panel-event"))!.data;
-    await submit("apply-details", {
-      venue: "",
-      organizer_ref: "",
-      categories: "Workshop",
-    });
-    expect(
-      (
-        await h.actions.content.update("events", "panel-event", {
-          data: current,
-        })
-      ).success,
-    ).toBe(true);
-    expect(
-      (await h.actions.content.publish("events", "panel-event")).success,
-    ).toBe(true);
-    expect(await calendar(h)).not.toContain("Published address");
+    const panel=await load();expect(JSON.stringify(panel)).toContain('Saved hall');
+    const blockIds=all(panel).map(block=>block.block_id).filter(Boolean);
+    expect(new Set(blockIds).size).toBe(blockIds.length);
+    const stale=findForm(panel,'apply-details');
+    const saved=await submit('apply-details',{venue:'selected-venue',organizer_ref:'',categories:''});
+    expect(JSON.stringify(saved)).toContain('Schedule draft saved');
+    const pending=(await h.inspect.content.get('events','panel-event'))!;
+    expect(pending.draftRevisionId).toBeTruthy();expect(pending.data.description).toEqual(description);
+    expect(await calendar(h)).not.toContain('Published address');
+    const rejected=await h.admin.submitEditorPanel('event-schedule','events','panel-event',stale.submit.action_id,{venue:'',categories:''},{user,blockId:stale.block_id});
+    expect(JSON.stringify(rejected)).toContain('This event changed');
+    expect((await h.actions.content.publish('events','panel-event')).success).toBe(true);
+    expect(await calendar(h)).toContain('Published address');
+    const edit=all(await load()).flatMap(block=>block.elements??[]).find(item=>item.action_id?.startsWith('edit-occurrence|'));
+    const view=await h.admin.actEditorPanel('event-schedule','events','panel-event',edit.action_id,{user,value:edit.value});
+    const copy=findForm(view,'set-occurrence-copy');
+    const copied=await h.admin.submitEditorPanel('event-schedule','events','panel-event',copy.submit.action_id,{recurrence_id:edit.value,use_title:true,copy_title:'Special date',use_description:true,copy_description:'Occurrence announcement'},{user,blockId:copy.block_id});
+    expect(JSON.stringify(copied)).toContain('Schedule draft saved');
+    expect(await calendar(h)).not.toContain('SUMMARY:Special date');
+    expect((await h.actions.content.publish('events','panel-event')).success).toBe(true);
+    const live=await calendar(h);expect(live).toContain('SUMMARY:Special date');expect(live).toContain('DESCRIPTION:Occurrence announcement');
+    const output:any=await h.transport.invokeRoute('publicEvents',{from:'2026-11-01',through:'2026-11-30'});
+    expect(output.events.find((item:any)=>item.title==='Special date').descriptionBlocks).toEqual(expect.any(Array));
+    await submit('apply-details',{venue:'',organizer_ref:'',categories:''});
+    expect((await h.actions.content.publish('events','panel-event')).success).toBe(true);
+    expect(await calendar(h)).not.toContain('Published address');
+    expect((await h.inspect.content.get('events','panel-event'))!.data.description).toEqual(description);
+    expect(await h.inspect.storage.list('events')).toHaveLength(0);
   });
   it("reads native metadata and keeps an empty native collection authoritative", async () => {
     const h = await setup();
@@ -623,7 +542,7 @@ describe("Native modernization through the EmDash production runtime", () => {
     ).toBe("draft");
     expect(await calendar(h)).not.toContain("SUMMARY:Native event");
   });
-  it("publishes native media URLs and replaces custom admin editing with collection links", async () => {
+  it("publishes native media URLs and keeps the self-contained workspace authoritative", async () => {
     const h = await setup();
     const media = await h.fixtures.media({
       filename: "poster.png",
@@ -671,7 +590,7 @@ describe("Native modernization through the EmDash production runtime", () => {
       type: "page_load",
       page: "/events",
     })) as any;
-    expect(JSON.stringify(page)).toContain("/_emdash/admin/content/events");
+    expect(JSON.stringify(page)).toContain("/_emdash/admin/content/events/");
     expect(JSON.stringify(page)).not.toContain("save-event");
     expect(
       await h.transport.invokeRoute("mcp/events/create", {

@@ -1,3 +1,4 @@
+import { EXTERNAL_URL_ERROR } from './domain/messages';
 import { validateMcpInput, type McpEventInput } from "./mcp-schemas";
 
 import { normalizeCategories } from "./domain/category";
@@ -14,6 +15,7 @@ import type {
   VenueFields,
   VenueRecord,
 } from "./domain/event";
+import { EMPTY_EVENT_DRAFT } from './domain/event';
 import {
   exceptionIdsMatchRecurrence,
   expandEventsInDateRange,
@@ -46,6 +48,7 @@ import {
   hydrateNativeAssets,
 } from "./domain/native-source";
 import { referenceTarget } from "./domain/native-references";
+import { saveCollectionBindings, COLLECTION_SETTINGS_KEY, type CollectionBindings } from './domain/collections';
 import { normalizeVenueRecord, localizedVenue } from "./domain/venue-adapter";
 import { nativeEntryToEventRecord } from "./domain/event-expansion";
 
@@ -96,29 +99,7 @@ function draftFromFields(
 ): EventDraft {
   const draft = base
     ? eventToDraft(base)
-    : {
-        title: "",
-        description: "",
-        start: "",
-        end: "",
-        allDay: false,
-        timezone: "UTC",
-        location: "",
-        organizer: "",
-        externalUrl: "",
-        imageUrl: "",
-        imageMediaId: "",
-        categories: "",
-        venueId: "",
-        published: false,
-        repeatFrequency: "none" as const,
-        recurrenceUntil: "",
-        monthlyPattern: "dayOfMonth" as const,
-        missingDayBehavior: "skip" as const,
-        monthlyWeekday: "monday" as const,
-        monthlyPosition: 1 as const,
-        exceptions: [],
-      };
+    : EMPTY_EVENT_DRAFT;
   const recurrence =
     fields.recurrence === null
       ? undefined
@@ -193,7 +174,7 @@ async function saveEvent(
   if (!prepared.data)
     return validationResult(prepared.error ?? "Check the event fields.");
   if (prepared.data.externalUrl && !safeHttpUrl(prepared.data.externalUrl))
-    return validationResult("External URL must use HTTP or HTTPS.");
+    return validationResult(EXTERNAL_URL_ERROR);
   if (
     draft.imageMediaId &&
     !(await isUsableEventImage(ctx, draft.imageMediaId))
@@ -210,12 +191,16 @@ async function saveEvent(
     return validationResult("The selected saved organizer does not exist.");
   const now = new Date().toISOString();
   const event: EventRecord = {
+    ...previous,
     ...prepared.data,
+    recurrence:prepared.data.recurrence, venueId:prepared.data.venueId, organizerId:prepared.data.organizerId, imageMediaId:prepared.data.imageMediaId, virtualUrl:prepared.data.virtualUrl,
+    locale: previous?.locale ?? ctx.site.locale ?? 'en',
     id: previous?.id ?? crypto.randomUUID(),
     exceptions: previous?.exceptions ?? [],
     createdAt: previous?.createdAt ?? now,
     updatedAt: now,
   };
+  for (const key of ['recurrence','venueId','organizerId','imageMediaId','virtualUrl'] as const) if(event[key] === undefined) delete event[key];
   if (!exceptionIdsMatchRecurrence(event))
     return validationResult(
       "Changing this schedule would invalidate occurrence exceptions. Remove or update those exceptions first.",
@@ -305,8 +290,9 @@ export const mcpRoutes = {
       )
         return { ok: false, error: "INVALID_DATE_RANGE" };
 
-      if (await nativeSchema(ctx)) {
-        const entries = await listNative(ctx, "events");
+      const eventCollection = await nativeSchema(ctx);
+      if (eventCollection) {
+        const entries = await listNative(ctx, eventCollection.slug);
         const records: EventRecord[] = entries
           .map(nativeEntryToEventRecord)
           .filter((e: any): e is EventRecord => e !== null);
@@ -358,8 +344,9 @@ export const mcpRoutes = {
   "mcp/events/get": route(
     validId,
     async ({ id }, ctx) => {
-      if (await nativeSchema(ctx)) {
-        const entry = await ctx.content?.get("events", id);
+      const eventCollection = await nativeSchema(ctx);
+      if (eventCollection) {
+        const entry = await ctx.content?.get(eventCollection.slug, id);
         if (!entry) return { ok: false, error: "NOT_FOUND" };
         const event = nativeEntryToEventRecord(entry);
         if (!event) return { ok: false, error: "NOT_FOUND" };
@@ -389,8 +376,9 @@ export const mcpRoutes = {
       if (!validOccurrenceRange(from, through))
         return { ok: false, error: "INVALID_DATE_RANGE" };
 
-      if (await nativeSchema(ctx)) {
-        const entry = await ctx.content?.get("events", input.id);
+      const eventCollection = await nativeSchema(ctx);
+      if (eventCollection) {
+        const entry = await ctx.content?.get(eventCollection.slug, input.id);
         if (!entry) return { ok: false, error: "NOT_FOUND" };
         const event = nativeEntryToEventRecord(entry);
         if (!event) return { ok: false, error: "NOT_FOUND" };
@@ -537,7 +525,7 @@ export const mcpRoutes = {
         patch.externalUrl &&
         !safeHttpUrl(patch.externalUrl)
       )
-        return validationResult("External URL must use HTTP or HTTPS.");
+        return validationResult(EXTERNAL_URL_ERROR);
       if (
         patch.imageUrl !== undefined &&
         patch.imageUrl &&
@@ -630,14 +618,19 @@ export const mcpRoutes = {
       ok: true,
       defaultTimezone:
         (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC",
+      collections: await ctx.settings.get<CollectionBindings>(COLLECTION_SETTINGS_KEY) ?? null,
     }),
     true,
   ),
   "mcp/settings/update": route(
     validSettingsUpdate,
-    async ({ defaultTimezone }, ctx) => {
+    async ({ defaultTimezone, collections }, ctx) => {
       if (!isValidTimeZone(defaultTimezone))
         return { ok: false, error: "INVALID_TIMEZONE" };
+      if(collections) {
+        try { await saveCollectionBindings(ctx,collections); }
+        catch(error) {return {ok:false,error:'INVALID_COLLECTIONS',details:error instanceof Error?error.message:'Review the collection schemas.'};}
+      }
       await ctx.settings.set("defaultTimezone", defaultTimezone);
       return { ok: true, defaultTimezone };
     },

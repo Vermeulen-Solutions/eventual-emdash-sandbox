@@ -42,9 +42,12 @@ export interface CollectionBlueprint {
   fields: BlueprintField[];
 }
 export interface SchemaBlueprintOptions {
+  eventCollection?: string;
   venueCollection?: string;
   organizerCollection?: string;
   bindRelations?: boolean;
+  /** Opt in only when importing private-storage records from older prototypes. */
+  legacyCompatibility?: boolean;
 }
 function field(
   slug: string,
@@ -116,7 +119,7 @@ export function createEventsCollectionBlueprint(
   options: SchemaBlueprintOptions = {},
 ): CollectionBlueprint {
   return {
-    slug: "events",
+    slug: options.eventCollection ?? "events",
     label: "Events",
     labelSingular: "Event",
     supports: ["drafts", "revisions", "scheduling", "search"],
@@ -125,13 +128,9 @@ export function createEventsCollectionBlueprint(
     fields: [
       field("title", "string", true, { required: true, searchable: true }),
       field("description", "portableText", true, { searchable: true }),
-      field("excerpt", "text", true, {
-        widget: "eventual-editor:optional-text",
-      }),
+      ...(options.legacyCompatibility ? [field("excerpt", "text", true)] : []),
       field("featured_image", "image"),
-      field("image_url", "url", false, {
-        widget: "eventual-editor:optional-text",
-      }),
+      ...(options.legacyCompatibility ? [field("image_url", "url")] : []),
       // All-day dates are Gregorian civil dates, inclusive at both ends.
       field("start", "datetime", false, { indexed: true }),
       field("end", "datetime"),
@@ -150,7 +149,7 @@ export function createEventsCollectionBlueprint(
         ...(options.bindRelations
           ? {
               validation: {
-                relation: "events_venue",
+                relation: `${options.eventCollection ?? "events"}_venue`,
                 targetCollection: options.venueCollection ?? "venues",
                 relationSide: "parent",
                 multiple: false,
@@ -158,9 +157,7 @@ export function createEventsCollectionBlueprint(
             }
           : {}),
       }),
-      field("location", "string", true, {
-        widget: "eventual-editor:optional-text",
-      }),
+      ...(options.legacyCompatibility ? [field("location", "string", true)] : []),
       ...(options.bindRelations
         ? [
             field("venue_id", "reference", false, {
@@ -175,16 +172,14 @@ export function createEventsCollectionBlueprint(
       field("external_url", "url", false, {
         widget: "eventual-editor:optional-text",
       }),
-      field("organizer", "string", true, {
-        widget: "eventual-editor:optional-text",
-      }),
+      ...(options.legacyCompatibility ? [field("organizer", "string", true)] : []),
       field("organizer_ref", "reference", false, {
         label: "Saved organizer",
         options: { collection: options.organizerCollection ?? "organizers" },
         ...(options.bindRelations
           ? {
               validation: {
-                relation: "events_organizer",
+                relation: `${options.eventCollection ?? "events"}_organizer`,
                 targetCollection: options.organizerCollection ?? "organizers",
                 relationSide: "parent",
                 multiple: false,
@@ -192,7 +187,7 @@ export function createEventsCollectionBlueprint(
             }
           : {}),
       }),
-      field("organizer_details", "json"),
+      ...(options.legacyCompatibility ? [field("organizer_details", "json")] : []),
       ...(options.bindRelations
         ? [
             field("organizer_id", "reference", false, {
@@ -203,7 +198,9 @@ export function createEventsCollectionBlueprint(
             }),
           ]
         : []),
-      field("categories", "json"),
+      field("categories", options.legacyCompatibility ? "json" : "string", false, {
+        description: "Optional. Separate category names with commas.",
+      }),
       field("event_status", "select", false, {
         widget: "eventual-editor:event-status",
         defaultValue: "published",
@@ -217,15 +214,17 @@ export function createEventsCollectionBlueprint(
           "Schedule overrides only; translated occurrence copy belongs in occurrence_content.",
       }),
       field("occurrence_content", "json", true),
-      field("previous_start_date", "string"),
-      field("schedule_history", "json"),
-      field("legacy_id", "string", false, { unique: true, indexed: true }),
-      field("legacy_metadata", "json"),
-      field("calendar_uid", "string"),
+      ...(options.legacyCompatibility ? [
+        field("previous_start_date", "string"),
+        field("schedule_history", "json"),
+        field("legacy_id", "string", false, { unique: true, indexed: true }),
+        field("legacy_metadata", "json"),
+        field("calendar_uid", "string"),
+      ] : []),
     ],
   };
 }
-export function createVenuesCollectionBlueprint(): CollectionBlueprint {
+export function createVenuesCollectionBlueprint(options: SchemaBlueprintOptions = {}): CollectionBlueprint {
   return {
     slug: "venues",
     label: "Venues",
@@ -243,13 +242,15 @@ export function createVenuesCollectionBlueprint(): CollectionBlueprint {
         "country",
       ].map((slug) => field(slug, "string")),
       field("directions", "portableText", true),
-      field("legacy_id", "string", false, { unique: true, indexed: true }),
-      field("legacy_metadata", "json"),
+      ...(options.legacyCompatibility ? [
+        field("legacy_id", "string", false, { unique: true, indexed: true }),
+        field("legacy_metadata", "json"),
+      ] : []),
     ],
   };
 }
 
-export function createOrganizersCollectionBlueprint(): CollectionBlueprint {
+export function createOrganizersCollectionBlueprint(options: SchemaBlueprintOptions = {}): CollectionBlueprint {
   return {
     slug: "organizers",
     label: "Organizers",
@@ -260,8 +261,10 @@ export function createOrganizersCollectionBlueprint(): CollectionBlueprint {
       field("name", "string", false, { required: true, searchable: true }),
       field("website", "url"),
       field("contact_url", "url"),
-      field("legacy_id", "string", false, { unique: true, indexed: true }),
-      field("legacy_metadata", "json"),
+      ...(options.legacyCompatibility ? [
+        field("legacy_id", "string", false, { unique: true, indexed: true }),
+        field("legacy_metadata", "json"),
+      ] : []),
     ],
   };
 }
@@ -283,10 +286,11 @@ export function createEventRelations(
 ): BlueprintRelation[] {
   const venueCollection = options.venueCollection ?? "venues";
   const organizerCollection = options.organizerCollection ?? "organizers";
+  const eventCollection = options.eventCollection ?? "events";
   return [
     {
-      slug: "events_venue",
-      parentCollection: "events",
+      slug: `${eventCollection}_venue`,
+      parentCollection: eventCollection,
       childCollection: venueCollection,
       parentLabel: "Events",
       childLabel:
@@ -296,8 +300,8 @@ export function createEventRelations(
       maxChildrenPerParent: 1,
     },
     {
-      slug: "events_organizer",
-      parentCollection: "events",
+      slug: `${eventCollection}_organizer`,
+      parentCollection: eventCollection,
       childCollection: organizerCollection,
       parentLabel: "Events",
       childLabel:

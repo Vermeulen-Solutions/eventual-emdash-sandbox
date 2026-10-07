@@ -270,6 +270,7 @@ describe("Native content validation", () => {
       },
     };
     const ctx = {
+      schema: {listCollections: vi.fn().mockResolvedValue([{slug:"events",fields:[{slug:"schedule_history"},{slug:"previous_start_date"}]}])},
       content: {
         get: vi.fn().mockResolvedValue(livePublished),
         listRevisions: vi.fn().mockResolvedValue([]),
@@ -318,6 +319,7 @@ describe("Native content validation", () => {
       },
     };
     const ctx = {
+      schema: {listCollections: vi.fn().mockResolvedValue([{slug:"events",fields:[{slug:"schedule_history"},{slug:"previous_start_date"}]}])},
       content: {
         get: vi.fn().mockResolvedValue(livePublished),
         listRevisions: vi.fn().mockResolvedValue([]),

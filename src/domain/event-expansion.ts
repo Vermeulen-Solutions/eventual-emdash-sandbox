@@ -8,7 +8,7 @@ import {
 } from "./venue-adapter";
 import { normalizeNativeSchedule, parseJson } from "./native-validation";
 import { formatPublicEvent } from "../public-event";
-import { categoryKey } from "./category";
+import { categoryKey, readCategories } from "./category";
 import type { PublicEvent } from "../../astro/feed";
 
 export interface ExpandOccurrencesOptions {
@@ -138,7 +138,7 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
         : venue && typeof venue === "object"
           ? text((venue as Record<string, unknown>).id)
           : "";
-    const categories = parseJson(data.categories) ?? [];
+    const categories = readCategories(data.categories);
     return {
       id,
       title: text(data.title).trim(),
@@ -179,9 +179,7 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
         image?.src ?? image?.url ?? data.image_url ?? data.imageUrl,
       ),
       imageMediaId: text(image?.id ?? data.imageMediaId),
-      categories: Array.isArray(categories)
-        ? categories.filter((item): item is string => typeof item === "string")
-        : [],
+      categories,
       createdAt:
         timestamp(outer.createdAt ?? data.created_at ?? data.createdAt) ||
         "1970-01-01T00:00:00.000Z",
