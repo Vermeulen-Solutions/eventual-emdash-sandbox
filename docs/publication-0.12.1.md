@@ -37,4 +37,8 @@ These checks do not certify external Google/Apple/Outlook subscription refresh, 
 
 ## Publication records
 
-Pending: source commit, GitHub release, signed package-profile update and exact-CID approval, versioned registry release and checksum verification. Do not describe the release as registry-installable until both current profile and release records have applicable approval labels.
+The initial source commit is `897e4f4ec58d7d2dd50391d0746ebbfed4c9a461`. Its Linux UTC/New York CI jobs passed the full release suite. Windows/New York hit two 15-second integration-test deadlines (no failed assertions); fail-fast cancelled Windows/UTC after its plugin/tooling/packed-consumer checks passed. Real cold workerd/D1 startup plus multiple policy RPCs exceeded the deadline on that runner. The compatibility integration suite now has a bounded 60-second deadline; domain tests retain their 15-second limit. No retries or assertion changes were added. The matrix now finishes independently, with a 30-minute maximum per job, and is rerun before publication.
+
+The registry description/installation/changelog update was written once. Pre-release signed PDS and aggregator profile CID: `bafyreifskgnvr37g3o2lot54xbw3lthv43nrq5geth2kwkdhnust27sgse`; exact-CID `listing-passed` at `2026-10-07T08:46:56.671Z`. Historical override/review labels target another CID and do not approve this one. The host tarball is uploaded to a draft GitHub release, downloaded again and verified against the tested SHA-256 above.
+
+Pending: final CI, public GitHub release, versioned registry release and post-publication record/checksum verification. Publishing stamps a new profile revision, so the final signed and aggregator profile CID/approval must be checked again. Do not describe the release as registry-installable until both current profile and release records have applicable approval labels.

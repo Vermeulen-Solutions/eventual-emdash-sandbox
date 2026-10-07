@@ -9,7 +9,10 @@ afterEach(async () => {
   await host?.dispose();
   host = undefined;
 });
-describe("Eventual compatibility routes", () => {
+// Real workerd/D1 startup plus several policy RPCs exceeds 15s on cold Windows
+// runners. Keep the domain-test deadline unchanged; allow this integration suite
+// a bounded minute without retries or weaker assertions.
+describe("Eventual compatibility routes", { timeout: 60_000 }, () => {
   it("keeps legacy MCP publication and cancellation feeds usable without native collections", async () => {
     host = await createPluginTestHost();
     const created = (await host.invokeRoute("mcp/events/create", {
