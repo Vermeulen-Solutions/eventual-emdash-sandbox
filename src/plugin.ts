@@ -1,6 +1,8 @@
 import { pluginResponse, pluginRoute, type SandboxedPlugin } from "emdash/plugin";
+import type { BlockResponse } from "@emdash-cms/blocks";
 
 import { handleAdmin } from "./native-admin";
+import { handleScheduleEditorPanel } from "./native/schedule-panel";
 import { handlePublicEvents } from "./routes/public-events";
 import { handlePublicEventImage } from "./routes/public-media";
 import { handleCalendarFeed } from "./routes/calendar-feed";
@@ -8,7 +10,11 @@ import { mcpTools } from "./mcp-schemas";
 import { mcpRoutes } from "./mcp";
 import { transferRoutes } from './transfer';
 import { EventScanLimitError } from "./storage";
-import { handleContentBeforeSave, handleContentBeforeDelete, handleContentBeforePublish } from "./hooks/content-hooks";
+import { handleContentBeforeSave, handleContentBeforeDelete, handleContentBeforePublish, handleContentBeforeUnpublish } from "./hooks/content-hooks";
+const editorUi = (response: BlockResponse) => {
+  if (response.blocks[0]) response.blocks[0].block_id = "eventual-ui";
+  return response;
+};
 
 const plugin: SandboxedPlugin = {
 	hooks: {
@@ -16,13 +22,18 @@ const plugin: SandboxedPlugin = {
 		"content:beforeDelete": handleContentBeforeDelete,
 		"content:beforePublish": handleContentBeforePublish,
 		"content:beforeSchedule": handleContentBeforePublish,
+		"content:beforeUnpublish": handleContentBeforeUnpublish,
 	},
 	routes: {
 		...mcpRoutes,
 		...transferRoutes,
 		admin: {
 			permission: "content:edit_any",
-			handler: async (routeCtx, ctx) => handleAdmin(routeCtx.input, ctx),
+            handler: async (routeCtx, ctx) => editorUi(await handleAdmin(routeCtx.input, ctx, routeCtx.user)),
+		},
+		"admin/editor/schedule": {
+			permission: "content:edit_any",
+			handler: async (routeCtx, ctx) => editorUi(await handleScheduleEditorPanel(routeCtx, ctx)),
 		},
 		publicEvents: pluginRoute({
 			public: true,

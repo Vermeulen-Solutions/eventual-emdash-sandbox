@@ -2,18 +2,25 @@
 
 All notable changes to Eventual are documented here.
 
-## 0.12.0
+## 0.12.1
 
 - Transition to native EmDash collections (`events`, `venues`/`locations`) with row-per-locale internationalization (`translation_group`, `locale`).
 - Automatic synchronization of invariant schedule fields across translation siblings (`translatable: false`).
 - Rich text editing using native Portable Text (`portableText`) instead of raw markdown textareas.
-- Full compatibility with `@swiss.ky/linguadash` and core EmDash revisions, drafts, and scheduled publishing.
+- Native translation rows and Portable Text are available to translation plugins. Live `@swiss.ky/linguadash` service acceptance remains untested; core drafts, revisions and publishing are covered separately.
 - Separation of shared schedule exceptions (`exceptions`) and localized editorial overrides (`occurrence_content`).
 - Inclusive civil dates (`start_date`, `end_date`) for all-day events and RFC 5545 exclusive DTEND conversion.
 - Resumable non-destructive migration engine (`migrateToNative`) with dry-run preview, lease-based concurrency locking, and token-based recovery.
 - Stable cross-locale and migration calendar UIDs, logical RFC SEQUENCE counters, and committed-state cancellation reconciliation.
 - Single native authority: native collections are authoritative when installed, preventing stale legacy storage resurrection.
 - Exported typed blueprints (`eventual/schema`) and localized Astro components (`eventual/astro`).
+- Friendly recurrence/occurrence editing, grouped venue choices, human draft review and English/French admin presentation; optional fields are collapsed and technical metadata stays stored but hidden.
+- A single `eventual/install` host integration, exact tested core/toolchain guards, compiled schema exports and an offline backed-up SQLite schema/reference upgrade tool. Backend and host packages must match.
+- Browser acceptance against a freshly installed tarball; the final release evidence is in `docs/release-refinements-2026-10-07.md`.
+
+## 0.12.0
+
+- Initial native-collection modernization. The 0.12.1 recovery release restores editor workflows and fixes native references, installation and publication contracts; use its upgrade runbook.
 
 ## 0.11.1
 

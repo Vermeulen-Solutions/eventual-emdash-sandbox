@@ -1,13 +1,20 @@
-## 0.12.0 (unreleased)
+## 0.12.1
 
-- Native multilingual blueprints with Portable Text, explicit all-day civil dates, localized occurrence copy and core scheduling.
-- Replace the custom editor with collection links; gate legacy CRUD/imports when events is installed, including an empty collection.
-- Production-contract lifecycle validation, paginated native feeds, media URLs and localized Astro rendering.
-- Stable translation/migration UIDs, logical RFC SEQUENCE, committed-state locale/category cancellations, parser checks and bounded work.
-- Non-destructive migration with structural preview, generated IDs, publication preservation, dependency validation, recovery and resumable batches.
-- Package Astro's transitive sources and keep the sandbox bundle within installation budgets.
+- Native multilingual event/venue/organizer collections, Portable Text, drafts, revisions and core publishing.
+- Friendly daily/weekly/monthly recurrence controls, local dates, 90-day occurrence cancellation/restoration/rescheduling and localized copy; no routine JSON editing.
+- English/French admin presentation, optional-field disclosures, readable draft review and compact occurrence rows.
+- Venue/organizer choices group translations, show addresses and draft warnings, retain selected IDs and search by name/address. Publication requires published dependencies.
+- One eventual/install host integration with exact core compatibility checks, compiled schema exports and a backed-up SQLite schema/reference upgrade CLI.
+- Live native MCP/export, safe draft duplication, bounded schedule history and 500-exception capacity.
+- Paginated multilingual JSON/ICS, stable UIDs, logical SEQUENCE, committed-state cancellations and localized Astro/JSON-LD.
+- Non-destructive resumable migration with structural preview and recovery.
+- Packed-package browser acceptance, SQLite upgrades and UTC/New York tests; measured registry payload budgets.
 
-Requires EmDash 1.0.1+. Adds content/publication/revision/schema/policy capabilities. Review native setup before applying schemas: installation changes feed authority. Legacy data is retained. This local version has not been published.
+Requires matching backend and host packages. Tested core EmDash/Admin/Block Kit 1.0.1; see installation for host versions. Existing schemas need upgrading. Native events changes feed authority even while empty. Legacy storage is retained. Public styling is preserved.
+
+## 0.12.0
+
+Initial native collection modernization; superseded by 0.12.1's editor/reference recovery and installation fixes.
 
 ## 0.11.1
 
@@ -15,8 +22,8 @@ Editor-level admin permission; MCP management remains administrator-only.
 
 ## 0.11.0
 
-Attendance/lifecycle states, saved organizers, structured addresses, native media, schedule history, transfer tools, calendar states and Astro/JSON-LD helpers. Requires EmDash 1.0.1+.
+Attendance/lifecycle states, saved organizers, structured addresses, media, schedule history, transfer tools, calendar states and Astro/JSON-LD helpers.
 
 ## Earlier releases
 
-See CHANGELOG.md and GitHub releases for the complete history.
+See CHANGELOG.md and GitHub releases.

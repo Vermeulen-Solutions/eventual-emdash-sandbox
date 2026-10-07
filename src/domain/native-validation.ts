@@ -47,6 +47,9 @@ export const scheduleKeys = [
   "exceptions",
   "occurrence_content",
   "venue",
+  "venue_id",
+  "organizer_ref",
+  "organizer_id",
   "location_type",
   "event_status",
   "calendar_uid",
@@ -149,8 +152,8 @@ export function normalizeNativeSchedule(
       throw new Error("Recurring starts require minute precision.");
   }
   const exceptions = parseJson(data.exceptions) ?? [];
-  if (!Array.isArray(exceptions) || exceptions.length > 366)
-    throw new Error("Exceptions must be an array of at most 366 items.");
+  if (!Array.isArray(exceptions) || exceptions.length > 500)
+    throw new Error("Exceptions must be an array of at most 500 items.");
   const allowed = new Set([
     "start",
     "end",
@@ -261,7 +264,7 @@ export function normalizeNativeSchedule(
   const editorial = parseJson(data.occurrence_content) ?? [];
   if (
     !Array.isArray(editorial) ||
-    editorial.length > 366 ||
+    editorial.length > 500 ||
     editorial.some(
       (ex) =>
         !ex ||

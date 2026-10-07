@@ -24,7 +24,7 @@ const imageUrl = apiOrigin ? safeImageUrl(event.imageUrl, apiOrigin) : "";
 const directionsUrl = safeHttpUrl(event.directionsUrl);
 ---
 
-<article class:list={["agenda-item", compact && "agenda-item--compact", !showDate && "agenda-item--without-date"]}>
+<article class:list={["agenda-item", compact && "agenda-item--compact", !showDate && "agenda-item--without-date", !imageUrl && !compact && showDate && "agenda-item--without-image"]}>
 	{showDate && (
 		<time class="date-block" datetime={dateKey} aria-label={fullDate}>
 			<span>{weekday}</span>

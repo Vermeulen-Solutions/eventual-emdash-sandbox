@@ -4,7 +4,8 @@ import { defineConfig, configDefaults } from "vitest/config";
 export default defineConfig({
 	plugins: [emdashPluginTest()],
 	test: {
-		exclude: [...configDefaults.exclude, 'scripts/**', 'reports/**'],
+		include: ['tests/**/*.test.ts'],
+		exclude: [...configDefaults.exclude, 'scripts/**', 'reports/**', 'tests/browser/**'],
 		// The EmDash test plugin builds the shared sandbox artifact for each
 		// Cloudflare pool. Keep workers serial to avoid dist/ write races on Windows.
 		fileParallelism: false,

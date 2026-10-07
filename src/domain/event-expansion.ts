@@ -1,7 +1,11 @@
 import { expandEventsInDateRange, scheduledOccurrence } from "./recurrence";
 import type { EventRecord, EventException } from "./event";
 import { portableTextToPlainText } from "./portable-text";
-import { normalizeVenueRecord, type NormalizedVenue } from "./venue-adapter";
+import {
+  normalizeVenueRecord,
+  localizedVenue,
+  type NormalizedVenue,
+} from "./venue-adapter";
 import { normalizeNativeSchedule, parseJson } from "./native-validation";
 import { formatPublicEvent } from "../public-event";
 import { categoryKey } from "./category";
@@ -125,7 +129,9 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
           ? "published"
           : "draft")) as EventRecord["status"];
     const image = data.featured_image as Record<string, unknown> | undefined;
-    const venue = data.venue ?? data.venue_id ?? data.venueId;
+    const venue = Object.hasOwn(data, "venue_id")
+      ? data.venue_id
+      : (data.venue ?? data.venueId);
     const reference =
       typeof venue === "string"
         ? venue
@@ -140,6 +146,9 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
         typeof data.description === "string"
           ? data.description
           : JSON.stringify(data.description ?? []),
+      descriptionBlocks: Array.isArray(data.description)
+        ? data.description
+        : undefined,
       start,
       end,
       allDay,
@@ -155,7 +164,13 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
       virtualUrl: text(data.virtual_url ?? data.virtualUrl),
       externalUrl: text(data.external_url ?? data.externalUrl),
       organizer: text(data.organizer),
-      organizerId: text(data.organizer_id ?? data.organizerId),
+      organizerId: text(
+        Object.hasOwn(data, "organizer_id")
+          ? data.organizer_id
+          : typeof data.organizer_ref === "object"
+            ? (data.organizer_ref as Record<string, unknown> | null)?.id
+            : (data.organizer_ref ?? data.organizerId),
+      ),
       organizerDetails: parseJson(
         data.organizer_details,
       ) as EventRecord["organizerDetails"],
@@ -205,7 +220,7 @@ export function eventRecordToPublicEvent(
   venueMap?: Map<string, NormalizedVenue>,
   siteUrl?: string,
 ): PublicEvent {
-  const venue = record.venueId ? venueMap?.get(record.venueId) : undefined;
+  const venue = localizedVenue(venueMap, record);
   const normalized = venue
     ? {
         ...venue,
@@ -230,6 +245,9 @@ export function eventRecordToPublicEvent(
   return {
     ...formatPublicEvent(record, normalized),
     description: portableTextToPlainText(record.description),
+    ...(record.descriptionBlocks
+      ? { descriptionBlocks: record.descriptionBlocks }
+      : {}),
     imageUrl,
     organizerDetails: record.organizerDetails,
     previousStartDate: record.previousStartDate,
@@ -246,9 +264,7 @@ export function expandEventOccurrences(
   if (!Array.isArray(entries) || !options?.from || !options.through) return [];
   const records = entries
     .map(nativeEntryToEventRecord)
-    .filter(
-      (record): record is EventRecord => !!record && record.published,
-    );
+    .filter((record): record is EventRecord => !!record && record.published);
   const venues = new Map<string, NormalizedVenue>();
   if (options.venues instanceof Map) {
     for (const [key, value] of options.venues) {

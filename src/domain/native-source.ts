@@ -5,6 +5,8 @@ import type {
 import type { EventRecord } from "./event";
 import { nativeEntryToEventRecord } from "./event-expansion";
 import { normalizeVenueRecord, type NormalizedVenue } from "./venue-adapter";
+import { referenceTarget, eventSchema } from "./native-references";
+import { safeHttpUrl } from "./venue";
 import {
   listEvents,
   listVenuesById,
@@ -87,24 +89,59 @@ export async function resolveEventVenues(
       if (venue) result.set(id, venue);
     }
   } else {
-    const collection = schema.fields.find((field) => field.slug === "venue")
-      ?.options?.collection;
+    const collection = referenceTarget(schema, "venue");
     if (ids.length && typeof collection !== "string")
       throw new Error("Missing native venue reference target.");
-    // Batch groups bound concurrency; do not scan unrelated or draft venue collections.
-    for (let i = 0; i < ids.length; i += 20) {
-      const records = await Promise.all(
-        ids
-          .slice(i, i + 20)
-          .map((id) => ctx.content!.get(collection as string, id)),
-      );
-      for (const record of records) {
-        if (record?.status !== "published") continue;
-        const venue = normalizeVenueRecord(record);
-        if (venue) result.set(venue.id, venue);
-      }
+    for (const [key, record] of await localizedReferences(
+      ctx,
+      collection,
+      events,
+      (event) => event.venueId,
+    )) {
+      const venue = normalizeVenueRecord(record);
+      if (venue) result.set(key, venue);
     }
   }
+  return result;
+}
+async function localizedReferences(
+  ctx: EventualContext,
+  target: string,
+  events: EventRecord[],
+  idOf: (event: EventRecord) => string | undefined,
+) {
+  const requested = new Map<string, Set<string>>();
+  for (const event of events) {
+    const id = idOf(event);
+    if (!id) continue;
+    const locales = requested.get(id) ?? new Set<string>();
+    locales.add((event.locale ?? "").toLowerCase());
+    requested.set(id, locales);
+  }
+  const result = new Map<string, ContentItem>();
+  const ids = [...requested.keys()];
+  for (let i = 0; i < ids.length; i += 20)
+    await Promise.all(
+      ids.slice(i, i + 20).map(async (id) => {
+        const base = await ctx.content!.get(target, id);
+        if (base?.status !== "published") return;
+        result.set(id, base);
+        const locales = [...requested.get(id)!].filter(
+          (locale) => locale && locale !== base.locale?.toLowerCase(),
+        );
+        if (!locales.length || !ctx.content?.getTranslations) return;
+        const siblings = await ctx.content.getTranslations(target, id);
+        for (const locale of locales) {
+          const sibling = siblings.translations.find(
+            (row) => row.locale?.toLowerCase() === locale,
+          );
+          if (!sibling) continue;
+          const translated = await ctx.content.get(target, sibling.id);
+          if (translated?.status === "published")
+            result.set(id + "|" + locale, translated);
+        }
+      }),
+    );
   return result;
 }
 export function selectEventLocales(
@@ -137,11 +174,23 @@ export function selectEventLocales(
     if (match) result.push(match);
     else if (!strict) {
       const fallback = group[0]!;
+      const prefix = fallback.locale
+        ? "[" + fallback.locale.toUpperCase() + "] "
+        : "";
       result.push({
         ...fallback,
-        title:
-          (fallback.locale ? "[" + fallback.locale.toUpperCase() + "] " : "") +
-          fallback.title,
+        title: prefix + fallback.title,
+        exceptions: (fallback.exceptions ?? []).map((item) =>
+          item.overrides?.title !== undefined
+            ? {
+                ...item,
+                overrides: {
+                  ...item.overrides,
+                  title: prefix + item.overrides.title,
+                },
+              }
+            : item,
+        ),
       });
     }
   }
@@ -154,6 +203,33 @@ export async function hydrateNativeAssets(
 ): Promise<EventRecord[]> {
   const urls = new Map<string, string>();
   const images = new Map<string, string>();
+  const organizers = new Map<
+    string,
+    NonNullable<EventRecord["organizerDetails"]>
+  >();
+  const organizerIds = [
+    ...new Set(
+      events.flatMap((event) => (event.organizerId ? [event.organizerId] : [])),
+    ),
+  ];
+  if (organizerIds.length) {
+    const target = referenceTarget(await eventSchema(ctx), "organizer_ref");
+    for (const [key, entry] of await localizedReferences(
+      ctx,
+      target,
+      events,
+      (event) => event.organizerId,
+    )) {
+      organizers.set(key, {
+        id: entry.id,
+        name: String(entry.data.name ?? entry.data.title ?? ""),
+        website: safeHttpUrl(String(entry.data.website ?? "")),
+        contactUrl: safeHttpUrl(
+          String(entry.data.contact_url ?? entry.data.contactUrl ?? ""),
+        ),
+      });
+    }
+  }
   const ids = [...new Set(events.map((event) => event.id.split("#")[0]!))];
   for (let i = 0; i < ids.length; i += 20)
     await Promise.all(
@@ -178,6 +254,21 @@ export async function hydrateNativeAssets(
     );
   return events.map((event) => ({
     ...event,
+    organizer:
+      event.organizer ||
+      (
+        organizers.get(
+          (event.organizerId ?? "") + "|" + (event.locale ?? "").toLowerCase(),
+        ) ?? organizers.get(event.organizerId ?? "")
+      )?.name ||
+      event.organizerDetails?.name ||
+      "",
+    organizerDetails:
+      organizers.get(
+        (event.organizerId ?? "") + "|" + (event.locale ?? "").toLowerCase(),
+      ) ??
+      organizers.get(event.organizerId ?? "") ??
+      event.organizerDetails,
     publicUrl: urls.get(event.id.split("#")[0]!) ?? event.publicUrl,
     imageUrl: event.imageUrl || images.get(event.imageMediaId ?? "") || "",
   }));

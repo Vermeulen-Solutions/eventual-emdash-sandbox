@@ -99,6 +99,7 @@ export interface EventRecord extends EventFields {
   slug?: string;
   publicUrl?: string;
   organizerDetails?: { id: string; name: string; website: string; contactUrl: string };
+  descriptionBlocks?: unknown[];
 }
 
 export interface EventDraft {

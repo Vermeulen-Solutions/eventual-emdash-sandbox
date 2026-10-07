@@ -8,7 +8,7 @@
   <a href="https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/actions/workflows/ci.yml"><img src="https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <a href="https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/releases"><img src="https://img.shields.io/github/v/release/Vermeulen-Solutions/eventual-emdash-sandbox?color=176b57&label=release" alt="Latest Release" /></a>
   <a href="https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual"><img src="https://img.shields.io/badge/EmDash_Registry-Eventual-0b4d3d" alt="EmDash Plugin Registry" /></a>
-  <a href="https://emdashcms.com"><img src="https://img.shields.io/badge/EmDash-%E2%89%A51.0.1-0b4d3d" alt="EmDash Compatibility" /></a>
+  <a href="https://emdashcms.com"><img src="https://img.shields.io/badge/EmDash-1.0.1-0b4d3d" alt="EmDash Compatibility" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-d89521" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6" alt="TypeScript Strict" />
   <img src="https://img.shields.io/badge/Sandbox-0%20outbound-2ea44f" alt="Zero Outbound Requests" />
@@ -29,10 +29,10 @@ Starting with **v0.12.0**, Eventual natively integrates with **EmDash collection
 - **Visual & Accessible Public Views:** An included [Astro frontend example](./examples/astro-events/README.md) offers seven responsive, zero-JavaScript visitor views: card grid, compact list, timeline, daily schedule, date strip, month calendar, and location groupings.
 - **One-Click Calendar Sync:** Built-in public iCalendar (`webcal`) subscription and downloadable `.ics` files with RFC 5545 monotonic `SEQUENCE` tracking, inclusive-to-exclusive all-day date conversion, and cancellation tombstones.
 - **Resumable Migration Engine:** Non-destructive `migrateToNative` MCP tool and endpoint to migrate existing events from legacy storage with dry-run previews and idempotency guarantees.
-- **AI & Automation Ready:** Built-in Model Context Protocol (MCP) tools let authorized AI agents safely manage events, update schedules, and query occurrences.
+- **AI & Automation Access:** Eventual MCP tools inspect native events and support legacy migration. Use EmDash core content tools for native writes and publication.
 - **Sandboxed & Private:** Runs inside EmDash's security sandbox with dedicated storage, strict permissions, and zero unauthorized outbound network requests.
 
-> **Requirements:** Eventual `0.12.0` requires **EmDash 1.0.1** or newer.
+> **Supported editor host (0.12.1):** EmDash, Admin and Block Kit **1.0.1**, Astro **7.3.x** (at least 7.3.2), Vite **8.3.x**, React **19**, and Node **24+**. Other host versions require compatibility verification. Install both the registry backend and the matching host package.
 
 ---
 
@@ -60,7 +60,7 @@ Visitors can view full event details, join virtual meetings, get venue direction
 Browse and manage your events with status filtering, date indicators, and quick links directly to EmDash's native collection editor.
 
 <p align="center">
-  <img src="./images/registry-0.11.0/01-events-admin.jpg" alt="Eventual Events Admin Page" width="90%" />
+  <img src="./images/registry-0.12.0/editor-fr-desktop.png" alt="French native Eventual editor" width="90%" />
 </p>
 
 ---
@@ -68,9 +68,7 @@ Browse and manage your events with status filtering, date indicators, and quick 
 ### 4. Saved Organizers & Venues
 Maintain a directory of organizers (names, websites, contact links) and physical venues with structured addresses and map directions.
 
-<p align="center">
-  <img src="./images/registry-0.11.0/03-organizers.jpg" alt="Saved Organizers Management" width="90%" />
-</p>
+Venue choices combine translation siblings into one selection, show the name and address, and retain the saved native ID. Search finds names or addresses, including accents; draft venues are marked and must be published before their events. Create and edit links open the native venue editor.
 
 ---
 
@@ -79,30 +77,28 @@ Maintain a directory of organizers (names, websites, contact links) and physical
 ### For Content Editors & Site Managers
 - **Native EmDash Collections:** Edit events and venues directly in EmDash's core editor with native revisions, draft states, and scheduled publication.
 - **Row-per-locale Translations:** Localize event titles, Portable Text descriptions, excerpts, and occurrence notes independently per language.
-- **Invariant Schedule Sync:** Updating a date, time, or recurrence rule on any translation automatically updates all language siblings.
-- **One-off & Recurring Events:** Support for daily, weekly (with specific weekday selection), monthly, and yearly recurrence intervals.
-- **Manage Occurrence Dates:** Shared recurrence exceptions handle timing/cancellations across all locales, while localized occurrence content handles per-language announcements.
+- **Invariant Schedule Sync:** Core shares committed dates, venues and recurrence across published translation siblings; pending drafts remain separate from live content.
+- **One-off & Recurring Events:** Support for daily, weekly (with specific weekday selection), and monthly recurrence intervals configured through the native Recurrence & Schedule editor panel.
+- **Manage Occurrence Dates:** Visual 90-day inspection with cancellation, restoration, rescheduling and per-language announcements. Changes pass through EmDash's draft review and publication controls.
 - **Physical, Virtual & Hybrid:** Specify in-person locations, video conference links (Zoom, Google Meet, YouTube Live), or both.
 - **Media Library Integration:** Pick event covers directly from the EmDash media library or supply external image URLs.
-- **Dashboard Widget:** Highlights upcoming published events at a glance on the EmDash admin dashboard.
+- **Companion Workspace & Dashboard Widget:** Browse native events with schedule summaries, status badges, and safe duplication at `/events`, and highlight upcoming published events on the EmDash admin dashboard.
 
 ### For Developers & Site Builders
 - **Multilingual Public JSON API:** High-performance feed at `/_emdash/api/plugins/eventual/publicEvents` with date range, locale, strict mode, and category filtering.
 - **Live iCalendar (`webcal`) Feed:** RFC 5545 compliant subscription route at `/_emdash/api/plugins/eventual/calendar` with monotonic integer `SEQUENCE` values and 366-day cancellation tombstones.
 - **Schema.org Structured Data:** Built-in JSON-LD generators (`eventToJsonLd`, `serializeJsonLd`) for rich search engine indexing.
 - **Portable Astro Feed Client:** Import `eventual/astro` in your Astro project to query the feed and render the unstyled `EventList.astro` component or full custom interfaces.
-- **Non-Destructive Migration:** Automated `migrateToNative` engine reads legacy plugin tables and writes native collections with zero data loss.
+- **Resumable Migration Engine:** Automated `migrateToNative` engine reads legacy plugin tables and writes native collections in safe, previewable batches with ledger mapping.
 
 ---
 
 ## Installation & Setup
 
 ### 1. Install via EmDash Plugin Registry
-Install Eventual directly from the **EmDash Admin → Plugins** marketplace, or via CLI:
+Install Eventual **0.12.1** through EmDash's registry administration. The plugin publisher CLI does not have an `install` command. The original 0.12.0 release is superseded by this recovery release.
 
-```sh
-npx emdash-plugin install @vermeulen.solutions/eventual
-```
+For friendly editing, install the matching host tarball and use `eventual/install` for the EmDash integration. It registers the frontend companion and the tested compatibility adapter together. See the [installation and upgrade runbook](./docs/editor-upgrade.md). Registry installation alone does not install frontend widgets or upgrade existing schemas. Public-page screenshots show the earlier Astro showcase; the editor screenshot is from the current release acceptance test.
 
 ### 2. Apply Collection Blueprints
 Eventual exports typed collection blueprints to seed the required EmDash collections:
@@ -128,7 +124,8 @@ See [Registry Installation Guide](./docs/registry-installation.md) for full inst
 Eventual requests minimal capabilities within the EmDash sandbox:
 - `content:read`, `content:write`, `content:publish`, `content:revisions:read`: For native event management, publication, and migration.
 - `schema:read`: To detect active collection schemas.
-- `hooks.content-policy:register`: To synchronize invariant schedule fields across language siblings.
+- `hooks.content-policy:register`: To validate schedules, preserve domain history and protect dependencies; core performs shared-field synchronization.
+- `admin.editor-draft:read`, `admin.editor-draft:patch`: To inspect permitted draft fields and propose changes through the host's review mechanism.
 - `media:read`, `media:bytes:read`: To display and serve selected event cover images.
 - `allowedHosts: []`: **Zero outbound HTTP requests**; all data stays strictly within your site.
 
@@ -146,7 +143,7 @@ To make building visitor pages easy, an official, runnable showcase is included 
 In your Astro project, install the plugin package:
 
 ```sh
-npm install eventual
+npm install https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/releases/download/v0.12.1/eventual-0.12.1.tgz
 ```
 
 Then query the public feed in your Astro pages:
@@ -280,9 +277,10 @@ Eventual exposes Model Context Protocol (MCP) tools for AI agents under the `eve
 
 - **Migration & Transfers:** `migrateToNative`, `exportRecords`, `previewImport`, `importRecords`.
 - **Settings:** `getDefaultTimezone`, `updateDefaultTimezone`.
-- **Legacy Compatibility (when native collections are not installed):** `listEvents`, `getEvent`, `createEvent`, `updateEvent`, `publishEvent`, `unpublishEvent`, `deleteEvent`, `listOccurrences`, `setOccurrenceException`, `removeOccurrenceException`, `listVenues`, `createVenue`, `updateVenue`, `deleteVenue`, `listOrganizers`, `createOrganizer`, `updateOrganizer`.
+- **Native reads:** `listEvents`, `getEvent`, `listOccurrences`, `listVenues`, `listOrganizers` read the native source. Saved live data is authoritative; inspect pending revisions with core tools.
+- **Legacy writes (only without native collections):** `createEvent`, `updateEvent`, `publishEvent`, `unpublishEvent`, `deleteEvent`, `setOccurrenceException`, `removeOccurrenceException`, `createVenue`, `updateVenue`, `deleteVenue`, `createOrganizer`, `updateOrganizer`.
 
-To enable MCP tools, navigate to **EmDash Admin → Plugins → Eventual → Agent Access** and configure permissions.
+Configure EmDash's MCP access and use an account/token with `plugins:manage` for Eventual tools. The retired Eventual “Agent Access” settings form is not part of the current workspace. Native transfer export is a content inspection format, not a full site/revision backup; native import remains blocked.
 
 ---
 
@@ -306,7 +304,7 @@ npm run test:package # Run integration tests against packed tarball
 - [Native Modernization Guide](./docs/native-modernization.md) — Comprehensive schema, invariant sync, and migration documentation.
 - [Registry Installation Guide](./docs/registry-installation.md) — Plugin marketplace installation and initial setup.
 - [Registry Changelog](./docs/registry-changelog.md) — Public changelog for registry releases.
-- [Release Notes 0.12.0](./docs/release-notes-0.12.0.md) — Detailed 0.12.0 release overview and migration advisory.
+- [Release Notes 0.12.1](./docs/release-notes-0.12.1.md) — Recovery release, installation requirements and verification.
 - [Astro Visitor Example](./examples/astro-events/README.md) — 7-view zero-JS visitor showcase.
 
 ---

@@ -8,7 +8,7 @@
 	"author": { "name": "Jaap Vermeulen", "email": "jaap.vermeulen@gmail.com" },
 	"security": { "email": "jaap.vermeulen@gmail.com" },
 	"name": "Eventual",
-	"description": "Native multilingual event collections with recurrence validation, iCalendar feeds, Astro helpers and resumable legacy migration.",
+	"description": "Multilingual events with friendly recurrence and venue editing, Portable Text, iCalendar feeds, Astro helpers and safe legacy migration.",
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
 		"installation": { "file": "./docs/registry-installation.md" },
@@ -16,11 +16,13 @@
 	},
 	"repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
 	"release": {
-		"requires": { "env:emdash": ">=1.0.1" },
+		"requires": { "env:emdash": "1.0.1" },
 		"artifacts": {
 			"icon": { "file": "./images/registry/icon-v1.png" },
 			"banner": { "file": "./images/registry/banner-v1.png" },
 			"screenshots": [
+				{ "file": "./images/registry-0.12.0/editor-fr-desktop.png" },
+				{ "file": "./images/registry-0.12.0/editor-fr-mobile.png" },
 				{ "file": "./images/registry-0.11.0/05-public-events.jpg" },
 				{ "file": "./images/registry-0.11.0/06-hybrid-event-detail.jpg" }
 			]
@@ -32,7 +34,18 @@
 	// KV, and route/hook registration. Changing these between
 	// releases requires a version bump because installed
 	// users have consented to the old contract.
-	"capabilities": ["media:read", "media:bytes:read", "content:read", "content:write", "content:publish", "content:revisions:read", "schema:read", "hooks.content-policy:register"],
+	"capabilities": [
+		"media:read",
+		"media:bytes:read",
+		"content:read",
+		"content:write",
+		"content:publish",
+		"content:revisions:read",
+		"schema:read",
+		"hooks.content-policy:register",
+		"admin.editor-draft:read",
+		"admin.editor-draft:patch"
+	],
 	"allowedHosts": [],
 	"storage": {
 		"events": { "indexes": ["start", "published", ["published", "start"], "venueId", "organizerId"] },
@@ -47,23 +60,52 @@
 		"pages": [
 			{ "path": "/events", "label": "Eventual", "icon": "calendar" }
 		],
-		"settingsSchema": {
-			"defaultTimezone": {
-				"label": "Legacy MCP default timezone",
-				"description": "Used by legacy MCP event creation. Native collections use the timezone field's schema default.",
-				"type": "string",
-				"default": "UTC"
-			},
-			"timeFormat": {
-				"label": "Legacy time display",
-				"description": "Retained for legacy settings compatibility. Native editing and Astro rendering use their own locale settings.",
-				"type": "select",
-				"options": [
-					{ "value": "24-hour", "label": "24-hour (18:30)" },
-					{ "value": "12-hour", "label": "12-hour (6:30 PM)" }
-				],
-				"default": "24-hour"
+		"editorPanels": [
+			{
+				"id": "event-schedule",
+				"title": "Dates, venue & repeat",
+				"route": "admin/editor/schedule",
+				"collections": ["events"],
+				"order": 10,
+				"draft": {
+					"read": {
+						"fields": [
+							"start",
+							"end",
+							"start_date",
+							"end_date",
+							"all_day",
+							"timezone",
+							"recurrence",
+							"exceptions",
+							"occurrence_content",
+							"venue",
+							"venue_id",
+							"organizer_ref",
+							"organizer_id",
+							"categories"
+						]
+					},
+					"patch": {
+						"fields": [
+							"start",
+							"end",
+							"start_date",
+							"end_date",
+							"all_day",
+							"timezone",
+							"recurrence",
+							"exceptions",
+							"occurrence_content",
+							"venue",
+							"venue_id",
+							"organizer_ref",
+							"organizer_id",
+							"categories"
+						]
+					}
+				}
 			}
-		}
+		]
 	}
 }

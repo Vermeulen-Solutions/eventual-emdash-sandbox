@@ -1,72 +1,121 @@
 {
-	"name": "eventual",
-	"version": "0.12.0",
-	"license": "MIT",
-	"homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
-	"private": true,
-	"type": "module",
-	"packageManager": "npm@11.19.0",
-	"main": "dist/index.mjs",
-	"exports": {
-		".": {
-			"import": "./dist/index.mjs",
-			"types": "./dist/index.d.mts"
-		},
-		"./sandbox": "./dist/plugin.mjs",
-		"./schema": "./src/schema/blueprint.ts",
-		"./astro": "./astro/feed.ts",
-		"./astro/schema": "./astro/schema.ts",
-		"./astro/EventList.astro": "./astro/EventList.astro",
-		"./transfer": {
-			"types": "./transfer/index.d.mts",
-			"import": "./transfer/index.mjs"
-		}
-	},
-	"files": [
-		"dist/*.mjs",
-		"dist/*.d.mts",
-		"emdash-plugin.jsonc",
-		"astro",
-		"transfer",
-		"src/domain",
-		"src/schema",
-		"src/storage.ts",
-		"src/public-event.ts",
-		"docs/native-modernization.md",
-		"scripts/export-native-schema.mjs"
-	],
-	"scripts": {
-		"validate": "emdash-plugin validate",
-		"build": "emdash-plugin build",
-		"dev": "emdash-plugin dev",
-		"typecheck": "tsc --noEmit",
-		"test": "emdash-plugin validate && vitest run",
-		"bundle": "emdash-plugin bundle",
-		"login": "emdash-plugin login",
-		"publish": "emdash-plugin publish",
-		"release:setup": "emdash-plugin release setup",
-		"budget": "node scripts/bundle-budget.mjs",
-		"test:tooling": "node --test scripts/*.test.mjs",
-		"test:package": "node scripts/verify-packed-astro.mjs",
-		"profile": "vitest run --config vitest.profile.config.ts"
-	},
-	"peerDependencies": {
-		"emdash": ">=1.0.1"
-	},
-	"devDependencies": {
-		"@emdash-cms/plugin-cli": "0.13.1",
-		"@emdash-cms/plugin-test": "0.2.6",
-		"emdash": "1.0.1",
-		"ical.js": "^2.2.1",
-		"typescript": "^5.9.0",
-		"vitest": "^4.1.0"
-	},
-	"dependencies": {
-		"@emdash-cms/blocks": "1.0.1",
-		"zod": "4.5.4"
-	},
-	"allowScripts": {
-		"esbuild": true,
-		"workerd": true
-	}
+  "name": "eventual",
+  "version": "0.12.1",
+  "license": "MIT",
+  "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "npm@11.19.0",
+  "main": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
+    "./sandbox": "./dist/plugin.mjs",
+    "./schema": {
+      "types": "./astro/blueprint.d.mts",
+      "import": "./astro/blueprint.mjs"
+    },
+    "./astro": "./astro/feed.ts",
+    "./astro/schema": "./astro/schema.ts",
+    "./astro/EventList.astro": "./astro/EventList.astro",
+    "./transfer": {
+      "types": "./transfer/index.d.mts",
+      "import": "./transfer/index.mjs"
+    },
+    "./admin": {
+      "types": "./astro/admin.d.mts",
+      "import": "./astro/admin.mjs"
+    },
+    "./admin/compat": "./astro/editor-compat.mjs",
+    "./admin/i18n": "./astro/editor-i18n.mjs",
+    "./install": {
+      "types": "./astro/install.d.mts",
+      "import": "./astro/install.mjs"
+    }
+  },
+  "files": [
+    "dist/*.mjs",
+    "dist/*.d.mts",
+    "emdash-plugin.jsonc",
+    "astro",
+    "transfer",
+    "src/domain",
+    "src/schema",
+    "src/storage.ts",
+    "src/public-event.ts",
+    "docs/native-modernization.md",
+    "scripts/export-native-schema.mjs",
+    "scripts/upgrade-native-editor.mjs",
+    "scripts/check-editor-installation.mjs",
+    "docs/editor-upgrade.md"
+  ],
+  "scripts": {
+    "validate": "emdash-plugin validate",
+    "build": "emdash-plugin build && node scripts/build-host.mjs",
+    "prepack": "node scripts/build-host.mjs",
+    "dev": "emdash-plugin dev",
+    "typecheck": "tsc --noEmit",
+    "test": "emdash-plugin validate && vitest run",
+    "bundle": "emdash-plugin bundle",
+    "login": "emdash-plugin login",
+    "publish": "emdash-plugin publish",
+    "release:setup": "emdash-plugin release setup",
+    "budget": "node scripts/bundle-budget.mjs",
+    "test:tooling": "node --test scripts/*.test.mjs",
+    "test:package": "node scripts/verify-packed-astro.mjs",
+    "test:editor": "node scripts/verify-editor-host.mjs",
+    "profile": "vitest run --config vitest.profile.config.ts",
+    "release:prepare": "node scripts/prepare-release.mjs"
+  },
+  "peerDependencies": {
+    "astro": "~7.3.2",
+    "vite": "~8.3.0",
+    "@emdash-cms/admin": "1.0.1",
+    "emdash": "1.0.1",
+    "kysely": "^0.29.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@emdash-cms/plugin-cli": "0.13.1",
+    "@emdash-cms/plugin-test": "0.2.6",
+    "@playwright/test": "1.58.2",
+    "emdash": "1.0.1",
+    "ical.js": "^2.2.1",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "@lingui/core": "5.9.5",
+    "@emdash-cms/blocks": "1.0.1",
+    "zod": "4.5.4"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "workerd": true
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
+    "@emdash-cms/admin": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "kysely": {
+      "optional": true
+    }
+  },
+  "overrides": {
+    "sharp": "0.35.5",
+    "undici@7.29.0": "7.29.1"
+  }
 }

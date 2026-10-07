@@ -1,0 +1,2 @@
+import { defineConfig } from "@playwright/test";
+export default defineConfig({ testDir:"./tests/browser", workers:1, timeout:240000, expect:{timeout:60000}, outputDir:"reports/browser-results", reporter:[["list"],["json",{outputFile:"reports/browser-acceptance.json"}]], use:{baseURL:process.env.EVENTUAL_TEST_ORIGIN, viewport:{width:1280,height:900},actionTimeout:30000,trace:"retain-on-failure", screenshot:"only-on-failure",launchOptions:process.env.EVENTUAL_CHROMIUM_PATH?{executablePath:process.env.EVENTUAL_CHROMIUM_PATH}:{}} });

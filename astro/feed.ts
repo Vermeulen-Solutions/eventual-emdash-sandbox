@@ -13,6 +13,7 @@ export interface PublicEvent {
 	updatedAt?: string;
 	title: string;
 	description: string;
+	descriptionBlocks?: unknown[];
 	start: string;
 	end: string;
 	allDay: boolean;
@@ -110,6 +111,7 @@ export async function fetchPublicFeed(
 function isPublicEvent(value: unknown): value is PublicEvent {
 	if (!isRecord(value)) return false;
 	if (['slug','publicUrl','locale','translationGroup'].some(key=>value[key]!==undefined && typeof value[key]!=='string'))return false;
+	if (value.descriptionBlocks !== undefined && !Array.isArray(value.descriptionBlocks)) return false;
 	if (!(typeof value.id === "string"
 		&& typeof value.title === "string"
 		&& typeof value.description === "string"

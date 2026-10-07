@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, join } from "node:path";
+import {createHash} from "node:crypto";
 const root = process.cwd();
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error("Run through npm run test:package.");
@@ -23,7 +24,7 @@ run(npm, ["run", "build"]);
 const work = resolve(root, "reports", "packed-consumer-" + Date.now());
 mkdirSync(join(work, "src", "pages"), { recursive: true });
 const packed = JSON.parse(
-  run(npm, ["pack", "--json", "--pack-destination", work]),
+  run(npm, ["pack", "--json", "--ignore-scripts", "--pack-destination", work]),
 );
 writeFileSync(
   join(work, "package.json"),
@@ -31,6 +32,8 @@ writeFileSync(
     name: "eventual-package-check",
     private: true,
     type: "module",
+    dependencies: { react: "19.2.4", "react-dom": "19.2.4", emdash: "1.0.1", astro: "7.3.2", "@astrojs/node": "11.1.5", "@astrojs/react": "6.0.5", "@emdash-cms/sandbox-workerd": "0.9.1" },
+    overrides: { sharp: "0.35.5", "undici@7.29.0": "7.29.1" },
   }),
 );
 run(
@@ -38,7 +41,6 @@ run(
   [
     "install",
     "--ignore-scripts",
-    "--legacy-peer-deps",
     "--no-audit",
     "--no-fund",
     "--package-lock=false",
@@ -50,6 +52,13 @@ writeFileSync(
   join(work, "astro.config.mjs"),
   "import {defineConfig} from 'astro/config'; export default defineConfig({output:'static',site:'https://consumer.example'});\n",
 );
+writeFileSync(
+  join(work, "verify-editor.mjs"),
+  `import {eventualEditor,createPlugin} from './node_modules/eventual/astro/descriptor.mjs'; import {eventualEditorCompatibility} from 'eventual/admin/compat'; import {checkEditorVersions,emdashWithEventual} from 'eventual/install'; import eventual from 'eventual'; if(eventualEditor().version!==eventual.version || Object.keys(createPlugin().routes).length || !eventualEditorCompatibility().transform) throw Error('Packed editor companion failed'); checkEditorVersions(); emdashWithEventual({sandboxed:[eventual]}); emdashWithEventual({});`,
+);
+run(join(work, "verify-editor.mjs"), [], work);
+const installedSchema=JSON.parse(run(join(work,"node_modules/eventual/scripts/export-native-schema.mjs"),[],work));
+if(!installedSchema.collections.some(collection=>collection.slug === "events")) throw new Error("Installed schema CLI failed.");
 writeFileSync(
   join(work, "src", "pages", "[locale].astro"),
   `---
@@ -105,7 +114,9 @@ if (
   reports.find((item) => item.locale === "th").display === reports[0].display
 )
   throw new Error("Packed dates were not localized.");
-const report = { package: packed[0].filename, consumer: work, pages: reports };
+const packagePath=join(work,packed[0].filename);
+const digest=path=>createHash("sha256").update(readFileSync(path)).digest("hex");
+const report = { package: packed[0].filename, packagePath, sha256:digest(packagePath), consumer: work, pages: reports, installedFiles:packed[0].files.map(file=>({path:file.path,sha256:digest(join(work,"node_modules/eventual",file.path))})) };
 writeFileSync(
   resolve(root, "reports", "packed-astro.json"),
   JSON.stringify(report, null, 2),

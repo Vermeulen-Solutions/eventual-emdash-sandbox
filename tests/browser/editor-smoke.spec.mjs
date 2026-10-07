@@ -1,0 +1,151 @@
+import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+const fixtures = JSON.parse(readFileSync(process.env.EVENTUAL_BROWSER_FIXTURES, "utf8"));
+test("French UI, grouped venues, native drafts and occurrence actions work in a packed installation", async ({ page, context }) => {
+  const errors=[];
+  page.on("pageerror", error => {errors.push(error.message);console.error("Browser error:", error.message);});
+  page.on("console", message => { if (message.type() === "error") console.error("Browser console:", message.text()); });
+  const origin = process.env.EVENTUAL_TEST_ORIGIN;
+  await context.addCookies([{name:"emdash-locale",value:"fr",url:origin+"/_emdash"}]);
+  await page.goto("/_emdash/api/auth/dev-bypass?redirect="+encodeURIComponent("/_emdash/admin/content/events/"+fixtures.eventId));
+  await expect(page.locator("#field-title")).toHaveValue("Repeat");
+  await page.getByRole("button",{name:"Commencer",exact:true}).click();
+  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Quand",exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Où",exact:true}).click();
+  await page.getByRole("combobox",{name:"Lieu enregistré",exact:true}).click();
+  // Content locale is English although admin UI is French: the English label
+  // is intentional, and both venue translations occupy one shared choice.
+  await expect(page.getByRole("option",{name:/School/})).toHaveCount(1);
+  await page.getByRole("option",{name:/School/}).click();
+  await page.getByRole("button",{name:"Proposer le lieu et l’organisation",exact:true}).click();
+  const review=page.getByRole("dialog",{name:/Vérifier les modifications proposées|Review proposed changes/});
+  await expect(review).toBeVisible();
+  await review.getByRole("button",{name:/Appliquer|Accepter/}).click();
+  await expect(page.locator("#field-title")).toHaveValue("Repeat");
+  await expect.poll(async()=>{
+    const response=await context.request.get("/_emdash/api/content/events/"+fixtures.eventId);
+    return (await response.json()).data?.item?.draftRevisionId;
+  }).toBeTruthy();
+  await page.reload();
+  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
+  await page.getByRole("button",{name:"Où",exact:true}).click();
+  await expect(page.getByRole("combobox",{name:"Lieu enregistré",exact:true})).toHaveValue(/School/);
+  await page.getByRole("button",{name:"Répétition",exact:true}).click();
+  await page.getByRole("radio",{name:"Chaque semaine",exact:true}).click();
+  await page.getByLabel("Toutes les … semaines",{exact:true}).fill("2");
+  await page.getByLabel("Dernière date de répétition",{exact:true}).fill(fixtures.through);
+  await page.getByRole("checkbox",{name:"Lundi",exact:true}).check();
+  await page.getByRole("button",{name:"Proposer la répétition",exact:true}).click();
+  await expect(review).toBeVisible();
+  await review.getByRole("button",{name:/Appliquer|Accepter/}).click();
+  await expect(page.getByText(/Toutes les 2 semaines, le lundi jusqu’au/)).toBeVisible();
+  // Changing attendance only changes presentation; retained online URLs survive.
+  const attendance=page.locator("#field-location_type");
+  await attendance.selectOption("virtual");
+  await expect(page.locator("#field-virtual_url").locator("xpath=ancestor::details")).toBeVisible();
+  await attendance.selectOption("physical");
+  await expect(page.locator("#field-virtual_url").locator("xpath=ancestor::details")).toBeHidden();
+  await attendance.selectOption("virtual");
+  const details=page.locator("#field-virtual_url").locator("xpath=ancestor::details");
+  await details.locator("summary").click();
+  await expect(page.locator("#field-virtual_url")).toHaveValue("https://example.org/meeting");
+  await attendance.selectOption("physical");
+  await page.getByRole("button",{name:/Publier maintenant|Publish now/,exact:true}).click();
+  await page.getByRole("dialog").getByRole("button",{name:/Publier maintenant|Publish now/,exact:true}).click();
+  await expect.poll(async()=>{
+    const response=await context.request.get(`/_emdash/api/plugins/eventual/publicEvents?from=${fixtures.from}&through=${fixtures.through}&locale=en`);
+    const body=await response.json();return body.events?.filter(event=>event.title==="Repeat").length ?? body.data?.events?.filter(event=>event.title==="Repeat").length;
+  }).toBe(2);
+  const calendar=await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en");
+  expect(calendar.ok()).toBeTruthy();expect(await calendar.text()).toContain("SUMMARY:Repeat");
+  const baseline=await calendar.text();
+  const firstUid=/UID:([^\r\n]+)/.exec(baseline)[1];
+  await page.getByRole("button",{name:"Dates individuelles",exact:true}).click();
+  await page.getByRole("button",{name:"Gérer cette date",exact:true}).first().click();
+  await page.getByRole("button",{name:"Annuler cette date",exact:true}).click();
+  await page.getByRole("dialog").getByRole("button",{name:"Annuler la date",exact:true}).click();
+  await expect(review).toBeVisible();await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
+  // A reviewed draft must not cancel the live occurrence prematurely.
+  expect(await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).not.toContain("STATUS:CANCELLED");
+  await page.getByRole("button",{name:"Publier les modifications",exact:true}).click();
+  await page.getByRole("dialog").getByRole("button",{name:"Publier les modifications",exact:true}).click();
+  await expect.poll(async()=>await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).toContain("STATUS:CANCELLED");
+  const cancelled=await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text();
+  expect(cancelled).toContain("UID:"+firstUid);
+  const dates=page.getByRole("button",{name:"Dates individuelles",exact:true});
+  if(await dates.getAttribute("aria-expanded")!=="true") await dates.click();
+  await page.getByRole("button",{name:"Gérer cette date",exact:true}).first().click();
+  await page.getByRole("button",{name:"Rétablir la date d’origine",exact:true}).click();
+  await expect(review).toBeVisible();await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
+  await page.getByRole("button",{name:"Publier les modifications",exact:true}).click();
+  await page.getByRole("dialog").getByRole("button",{name:"Publier les modifications",exact:true}).click();
+  await expect.poll(async()=>await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).not.toContain("STATUS:CANCELLED");
+  expect(await (await context.request.get("/_emdash/api/plugins/eventual/calendar?locale=en")).text()).toContain("UID:"+firstUid);
+  await expect(page.getByRole("link",{name:"Créer un lieu",exact:true})).toHaveAttribute("href",origin+"/_emdash/admin/content/venues/new");
+  // Reload proves persistence and clears transient animated core notifications.
+  await page.reload();
+  await expect(page.locator("#field-title")).toHaveValue("Repeat");
+  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
+  await page.getByRole("button",{name:"Où",exact:true}).click();
+  await expect(page.getByRole("combobox",{name:"Lieu enregistré",exact:true})).toHaveValue(/School/);
+  await page.locator("#field-title").scrollIntoViewIfNeeded();
+  const when=page.getByRole("button",{name:"Quand",exact:true});
+  if(await when.getAttribute("aria-expanded")==="true") await when.click();
+  const scrollSchedule=async()=>page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).evaluate(element=>{
+    let parent=element.parentElement;
+    while(parent) {
+      if(/auto|scroll/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight>parent.clientHeight) {
+        parent.scrollTop+=element.getBoundingClientRect().top-parent.getBoundingClientRect().top-12;break;
+      }
+      parent=parent.parentElement;
+    }
+  });
+  await scrollSchedule();
+  await page.screenshot({path:"reports/refined-editor-desktop.png",fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.getByRole("button",{name:"Paramètres",exact:true}).click();
+  const panel=page.getByRole("button",{name:"Dates, lieu et répétition",exact:true});
+  if(await panel.getAttribute("aria-expanded")!=="true") await panel.click();
+  await expect(page.getByRole("button",{name:"Où",exact:true})).toBeVisible();
+  const where=page.getByRole("button",{name:"Où",exact:true});
+  if(await where.getAttribute("aria-expanded")!=="true") await where.click();
+  if(await when.getAttribute("aria-expanded")==="true") await when.click();
+  await scrollSchedule();
+  await expect(page.getByRole("combobox",{name:"Lieu enregistré",exact:true})).toHaveValue(/School/);
+  await page.screenshot({path:"reports/refined-editor-mobile.png",fullPage:true});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  expect(errors).toEqual([]);
+});
+test("a new event can save its first draft and cannot publish a draft venue",async({page,context})=>{
+  const origin=process.env.EVENTUAL_TEST_ORIGIN;
+  const anonymous=await context.request.post("/_emdash/api/plugins/eventual/mcp/transfer/migrateToNative",{data:{dryRun:true}});
+  expect([401,403]).toContain(anonymous.status());
+  await context.addCookies([{name:"emdash-locale",value:"fr",url:origin+"/_emdash"}]);
+  await page.goto("/_emdash/api/auth/dev-bypass?redirect="+encodeURIComponent("/_emdash/admin/content/events/new?locale=fr"));
+  await page.locator("#field-title").fill("Nouvel événement");
+  await page.getByRole("button",{name:"Enregistrer",exact:true}).click();
+  await expect(page).toHaveURL(/content\/events\/(?!new)[^/?]+/);
+  const id=new URL(page.url()).pathname.split("/").pop();
+  await page.getByRole("button",{name:"Dates, lieu et répétition",exact:true}).click();
+  await page.getByLabel("Date de début",{exact:true}).fill(fixtures.firstDate);
+  await page.getByLabel("Date de fin (dernier jour inclus si journée entière)",{exact:true}).fill(fixtures.firstDate);
+  await page.getByLabel("Heure de début",{exact:true}).fill("12:00");
+  await page.getByLabel("Heure de fin",{exact:true}).fill("13:00");
+  await page.getByRole("button",{name:"Proposer les dates",exact:true}).click();
+  const review=page.getByRole("dialog",{name:"Vérifier les modifications proposées"});
+  await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
+  await page.getByRole("button",{name:"Où",exact:true}).click();
+  await page.getByRole("combobox",{name:"Lieu enregistré",exact:true}).click();
+  await page.getByRole("option",{name:/Lieu en préparation/}).click();
+  await page.getByRole("button",{name:"Proposer le lieu et l’organisation",exact:true}).click();
+  await review.getByRole("button",{name:"Appliquer les modifications",exact:true}).click();
+  await expect(page.getByText("Publiez cet élément avant de publier l’événement.",{exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Publier maintenant",exact:true}).click();
+  const rejected=page.waitForResponse(response=>response.url().includes(`/content/events/${id}/publish`) && response.request().method()==="POST");
+  await page.getByRole("dialog").getByRole("button",{name:"Publier maintenant",exact:true}).click();
+  expect((await rejected).ok()).toBe(false);
+  await expect(page.getByText(/Publiez d’abord le lieu sélectionné/)).toBeVisible();
+  const item=await (await context.request.get(`/_emdash/api/content/events/${id}`)).json();
+  expect(item.data.item.status).toBe("draft");
+});

@@ -1,19 +1,17 @@
 ## Install and upgrade
 
-Requires EmDash 1.0.1+ and a sandbox runner. Eventual 0.12.0 links to core's editor; the custom editor is retired. Installation does not create schemas or migrate records.
+0.12.1 recovers the native editor and fixes installation. Tested host: Node 24, EmDash/Admin/Block Kit 1.0.1, Astro 7.3.x (>=7.3.2), Vite 8.3.x, React 19.
 
-Review capabilities. Apply eventual/schema blueprints through the site's schema workflow, configure locales, then preview and execute administrator-only migrateToNative batches. Existing locations need unique indexed legacy_id and legacy_metadata JSON fields and must match events.venue. See the native-modernization guide.
+Install BOTH the registry backend and the host tarball from the v0.12.1 GitHub release. Use eventual/install instead of the emdash/astro default integration import; retain database, runner, storage and other integrations. Registry hosts must not add a second source backend. The integration adds friendly fields and compatibility adapters. English/French controls follow admin language; editors need no JSON editing.
 
-Legacy storage is retained. Published events/venues are explicitly published; drafts stay drafts. Generated IDs and durable recovery protect retries. Preview cannot predict IDs or other plugins' policies. Completed native records are not overwritten or republished.
+Follow docs/editor-upgrade.md in the host package. Existing collections require an offline, backed-up schema/reference upgrade; updating a blueprint is insufficient. The supplied CLI supports SQLite, not deployed D1 upgrades. Run the installation doctor and actual Astro check/build.
 
-Installing events changes authority immediately, including while empty. Native sites use core content tools; legacy CRUD/imports are gated. Export and settings remain available. Sites without events retain legacy feeds/MCP, but have no custom plugin editor.
+For new sites apply eventual/schema blueprints and configure locales. For legacy data preview administrator-only migrateToNative batches before executing. Existing locations must match events.venue and have indexed unique legacy_id and legacy_metadata fields. Legacy storage is retained; preview cannot predict generated IDs or other plugins' policies.
 
-## Feeds and Astro
+Installing events changes feed authority immediately, even when empty. Legacy writes are gated in native mode. Native export is not a full revision/database backup.
 
-JSON: /_emdash/api/plugins/eventual/publicEvents. Calendar: /_emdash/api/plugins/eventual/calendar. Both support locale, strict and category filters. Untranslated fallback titles carry a language prefix unless strict mode is enabled. UIDs survive translation/migration; removed publication/occurrences and removed strict-locale/category subscriptions receive matching cancellations.
+## Feeds and access
 
-Install the source package for eventual/astro, EventList and JSON-LD helpers. The sandbox plugin does not provision public pages. The Astro example offers seven visitor layouts.
+JSON: /_emdash/api/plugins/eventual/publicEvents. ICS: /_emdash/api/plugins/eventual/calendar. Locale, strict and category filters supported; fallback titles show language. Astro pages belong to the site; use eventual/astro helpers.
 
-## Permissions
-
-Capabilities support content read/write/publication, revision/schema read, content policies and media read/bytes read. No schema-write privilege or outbound hosts are requested. Migration/MCP requires plugins:manage; the companion page requires content:edit_any. Migration never deletes legacy storage.
+Migration/MCP requires plugins:manage; workspace/panel requires content:edit_any. Backend capabilities include content, revisions, schema read, policies, scoped draft patches and media. No schema-write privilege or outbound hosts. Core patch review and publication remain required.

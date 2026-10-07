@@ -1,5 +1,11 @@
 # Eventual modernization: implementation repair and completion handoff
 
+**Current continuation:** Read [release-refinements-2026-10-07.md](release-refinements-2026-10-07.md) for the final installation, French interface, venue selection, package acceptance and remaining deployment work. The prior handoff below is historical.
+
+> **Latest audit:** [recovery-audit-2026-10-07.md](recovery-audit-2026-10-07.md) records the repaired editor/reference workflows, applied local schema upgrade and actual verification. Follow that report and [editor-upgrade.md](editor-upgrade.md) for current implementation and installation details; this document is retained as historical context.
+
+> **Correction, 7 October 2026:** the custom-editor retirement described below removed essential product workflows and was rejected as a regression. This is a historical backend-repair handoff, not a current statement of editor feature parity or release readiness. Use [the 0.12 regression recovery plan](regression-recovery-plan-0.12.0.md) for implementation priorities and restored workflow requirements. Preserve the valid native data/calendar contracts; restore native-friendly controls and safe legacy-mode continuity. Publication/deployment status may have changed since this report's recorded session and must be checked separately.
+
 **Recipient:** the agent responsible for the original four-milestone implementation and audit prompt.
 
 **Repository:** `C:\dev\eventual-em\eventual-emdash-sandbox`.

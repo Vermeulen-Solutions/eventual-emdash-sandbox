@@ -17,7 +17,7 @@ This example demonstrates how an Astro website can consume Eventual's public JSO
 </p>
 
 ### Included Views
-Visitors can switch between seven viewing formats via query parameter (e.g., `/events?view=calendar`):
+Visitors can switch between seven viewing formats via query parameter (e.g., `/events?view=month`):
 
 | View | Query Param | Description |
 | :--- | :--- | :--- |
@@ -40,7 +40,7 @@ In addition, clicking any event opens a **shareable detail page** (`/events/[id]
 ## Quick Start
 
 ### Requirements
-- Node.js `22.12` or newer
+- Node.js `24` or newer
 - An active EmDash site with the Eventual plugin installed (or test server)
 
 ### 1. Install & Configure

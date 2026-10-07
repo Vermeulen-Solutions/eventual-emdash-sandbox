@@ -1,54 +1,46 @@
-# Modernization repair verification
+# Recovery audit verification — 7 October 2026
 
-Verified locally on 6 October 2026, for the unreleased 0.12.0 working tree against EmDash 1.0.1, plugin CLI 0.13.1 and plugin-test 0.2.6. This records repairs to the preceding modernization audit; it does not claim a deployed migration or calendar-client acceptance.
+Follow-up installation/French/venue acceptance and final release artifacts are recorded in [release-refinements-2026-10-07.md](release-refinements-2026-10-07.md). Counts below describe the earlier recovery pass, not the final separated plugin/example runs.
 
-## Architectural result
+This replaces the earlier blanket “WP0–WP10 complete / complete product parity” claim. The editor/reference repairs were checked against EmDash 1.0.1, Block Kit 1.0.1, plugin CLI 0.13.1 and plugin-test 0.2.6 on Windows/Node 24.21.0.
 
-Installed native events collections are authoritative, including when empty. EmDash owns editing, publication, revisions and row-per-locale translations. Eventual supplies schema blueprints, schedule policies, recurrence expansion, public feeds, Astro helpers and resumable migration. Non-event collections are unaffected by event policies.
+See [the detailed audit/handoff](recovery-audit-2026-10-07.md) and [the installation/upgrade runbook](editor-upgrade.md). This working tree is unreleased; registry-only installation does not install the frontend companion or upgrade existing collections.
 
-The custom event editor is retired from the runtime. The Eventual admin page explains native setup and exposes the companion workflow. Legacy storage, exports, public feeds and MCP compatibility remain available for unmigrated installations. Legacy mutation/import paths are blocked once native events are installed. The capability contract and package version were updated for native publication, revision reads and publication/scheduling policies.
+## Automated checks
 
-## Audit finding disposition
+| Check | Result | Local evidence |
+| --- | --- | --- |
+| Manifest + full Vitest suite | 196 passed in 25 files | `reports/recovery-tests.log` |
+| Strict TypeScript | Passed, zero errors | `npm run typecheck` |
+| Tooling tests | 9 passed, including real SQLite upgrade/backfill/rollback and renderer compatibility | `reports/recovery-tooling.log` |
+| Packed npm consumer | Passed: editor companion/compat exports plus Astro native/Live adapters and en/fr/ar/th pages | `reports/recovery-package.log`, `reports/packed-astro.json` |
+| Astro example diagnostics | 23 files; zero errors, warnings or hints | `reports/recovery-example-check.log` |
+| Astro example tests | 29 passed in 5 files | `reports/recovery-example-tests.log` |
+| Built example event page | Passed: JSON-LD escaping, links, locations, images and localization | `reports/recovery-example-page.log` |
+| Local EmDash host diagnostics | 28 files; zero errors, warnings or hints | `reports/recovery-site-check.log` |
+| Local host production build | Passed with editor widgets and Vite compatibility transform; core chunk-size advisory remains | `reports/recovery-site-build.log` |
+| UI mechanical detector | No findings on the three changed UI implementations | Impeccable detect JSON: `[]` |
+| Plugin workspace npm audit | Zero vulnerabilities after compatible tooling patch updates | `reports/recovery-npm-audit.json` |
+| Archive + budget | Backend 112,271 bytes (target 112,640); total 175,940 bytes (target 225,280); 3 files; no budget errors | `reports/recovery-bundle.log`, `reports/recovery-budget.json` |
+| Whitespace | Passed | `git diff --check` |
 
-| Findings | Implemented repair and evidence |
-| --- | --- |
-| F01–F03: migration scan, schema/API contract, publication | Bounded raw storage pagination replaces the invalid date sentinel. Creation uses core-generated IDs and schema-compatible values. Core publication is explicit and separate from event business status. Production D1 sandbox migration tests cover past-starting recurring series, drafts and published records. |
-| F04, F10: partial updates, translations, schedule validation | Save policies merge editable revision data for validation; incomplete drafts and new translation rows defer full validation until publication. Publication/scheduling validates complete schedules and published venue dependencies. Validation covers offsets, civil dates, IANA zones, recurrence membership and exception shapes. |
-| F05: all-day representation | Native all-day events use inclusive civil start/end dates; timed events use ISO datetimes. D1 booleans and legacy records are normalized. ICS emits the exclusive following-day end. Runtime and independent-parser regressions cover both representations. |
-| F06–F08: cancellations, source authority, pagination | Reconciliation derives cancellation tombstones from committed published state. Strict-locale and category removals produce scoped tombstones. Native source failures fail explicitly; they cannot resurrect legacy records. Native content pagination handles more than 100 rows and rejects broken cursors. |
-| F09, F15: packed Astro imports and localized dates | All transitive source dependencies and schema exports are packed. Independent packed-package builds render four locales. Machine dates use Gregorian ASCII digits while display dates use the entry/page locale. Native and Live Content IDs, public URLs and all-day rendering are tested. |
-| F11–F12: UID continuity and SEQUENCE | Migration preserves the legacy UID identity. Native sibling rows share encoded group/occurrence UIDs and a pinned host. Durable logical SEQUENCE counters respond to published content and venue changes; values stay within RFC integer bounds. Unicode folding, escaping, UID collisions and date semantics are checked with ical.js. |
-| F13: shared schedule and localized occurrence copy | Shared exceptions contain schedule fields; localized copy uses a separate translatable field. Categories stay shared. Copy orphaned by a sibling's schedule change remains stored and is ignored until its recurrence ID matches again. Runtime tests cover continued publishing and feeds in both languages. |
-| F14: venue, media and metadata preservation | Adapters retain structured addresses, native media, business status, organizer details, previous-start/history metadata and public URLs. Migration retains original source metadata. Public rendering resolves published venue dependencies and core media URLs. |
-| F16: preview, mappings, idempotency and interruption | Preview makes no writes and reports generated IDs honestly as unavailable. Plans identify creation, resumed publication or unchanged records. Venue mappings and required dependencies are checked. A renewable lease, unique legacy IDs and recovery tokens handle overlapping runs and lost creation/publication responses. Completed records are not overwritten or republished; deleted migrated records are not silently recreated. |
-| F17: Markdown conversion fidelity | The converter supports common Markdown constructs, with original Markdown preserved in legacy storage and legacy_metadata. Complete CommonMark conversion remains outside the implementation; complex content requires editorial acceptance. |
-| F18: schema provisioning and select validation | Blueprints use installed core field/seed contracts, including select validation and draft/revision/scheduling supports. A non-overwriting exporter produces a reviewable seed. Existing locations collections require compatible fields and are never replaced by the exporter. |
-| F19: resource and concurrency limits | Pagination, expansion, tombstones, output size and migration batches are bounded. Leases serialize reconciliation and migration. Tests cover contention, deterministic storage-call budgets and a native 1,830-occurrence annual workload. This is correctness and bounds verification, not a production latency benchmark. |
-| F20: multiple editing/public authorities | Public events, calendar feeds and the admin companion use native authority when installed. Native installations cannot mutate the obsolete legacy event workflow. Legacy compatibility remains available before native schema installation. |
+Meaningful regressions use the production EmDash runtime, not only mock-returned patches: host-attested draft effects, live-versus-pending venue selection and localized descriptions, safe duplication, reference publication policies, translated venue/organizer names, migration recovery, subscription identity/cancellations and image aliases. The renderer transform also checks the actual installed dependency source; unknown shapes fail explicitly.
 
-Migration remains non-destructive to legacy records and cancellation storage. It is resumable, not a database-wide transaction. Preview cannot predict concurrent state changes, generated IDs, configured-locale acceptance through an unavailable API, or other plugins' policies. These limits are explicit in the preview and [setup guide](native-modernization.md).
+## Browser and data checks
 
-## Verification completed
+Browser checks used an isolated SQLite backup on localhost port 4337. Panel submissions no longer reload the containing event form. A venue was cleared, accepted through core review, saved/reopened, selected again and published. The public JSON returned the selected venue on all three monthly occurrences; the ICS contained it too. Recurrence controls loaded the actual saved monthly weekday rule. Desktop and 390 px mobile views were inspected; native mobile Settings gives access to the same panel.
 
-| Check | Result |
-| --- | --- |
-| Manifest validation and full plugin suite | 170 tests passed across 24 files; installed EmDash/D1 sandbox exercised |
-| Final Astro/JSON-LD targeted regressions | 14 tests passed across 2 files after the final plain-text serialization adjustment |
-| TypeScript | npm run typecheck passed |
-| Tooling tests | 6 tests passed |
-| Node storage-call profiling | 2 deterministic call-budget tests passed |
-| Independent packed consumer | npm run test:package passed; en/fr/ar/th pages built and verified |
-| Astro example | 0 diagnostic errors/warnings/hints; 29 tests passed; built-page verification passed |
-| Schema | Exported seed passed installed EmDash CLI validation; blueprint tests validate core contracts |
-| Sandbox bundle | npm run bundle and npm run budget passed; backend 81,938 bytes, total 134,565 bytes, 3 files |
-| Whitespace | git diff --check passed |
+Screenshots: `reports/editor-desktop.jpg`, `reports/editor-mobile.jpg`. Feed assertion: `reports/recovery-browser-venue-feed.json`. No browser fixture edits were written to the original site database.
 
-The backend is below both the 112,640-byte project budget and the 131,072-byte hard file limit. The archive total is below the 225,280-byte project budget and the 262,144-byte hard total limit. Packed Astro verification is now part of CI. Retained legacy recurrence/organizer assertions were moved from the retired custom editor to the supported MCP path.
+The original local test-site schema was previewed and upgraded with a consistent backup at `C:/dev/eventual-em/eventual-emdash-test-site/data.db-before-eventual-editor-20261007.bak`. Seven event rows and six reference revisions were backfilled without warnings. A separate comparison verified all seven original event rows, all nine revisions and ninety other tables retained their existing content. Only added canonical reference data and expected schema/derived media-index records changed. See `reports/recovery-original-preservation.json` and the upgrade preview/application reports.
 
-## Site acceptance still required
+## What this verification does not claim
 
-Apply the reviewed schema and preview migration against the intended site's actual locales, content and location schema. Then verify native side-by-side editing and LinguaDash translation, complex Markdown rendering, scheduled publication and public route integration. No live D1 schema or migration was applied during this work.
+- A new Git commit, registry publication, remote deployment or deployed BBHC/D1 schema migration.
+- Actual Apple/Google/Outlook subscriber acceptance or a live LinguaDash AI-translation exercise.
+- Native Eventual legacy write/import parity; those operations remain blocked in native mode. Use core tools.
+- A full-restorable native transfer backup; its format includes saved content/metadata, not all revision/media/site state.
+- A platform transaction that atomically locks event publication against concurrent venue/organizer deletion.
+- Automatic host frontend/schema installation from a registry sandbox update, or support for untested renderer versions.
 
-Exercise existing and new Apple, Google and Outlook subscriptions through translated edits, exception cancellation/restoration, unpublication, deletion and migration. Subscribers that cached the prior invalid millisecond SEQUENCE may require a subscription reset; server tests cannot establish a particular client's recovery behavior. Feed caching may delay changes by five minutes.
-
-No release was published, and no Git commit or push was created. Follow the [native setup and migration guide](native-modernization.md) for the reviewed operational workflow.
+These boundaries are documented in the audit report. They must not be silently relabeled as completed workpackages.

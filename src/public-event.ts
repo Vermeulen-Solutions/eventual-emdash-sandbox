@@ -9,6 +9,7 @@ export interface PublicEvent {
 	updatedAt: string;
 	title: string;
 	description: string;
+	descriptionBlocks?: unknown[];
 	start: string;
 	end: string;
 	allDay: boolean;
@@ -25,6 +26,10 @@ export interface PublicEvent {
 	categories: string[];
 	venue: { id: string; name: string; address: string; addressParts?: Omit<VenueRecord, "id" | "name" | "createdAt" | "updatedAt"> } | null;
 	directionsUrl: string;
+	locale?: string;
+	translationGroup?: string;
+	slug?: string;
+	publicUrl?: string;
 }
 
 export function formatPublicEvent(
@@ -40,6 +45,7 @@ export function formatPublicEvent(
 		updatedAt: event.updatedAt,
 		title: event.title,
 		description: event.description,
+		...(event.descriptionBlocks ? { descriptionBlocks: event.descriptionBlocks } : {}),
 		start: event.start,
 		end: event.end,
 		allDay: event.allDay,
@@ -48,8 +54,10 @@ export function formatPublicEvent(
 		locationType: event.locationType ?? "physical",
 		...(safeHttpUrl(event.virtualUrl ?? "") ? { virtualUrl: safeHttpUrl(event.virtualUrl ?? "") } : {}),
 		status: normalizeEventStatus(event.published, event.status),
-		organizer: organizer?.name ?? event.organizer,
-		...(organizer ? { organizerDetails: { id: organizer.id, name: organizer.name, website: safeHttpUrl(organizer.website), contactUrl: safeHttpUrl(organizer.contactUrl) } } : {}),
+        organizer: organizer?.name ?? (event.organizer || event.organizerDetails?.name || ""),
+		...(organizer
+			? { organizerDetails: { id: organizer.id, name: organizer.name, website: safeHttpUrl(organizer.website), contactUrl: safeHttpUrl(organizer.contactUrl) } }
+			: (event.organizerDetails ? { organizerDetails: event.organizerDetails } : {})),
 		...(event.status === 'rescheduled' && event.previousStartDate ? { previousStartDate: event.previousStartDate } : {}),
 		externalUrl: event.externalUrl,
 		imageUrl: event.imageUrl || (event.imageMediaId ? publicEventImageUrl(pluginId, baseEventId) : ""),

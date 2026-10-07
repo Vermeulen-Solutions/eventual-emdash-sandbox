@@ -1,17 +1,19 @@
 # Native setup and migration
 
-These instructions describe the local 0.12.0 implementation. They do not apply a schema, migrate data or publish a release automatically.
+These instructions describe the 0.12.1 native recovery implementation. They do not apply a schema, migrate data or publish a release automatically.
+
+For friendly editing and an existing schema upgrade, follow [editor-upgrade.md](editor-upgrade.md). A blueprint alone does not install field renderers or update existing reference snapshots.
 
 ## Apply a reviewed schema
 
-From this repository, with Node's TypeScript stripping available:
+From this repository, after `npm run build`, using Node 24:
 
 ```sh
 node scripts/export-native-schema.mjs --output eventual.seed.json
 npx emdash seed eventual.seed.json --validate
 ```
 
-Review the seed. For an existing locations collection, use `--venue-collection locations`; the exporter emits only events and never replaces locations. Add shared `legacy_id` (string, unique, indexed) and `legacy_metadata` (JSON) fields to locations. Its required fields must be satisfiable by the name/address mapper, or pre-create compatible locations and supply `venueMapping`.
+Review the seed. For an existing locations collection, use `--venue-collection locations`; the exporter omits locations and includes events and the default organizers directory. Add shared `legacy_id` (string, unique, indexed) and `legacy_metadata` (JSON) fields to locations. Its required fields must be satisfiable by the name/address mapper, or pre-create compatible locations and supply `venueMapping`. New reference fields default to column-backed IDs; previously relation-bound fields need the upgrade runbook.
 
 Apply the definitions through EmDash's schema editor/MCP tools or `applySeed` in the site's database workflow. For local SQLite, the CLI supports `npx emdash seed eventual.seed.json --database <actual-site-database> --no-content --on-conflict update`. Confirm the database path: the CLI defaults to `./data.db`. Cloudflare/D1 sites must use their own EmDash schema workflow. Eventual has no `schema:write` capability.
 

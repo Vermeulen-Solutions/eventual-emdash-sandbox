@@ -813,6 +813,10 @@ input {
 	margin: 1.2rem 0;
 }
 
+.agenda-item--without-image .agenda-item__body {
+	grid-column: 2 / -1;
+}
+
 .calendar-menu {
 	position: relative;
 }

@@ -6,6 +6,15 @@
 
 import { portableTextToPlainText } from "./portable-text";
 const text = (value: unknown) => (typeof value === "string" ? value : "");
+export function localizedVenue(
+  venues: Map<string, NormalizedVenue> | undefined,
+  event: { venueId?: string; locale?: string },
+) {
+  return event.venueId
+    ? (venues?.get(event.venueId + "|" + (event.locale ?? "").toLowerCase()) ??
+        venues?.get(event.venueId))
+    : undefined;
+}
 export interface NormalizedVenue {
   id: string;
   name: string;

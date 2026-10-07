@@ -13,6 +13,7 @@ import { nativeEntryToEventRecord } from "./event-expansion";
 import { calendarHost, reconcileNativeCalendar } from "./native-calendar";
 import { eventUid } from "./icalendar";
 import { listNative } from "./native-source";
+import { referenceTarget, referenceField } from "./native-references";
 
 export interface MigrateToNativeOptions {
   locale?: string;
@@ -125,9 +126,10 @@ export async function migrateToNative(
     const eventsSchema = schemas.find((schema) => schema.slug === "events");
     if (!eventsSchema)
       throw new Error("Apply the Eventual events blueprint before migrating.");
-    const reference = eventsSchema.fields.find(
-      (field) => field.slug === "venue",
-    )?.options?.collection;
+    const reference = referenceTarget(eventsSchema,"venue");
+    const venueField = referenceField(eventsSchema,"venue");
+    if (!eventsSchema.fields.some(field => field.slug === venueField))
+      throw new Error("Upgrade the bound venue reference schema before migration.");
     result.venueCollection =
       options.venueCollection ??
       (typeof reference === "string"
@@ -559,7 +561,7 @@ export async function migrateToNative(
               ...normalized,
               location_type: event.locationType ?? "physical",
               location: text(event.location),
-              venue: nativeVenue,
+              [venueField]: nativeVenue,
               virtual_url: event.virtualUrl || undefined,
               external_url: event.externalUrl || undefined,
               organizer: text(event.organizer),

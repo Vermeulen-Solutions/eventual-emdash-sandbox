@@ -6,6 +6,7 @@ import {
 import {
   createEventsCollectionBlueprint,
   createVenuesCollectionBlueprint,
+  createOrganizersCollectionBlueprint,
 } from "../src/schema/blueprint";
 import { expandEventOccurrences } from "../src/domain/event-expansion";
 let host: PluginRuntimeTestHost | undefined;
@@ -55,6 +56,252 @@ const calendar = async (h: PluginRuntimeTestHost, query = "") => {
   return response.text();
 };
 describe("Native modernization through the EmDash production runtime", () => {
+  it("duplicates through the authorized workspace into a new unpublished native draft", async () => {
+    const h = await setup();
+    const user = await h.fixtures.user({
+      email: "duplicate-editor@example.com",
+      role: "editor",
+      emailVerified: true,
+    });
+    await h.fixtures.content("events", {
+      id: "duplicate-source",
+      slug: "duplicate-source",
+      locale: "fr",
+      status: "published",
+      data: {
+        ...schedule,
+        calendar_uid: "legacy-source@audit.example.com",
+        legacy_id: "legacy-source",
+        recurrence: { frequency: "daily", until: "2026-11-17" },
+        exceptions: [{ recurrenceId: "2026-11-16T10:00", status: "cancelled" }],
+        occurrence_content: [
+          {
+            recurrenceId: "2026-11-17T10:00",
+            overrides: { title: "One date" },
+          },
+        ],
+      },
+    });
+    const result = await h.admin.act("/events", "duplicate-event", {
+      user,
+      value: "duplicate-source",
+    });
+    expect(JSON.stringify(result)).toContain("Draft copy created");
+    const copies = await h.inspect.content.list("events");
+    const duplicate = copies.find((item) => item.id !== "duplicate-source");
+    expect(duplicate, JSON.stringify(result)).toBeDefined();
+    expect(duplicate!.status).toBe("draft");
+    expect(duplicate!.locale).toBe("fr");
+    expect(duplicate!.translationGroup).not.toBe("duplicate-source");
+    expect(duplicate!.data.title).toBe("Native event (copy)");
+    for (const key of [
+      "calendar_uid",
+      "legacy_id",
+      "legacy_metadata",
+      "schedule_history",
+      "previous_start_date",
+      "exceptions",
+      "occurrence_content",
+    ])
+      expect(duplicate!.data[key] ?? null).toBeNull();
+    expect(duplicate!.data.recurrence).toMatchObject({ frequency: "daily" });
+    expect(await calendar(h)).not.toContain("(copy)");
+  });
+  it("resolves translated venue and organizer names without changing shared reference IDs", async () => {
+    const h = await setup();
+    await h.fixtures.collection(createOrganizersCollectionBlueprint() as any);
+    for (const [locale, name] of [
+      ["fr", "Salle française"],
+      ["en", "English hall"],
+    ])
+      await h.fixtures.content("venues", {
+        id: "hall-" + locale,
+        locale,
+        ...(locale === "en" ? { translationOf: "hall-fr" } : {}),
+        status: "published",
+        data: { name },
+      });
+    for (const [locale, name] of [
+      ["fr", "Organisateur français"],
+      ["en", "English organizer"],
+    ])
+      await h.fixtures.content("organizers", {
+        id: "organizer-" + locale,
+        locale,
+        ...(locale === "en" ? { translationOf: "organizer-fr" } : {}),
+        status: "published",
+        data: { name },
+      });
+    for (const [locale, title] of [
+      ["fr", "Événement"],
+      ["en", "English event"],
+    ])
+      await h.fixtures.content("events", {
+        id: "localized-" + locale,
+        slug: "localized-" + locale,
+        locale,
+        ...(locale === "en" ? { translationOf: "localized-fr" } : {}),
+        status: "published",
+        data: {
+          ...schedule,
+          title,
+          venue: "hall-fr",
+          organizer_ref: "organizer-fr",
+        },
+      });
+    const english = await calendar(h, "?locale=en&strict=true");
+    const french = await calendar(h, "?locale=fr&strict=true");
+    expect(english).toContain("English hall");
+    expect(french).toContain("Salle française");
+    expect(/UID:([^\r]+)/.exec(english)?.[1]).toEqual(
+      /UID:([^\r]+)/.exec(french)?.[1],
+    );
+    const json = (await h.transport.invokeRoute("publicEvents", {
+      locale: "en",
+      strict: true,
+      from: "2026-11-01",
+      through: "2026-11-30",
+    })) as any;
+    expect(json.events[0].venue.name).toBe("English hall");
+    expect(json.events[0].organizer).toBe("English organizer");
+    expect(
+      (await h.inspect.content.get("events", "localized-en"))!.data.venue,
+    ).toBe("hall-fr");
+  });
+  it("applies host-attested venue and localized copy patches, preserving live feeds until publication", async () => {
+    const h = await setup();
+    const user = await h.fixtures.user({
+      email: "panel-editor@example.com",
+      role: "editor",
+      emailVerified: true,
+    });
+    await h.fixtures.content("venues", {
+      id: "selected-venue",
+      locale: "fr",
+      status: "published",
+      data: { name: "Saved hall", street: "Published address" },
+    });
+    const original = {
+      ...schedule,
+      recurrence: { frequency: "daily", until: "2026-11-17" },
+      exceptions: [],
+      occurrence_content: [],
+    };
+    await h.fixtures.content("events", {
+      id: "panel-event",
+      slug: "panel-event",
+      locale: "fr",
+      status: "published",
+      data: original,
+    });
+    const loaded = await h.admin.loadEditorPanel(
+      "event-schedule",
+      "events",
+      "panel-event",
+      { user },
+    );
+    expect(JSON.stringify(loaded)).toContain("Saved hall");
+    let current: Record<string, unknown> = { ...original };
+    const submit = async (action: string, values: Record<string, unknown>) => {
+      const allowed = [
+        "start",
+        "end",
+        "start_date",
+        "end_date",
+        "all_day",
+        "timezone",
+        "recurrence",
+        "exceptions",
+        "occurrence_content",
+        "venue",
+        "venue_id",
+        "organizer_ref",
+        "organizer_id",
+        "categories",
+      ];
+      const snapshot = Object.fromEntries(
+        Object.entries(current).filter(([key]) => allowed.includes(key)),
+      );
+      const draft = await h.admin.captureEditorDraft(
+        "events",
+        "panel-event",
+        snapshot,
+        { contentLocale: "fr" },
+      );
+      const response = await h.admin.submitEditorPanel(
+        "event-schedule",
+        "events",
+        "panel-event",
+        action,
+        values,
+        { user, draft, contentLocale: "fr" },
+      );
+      expect(response.patch, JSON.stringify(response)).toBeDefined();
+      current = await h.admin.applyEditorDraftPatch(
+        "panel",
+        "event-schedule",
+        draft,
+        response,
+        {
+          entryId: draft.entryId,
+          locale: draft.locale,
+          generation: draft.generation,
+          invocationId: draft.invocationId,
+        },
+        current,
+      );
+    };
+    await submit("apply-details", {
+      venue: "selected-venue",
+      organizer_ref: "",
+      categories: "Workshop",
+    });
+    await submit("set-occurrence-copy", {
+      recurrence_id: "2026-11-16T10:00",
+      use_title: true,
+      copy_title: "Special date",
+      use_description: true,
+      copy_description: "Occurrence announcement",
+    });
+    const save = await h.actions.content.update("events", "panel-event", {
+      data: current,
+    });
+    expect(save.success, JSON.stringify(save)).toBe(true);
+    expect(await calendar(h)).not.toContain("Published address");
+    expect(await calendar(h)).not.toContain("SUMMARY:Special date");
+    const publish = await h.actions.content.publish("events", "panel-event");
+    expect(publish.success, JSON.stringify(publish)).toBe(true);
+    const live = await calendar(h);
+    expect(live).toContain("Published address");
+    expect(live).toContain("SUMMARY:Special date");
+    expect(live).toContain("DESCRIPTION:Occurrence announcement");
+    const output = (await h.transport.invokeRoute("publicEvents", {
+      from: "2026-11-01",
+      through: "2026-11-30",
+    })) as any;
+    const occurrence = output.events.find(
+      (item: any) => item.title === "Special date",
+    );
+    expect(occurrence.description).toBe("Occurrence announcement");
+    expect(occurrence.descriptionBlocks).toEqual(expect.any(Array));
+    current = (await h.inspect.content.get("events", "panel-event"))!.data;
+    await submit("apply-details", {
+      venue: "",
+      organizer_ref: "",
+      categories: "Workshop",
+    });
+    expect(
+      (
+        await h.actions.content.update("events", "panel-event", {
+          data: current,
+        })
+      ).success,
+    ).toBe(true);
+    expect(
+      (await h.actions.content.publish("events", "panel-event")).success,
+    ).toBe(true);
+    expect(await calendar(h)).not.toContain("Published address");
+  });
   it("reads native metadata and keeps an empty native collection authoritative", async () => {
     const h = await setup();
     await h.fixtures.plugin.storage("events", "legacy-event", legacy);
@@ -384,7 +631,11 @@ describe("Native modernization through the EmDash production runtime", () => {
       bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
     });
     const saved = await h.actions.content.create("events", {
-      data: { ...schedule, featured_image: { id: media.id } },
+      data: {
+        ...schedule,
+        featured_image: { id: media.id },
+        legacy_id: "old-image-event",
+      },
     });
     expect(saved.success, JSON.stringify(saved)).toBe(true);
     if (!saved.success) return;
@@ -399,6 +650,23 @@ describe("Native modernization through the EmDash production runtime", () => {
       "/_emdash/api/media/asset/" + media.id,
     );
     expect(feed.events[0].publicUrl).toContain("/events/");
+    const alias = await h.actions.routes.request("publicEventImage", {
+      method: "GET",
+      url: "https://audit.example.com/_emdash/api/plugins/eventual/publicEventImage?eventId=old-image-event",
+    });
+    expect(alias.status).toBe(200);
+    expect((await alias.arrayBuffer()).byteLength).toBe(8);
+    expect(
+      (await h.actions.content.unpublish("events", saved.data.item.id)).success,
+    ).toBe(true);
+    expect(
+      (
+        await h.actions.routes.request("publicEventImage", {
+          method: "GET",
+          url: "https://audit.example.com/_emdash/api/plugins/eventual/publicEventImage?eventId=old-image-event",
+        })
+      ).status,
+    ).toBe(404);
     const page = (await h.transport.invokeRoute("admin", {
       type: "page_load",
       page: "/events",

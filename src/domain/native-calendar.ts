@@ -1,6 +1,10 @@
 import type { EventRecord } from "./event";
-import { readEventSource, resolveEventVenues } from "./native-source";
-import type { NormalizedVenue } from "./venue-adapter";
+import {
+  readEventSource,
+  resolveEventVenues,
+  hydrateNativeAssets,
+} from "./native-source";
+import { localizedVenue, type NormalizedVenue } from "./venue-adapter";
 import { expandEventsInDateRange } from "./recurrence";
 import { eventUid } from "./icalendar";
 import { categoryKey } from "./category";
@@ -58,6 +62,7 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
   try {
     const source = await readEventSource(ctx);
     if (!source.native) return { events: source.events, cancellations: [] };
+    source.events = await hydrateNativeAssets(ctx, source.events);
     const venues = await resolveEventVenues(ctx, source.events, source.schema);
     const groups = new Map<string, EventRecord[]>();
     for (const event of source.events) {
@@ -90,7 +95,7 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
         rows.map((row) => ({
           ...row,
           calendarSequence: undefined,
-          venue: row.venueId ? venues.get(row.venueId) : undefined,
+          venue: localizedVenue(venues, row),
         })),
       );
       const cache = cached.get(stateKey);

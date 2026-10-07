@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
 	createEventsCollectionBlueprint,
 	createVenuesCollectionBlueprint,
+	createOrganizersCollectionBlueprint,
 } from "../src/schema/blueprint";
 import { normalizeVenueRecord } from "../src/domain/venue-adapter";
 import {validateSeed,type SeedFile} from 'emdash/seed';
 
 describe("Schema Blueprints", () => {
 	it('exports valid, typed EmDash seeds with scheduling support',()=>{
-		const seed:SeedFile={version:'1',defaultLocale:'fr',collections:[createEventsCollectionBlueprint(),createVenuesCollectionBlueprint()]};
+		const seed:SeedFile={version:'1',defaultLocale:'fr',collections:[createEventsCollectionBlueprint(),createVenuesCollectionBlueprint(),createOrganizersCollectionBlueprint()]};
 		expect(validateSeed(seed)).toMatchObject({valid:true,errors:[]});
 		expect(seed.collections?.[0]?.supports).toContain('scheduling');
 	});
@@ -39,6 +40,21 @@ describe("Schema Blueprints", () => {
 		const blueprint = createEventsCollectionBlueprint({ venueCollection: "locations" });
 		const venueField = blueprint.fields.find((f) => f.slug === "venue");
 		expect(venueField?.options?.collection).toBe("locations");
+		expect(venueField?.validation?.relation).toBeUndefined();
+	});
+
+	it("binds relations when bindRelations: true is requested", () => {
+		const blueprint = createEventsCollectionBlueprint({
+			venueCollection: "locations",
+			organizerCollection: "hosts",
+			bindRelations: true,
+		});
+		const venueField = blueprint.fields.find((f) => f.slug === "venue");
+		expect(venueField?.validation?.relation).toBe("events_venue");
+		expect(venueField?.validation?.targetCollection).toBe("locations");
+		const organizerField = blueprint.fields.find((f) => f.slug === "organizer_ref");
+		expect(organizerField?.validation?.relation).toBe("events_organizer");
+		expect(organizerField?.validation?.targetCollection).toBe("hosts");
 	});
 
 	it("creates venues blueprint with localized directions", () => {

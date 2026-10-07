@@ -1,60 +1,37 @@
-# Eventual 0.12.0
+# Eventual 0.12.0 release candidate
 
-Eventual 0.12.0 modernizes the plugin to adopt native EmDash collections (`events`, `venues` or `locations`), replacing isolated plugin tables with core EmDash content features including row-per-locale multilingual support, native drafts, revisions, scheduled publishing, and Portable Text rich text.
+This release candidate moves event content into native EmDash collections while restoring friendly recurrence and occurrence editing. It has not been published by the audit/refinement work. The backend registry archive and matching Astro host package must be delivered together.
 
----
+## Editing and localization
 
-## What's New
+Events use core Portable Text, media, drafts, revisions and publishing. Editorial content belongs to each locale; shared schedule/reference fields use core `translatable: false` semantics. Eventual hooks validate schedules and publication dependencies; they do not implement core translation synchronization.
 
-### 1. Native Multilingual Collections & Invariant Scheduling
-- **Row-per-locale Content:** Translation entries for an event exist as native sibling content rows in EmDash, allowing editors to localize titles, Portable Text descriptions, excerpts, and localized occurrence overrides independently.
-- **Invariant Schedule Synchronization:** Non-translatable fields (`start`, `end`, `all_day`, `timezone`, recurrence rules, and shared exceptions) are automatically synchronized across translation siblings via `hooks.content-policy:register`.
-- **Inclusive Civil Dates:** All-day events store inclusive Gregorian civil dates (`YYYY-MM-DD`). In RFC 5545 iCalendar feeds, end dates are automatically converted to exclusive `DTEND` dates.
-- **Separation of Schedule vs Editorial Overrides:** Shared recurrence exceptions handle timing/cancellation across all locales, while localized `occurrence_content` handles per-locale presentation notes.
+The Dates, venue & repeat panel supplies local dates, time zones, daily/weekly/monthly rules, grouped venue/organizer choices and a 90-day occurrence inspector. Cancel, restore, reschedule and localized announcement changes go through the core draft-review receipt flow. Editing a draft does not change live feeds until publication. Technical JSON/identity/history fields stay stored but hidden. Optional editorial settings are collapsed.
 
-### 2. Public Feeds & Calendar Enhancements
-- **Multi-locale JSON Feed:** `GET /_emdash/api/plugins/eventual/publicEvents` supports `locale` and `strict` query parameters. In non-strict mode, missing translations fall back to an available sibling with a localized title tag (e.g., `[EN] Meeting`).
-- **RFC 5545 Monotonic SEQUENCE Counters:** Replaced legacy millisecond timestamps with true monotonic integer `SEQUENCE` values, complying with RFC 5545 and preventing subscribing clients from rejecting updates.
-- **Cancellation Tombstones:** Retains `STATUS:CANCELLED` records for 366 days, ensuring external calendar applications (Google Calendar, Apple Calendar, Outlook) accurately remove cancelled or unpublished events.
+English and French UI follow the admin language independently of the content language. Venue translations occupy one choice; the selected row ID remains stable. Names, addresses, draft warnings and native create/edit links explain the selection. Publication requires published dependencies.
 
-### 3. Resumable, Non-Destructive Migration (`migrateToNative`)
-- **Automated Migration Engine:** The `migrateToNative` MCP tool and admin endpoint read legacy Eventual storage and populate native EmDash collections.
-- **Dry-run Preview:** Supports `dryRun: true` to inspect migration payloads, counts, and potential warnings with zero database writes.
-- **Zero Data Loss:** Legacy records are never deleted or modified. Stable recovery tokens and unique indexed `legacy_id` fields guarantee idempotency across batch executions.
-- **Portable Text Conversion:** Legacy Markdown descriptions and exception notes are converted to schema-safe Portable Text blocks, with raw source strings preserved in `legacy_metadata`.
-- **Single Native Authority:** Once the native `events` collection exists, Eventual routes and feeds query native content exclusively, preventing split-brain storage while preserving legacy tables for fallback.
+## Public content and migration
 
-### 4. Admin Companion & Astro Integration
-- **Deep-linked Companion Admin:** Replaces the legacy custom form editor with an informational dashboard that links directly to EmDash's core collection editor.
-- **Astro Component Suite:** Enhanced `eventual/astro` helpers support native multilingual feeds, ISO civil dates, and structured JSON-LD generation with zero client-side JavaScript.
+Multilingual JSON/ICS feeds select published native content, with language-tagged fallbacks unless strict filtering is requested. UIDs survive translation/migration, all-day DTEND is exclusive, SEQUENCE is a logical integer, and cancellations use committed state. Protocol output/parser tests do not establish actual refresh behavior in Google, Apple or Outlook subscriptions; those clients remain an external acceptance step.
 
----
+Migration preserves legacy storage and original metadata, remaps dependencies, keeps drafts as drafts and supports resumable batches. Preview is structural: it cannot predict generated native IDs, concurrent changes or other plugins' policies. Batches are not a database-wide transaction. Markdown conversion supports common syntax, not complete CommonMark. Installing the native events schema switches feed authority immediately, including when empty.
 
-## Upgrade and Migration Guide
+## Installation and upgrades
 
-1. **Prerequisites:** Requires EmDash **1.0.1** or newer.
-2. **Back up your database:** Take a snapshot of your site's database and media before upgrading.
-3. **Install the 0.12.0 update:** Update the plugin via EmDash Admin → Plugins or run `npx emdash-plugin install @vermeulen.solutions/eventual`.
-4. **Apply Collection Blueprints:** Register the `events` and `venues` collection schemas using `createEventsCollectionBlueprint` and `createVenuesCollectionBlueprint` from `eventual/schema`.
-5. **Run Migration:** Execute `migrateToNative` via MCP or the companion admin endpoint. Start with a dry-run (`dryRun: true`), then run migration batches.
-6. **Update Frontend:** If using `eventual/astro`, pass `{ locale, strict }` options to `fetchPublicFeed`.
+Tested versions: Node 24; EmDash, Admin and Block Kit 1.0.1; Astro 7.3.2/7.3.5; Vite 8.3.x; React 19. The host integration rejects unsupported versions rather than applying uncertain source transforms.
 
-See the [Native Modernization Guide](./native-modernization.md) for full operational steps.
+1. Back up the database and media. Read [editor-upgrade.md](editor-upgrade.md).
+2. Install the backend and matching host tarball. Use `eventual/install` in the existing Astro config, keeping the runner/database/storage. Registry installations must not add a second source backend.
+3. Upgrade existing SQLite schemas/reference snapshots offline with the supplied preview/apply CLI and a new consistent backup. A blueprint or registry update alone does not upgrade installed schemas.
+4. For new collections, apply reviewed compiled `eventual/schema` blueprints; for legacy records, preview then execute administrator-only migration batches. Follow [native-modernization.md](native-modernization.md).
+5. Run the installation doctor, Astro check/build and editorial acceptance before opening the site to editors.
 
----
+The CLI is not a deployed D1 migration tool. Existing relation-bound D1 installations require an equivalent reviewed host migration. Core translation data is ready for translation plugins, but live LinguaDash service acceptance was not performed.
 
-## Trust Contract & Capabilities
+## Permissions and limits
 
-Eventual requests the following capabilities:
-- `content:read`, `content:write`, `content:publish`, `content:revisions:read`: Required for native event management, publication, and migration.
-- `schema:read`: Detects active collection schemas.
-- `hooks.content-policy:register`: Synchronizes invariant fields across language siblings and validates schedules.
-- `media:read`, `media:bytes:read`: Serves cover images and legacy media.
-- `allowedHosts: []`: Zero outbound network calls; all operations remain local to the site.
+Backend capabilities cover content reads/writes/publication/revision reads, schema reads, content policies, scoped editor-draft reads/patch proposals and media. It has no schema-write capability or outbound hosts. MCP/migration requires `plugins:manage`; the panel/workspace uses `content:edit_any`. The frontend companion has no backend capabilities. Core review and publication remain explicit.
 
----
+Legacy storage and old reference edges are retained for recovery and traceability; they are not a second write authority. Generic relationship consumers must adopt canonical ID columns after a bound-reference upgrade. Do not delete these records as routine cleanup.
 
-## Resolved Work
-
-- **Calendar SEQUENCE migration ([#2](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/2)):** Resolved in 0.12.0. Calendar feeds now emit RFC 5545 compliant integer sequence numbers with committed-state cancellation reconciliation.
-- **Native collections adoption:** Fully resolved; plugin data now leverages EmDash native content storage.
+Detailed changes, verification results, artifact checksums and remaining deployment acceptance are recorded in [release-refinements-2026-10-07.md](release-refinements-2026-10-07.md).
