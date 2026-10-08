@@ -6,6 +6,8 @@ import { prepareEventData, normalizeEventStatus } from "../src/domain/event-data
 import { formatCalendarFeed } from "../src/domain/icalendar";
 import { eventToJsonLd, serializeJsonLd } from "../astro/schema";
 import { formatPublicEvent } from "../src/public-event";
+// Includes D1 migrations and multiple independent sandbox invocations. Allow
+// hosted Windows runners the same wall-time budget as other runtime workflows.
 it("updates new fields, clears URLs, and normalizes publication transitions through MCP", async () => {
 	const h = await createPluginRuntimeTestHost();
 	try {
@@ -36,7 +38,7 @@ it("updates new fields, clears URLs, and normalizes publication transitions thro
 	finally {
 		await h.dispose();
 	}
-}, 15000);
+}, 60_000);
 it("rejects invalid inputs using real shared validation rather than fake safeParse", () => {
 	expect(validateMcpInput("getEvent", null)).toBe(false);
 	expect(validateMcpInput("getEvent", { id: "x", unexpected: true })).toBe(false);
