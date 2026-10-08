@@ -31,133 +31,34 @@ export function compileRecurrenceFromForm(input: RecurrenceFormInput): {
   rule: EventRecurrence | null;
   error?: string;
 } {
-  const freq = String(input.frequency || "")
-    .trim()
-    .toLowerCase();
-  if (!freq || freq === "none") {
-    return { rule: null };
+  const failure = (error: string) => ({rule:null, error});
+  const frequency = String(input.frequency || '').trim().toLowerCase();
+  if (!frequency || frequency === 'none') return {rule:null};
+  const until = String(input.until || '').trim();
+  if (!isDateOnly(until)) return failure('Repeat until must be a valid YYYY-MM-DD date.');
+  const interval = input.interval === undefined || String(input.interval).trim() === '' ? 1 : Number(input.interval);
+  if (!Number.isInteger(interval) || interval < 1 || interval > 52) return failure('Interval must be an integer between 1 and 52.');
+  const rule: Record<string, unknown> = {frequency, until, ...(interval > 1 ? {interval} : {})};
+  if (frequency === 'weekly' && input.weekdays) {
+    const days = Array.isArray(input.weekdays) ? input.weekdays : String(input.weekdays).split(',').map(value => value.trim());
+    if (days.some(day => !WEEKDAYS.includes(day as WeekdayName))) return failure('Choose valid weekdays.');
+    if (days.length) rule.weekdays = normalizeWeekdays(days as WeekdayName[]);
+  } else if (frequency === 'monthly') {
+    const type = input.monthlyPatternType ?? 'dayOfMonth';
+    if (type === 'dayOfMonth') {
+      const dayOfMonth = Number(input.dayOfMonth ?? 1);
+      if (!Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) return failure('Day of month must be between 1 and 31.');
+      rule.pattern = {type, dayOfMonth, missingDayBehavior:input.missingDayBehavior === 'lastDay' ? 'lastDay' : 'skip'};
+    } else if (type === 'weekdayOfMonth') {
+      const weekday = String(input.weekday || 'monday').toLowerCase();
+      if (!WEEKDAYS.includes(weekday as WeekdayName)) return failure('Choose a valid weekday.');
+      const position = input.position === 'last' ? 'last' : Number(input.position ?? 1);
+      if (position !== 'last' && (!Number.isInteger(position) || position < 1 || position > 5)) return failure('Choose first, second, third, fourth, fifth or last.');
+      rule.pattern = {type, weekday, position};
+    } else return failure('Choose a monthly pattern.');
   }
-
-  const rawUntil = String(input.until || "").trim();
-  if (!rawUntil || !isDateOnly(rawUntil)) {
-    return {
-      rule: null,
-      error: "Repeat until must be a valid YYYY-MM-DD date.",
-    };
-  }
-
-  let interval: number | undefined;
-  if (input.interval !== undefined && String(input.interval).trim() !== "") {
-    const num = Number(input.interval);
-    if (!Number.isInteger(num) || num < 1 || num > 52) {
-      return {
-        rule: null,
-        error: "Interval must be an integer between 1 and 52.",
-      };
-    }
-    interval = num;
-  }
-
-  if (freq === "daily") {
-    const rule: EventRecurrence = {
-      frequency: "daily",
-      until: rawUntil,
-      ...(interval && interval > 1 ? { interval } : {}),
-    };
-    return validRecurrence(rule)
-      ? { rule }
-      : { rule: null, error: "Invalid daily recurrence." };
-  }
-
-  if (freq === "weekly") {
-    let days: WeekdayName[] | undefined;
-    if (input.weekdays) {
-      const arr = Array.isArray(input.weekdays)
-        ? input.weekdays
-        : String(input.weekdays)
-            .split(",")
-            .map((s) => s.trim());
-      if (arr.some((day) => !WEEKDAYS.includes(day as WeekdayName)))
-        return { rule: null, error: "Choose valid weekdays." };
-      const filtered = arr as WeekdayName[];
-      if (filtered.length > 0) {
-        days = normalizeWeekdays(filtered);
-      }
-    }
-
-    const rule: EventRecurrence = {
-      frequency: "weekly",
-      until: rawUntil,
-      ...(days && days.length > 0 ? { weekdays: days } : {}),
-      ...(interval && interval > 1 ? { interval } : {}),
-    };
-    return validRecurrence(rule)
-      ? { rule }
-      : { rule: null, error: "Invalid weekly recurrence." };
-  }
-
-  if (freq === "monthly") {
-    const patternType = input.monthlyPatternType ?? "dayOfMonth";
-    if (patternType === "dayOfMonth") {
-      const day = Number(input.dayOfMonth ?? 1);
-      if (!Number.isInteger(day) || day < 1 || day > 31) {
-        return { rule: null, error: "Day of month must be between 1 and 31." };
-      }
-      const missingBehavior =
-        input.missingDayBehavior === "lastDay" ? "lastDay" : "skip";
-      const rule: EventRecurrence = {
-        frequency: "monthly",
-        until: rawUntil,
-        pattern: {
-          type: "dayOfMonth",
-          dayOfMonth: day,
-          missingDayBehavior: missingBehavior,
-        },
-        ...(interval && interval > 1 ? { interval } : {}),
-      };
-      return validRecurrence(rule)
-        ? { rule }
-        : { rule: null, error: "Invalid monthly recurrence." };
-    }
-
-    if (patternType !== "weekdayOfMonth")
-      return { rule: null, error: "Choose a monthly pattern." };
-    const rawWeekday = String(input.weekday || "monday").toLowerCase();
-    if (!WEEKDAYS.includes(rawWeekday as WeekdayName))
-      return { rule: null, error: "Choose a valid weekday." };
-    const weekday: WeekdayName = WEEKDAYS.includes(rawWeekday as WeekdayName)
-      ? (rawWeekday as WeekdayName)
-      : "monday";
-    let position: MonthlyPosition = 1;
-    if (input.position === "last") {
-      position = "last";
-    } else {
-      const posNum = Number(input.position ?? 1);
-      if (Number.isInteger(posNum) && posNum >= 1 && posNum <= 5) {
-        position = posNum as MonthlyPosition;
-      } else
-        return {
-          rule: null,
-          error: "Choose first, second, third, fourth, fifth or last.",
-        };
-    }
-
-    const rule: EventRecurrence = {
-      frequency: "monthly",
-      until: rawUntil,
-      pattern: {
-        type: "weekdayOfMonth",
-        weekday,
-        position,
-      },
-      ...(interval && interval > 1 ? { interval } : {}),
-    };
-    return validRecurrence(rule)
-      ? { rule }
-      : { rule: null, error: "Invalid monthly recurrence." };
-  }
-
-  return { rule: null, error: `Unsupported recurrence frequency: ${freq}` };
+  if (!['daily','weekly','monthly'].includes(frequency)) return failure('Unsupported recurrence frequency: '+frequency);
+  return validRecurrence(rule) ? {rule} : failure('Invalid '+frequency+' recurrence.');
 }
 
 /** Deconstructs stored canonical recurrence rule into form fields. */

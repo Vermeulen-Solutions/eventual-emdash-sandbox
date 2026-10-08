@@ -1,9 +1,11 @@
+import { reject } from './domain/messages';
 import type {BlockResponse, FormField} from '@emdash-cms/blocks';
 import type {SandboxedRouteContext} from 'emdash/plugin';
 import type {EventualContext} from './storage';
 import {handleAdmin as nativeWorkspace} from './native-admin';
-import {collectionBindings, saveCollectionBindings, COLLECTION_SETTINGS_KEY, type CollectionBindings} from './domain/collections';
+import {collectionBindings, saveCollectionBindings, collectionSettings, collectionSchemas, type CollectionBindings} from './domain/collections';
 import {isValidTimeZone} from './domain/date-time';
+import {withInvocationBudget} from './domain/invocation-budget';
 
 const context=(text:string):BlockResponse['blocks'][number]=>({type:'context',text});
 const nav=():BlockResponse['blocks'][number]=>({type:'actions',elements:[['/events','Events'],['/venues','Venues'],['/organizers','Organizers'],['/settings','Settings']].map(([path,label])=>({type:'button',action_id:'open-page:'+path,label,value:path}))});
@@ -11,8 +13,8 @@ const collectionLink=(ctx:EventualContext,slug:string,label:string):BlockRespons
 
 async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse> {
   // This page repairs removed/broken bindings; do not resolve them first.
-  const selected=await ctx.settings.get<CollectionBindings>(COLLECTION_SETTINGS_KEY);
-  const schemas=await ctx.schema?.listCollections() ?? [];
+  const selected=await collectionSettings(ctx);
+  const schemas=await collectionSchemas(ctx);
   const defaultEvents=schemas.find(item=>item.slug==='events');
   const target=(field:string,fallback:string)=>String(defaultEvents?.fields.find(item=>item.slug===field)?.options?.collection ?? fallback);
   const choose=(key:keyof CollectionBindings,label:string):FormField=>({type:'select',action_id:key,label,
@@ -27,6 +29,7 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
 
 /** Companion navigation only. Creation and editorial editing belong to core. */
 export async function handleAdmin(input:unknown,ctx:EventualContext,user?:SandboxedRouteContext['user']):Promise<BlockResponse> {
+  ctx = withInvocationBudget(ctx);
   const request=input && typeof input==='object' && !Array.isArray(input) ? {...input as Record<string,unknown>} : {};
   if(request.type==='form_submit' && (!request.values || typeof request.values!=='object' || Array.isArray(request.values))) return {blocks:[{type:'banner',title:'Invalid admin request',variant:'error'}]};
   if(String(request.action_id ?? '').startsWith('open-page:')) {request.type='page_load';request.page=request.value;delete request.action_id;}
@@ -37,7 +40,7 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
     if(request.action_id==='save-settings') {
       try {
         const values=request.values as Record<string,unknown>;
-        if(!values || values.defaultTimezone !== undefined && !isValidTimeZone(String(values.defaultTimezone))) throw new Error('Choose a valid IANA time zone.');
+        if(!values || values.defaultTimezone !== undefined && !isValidTimeZone(String(values.defaultTimezone))) reject('Choose a valid IANA time zone.');
         await saveCollectionBindings(ctx,{events:String(values.events ?? ''),venues:String(values.venues ?? ''),organizers:String(values.organizers ?? '')});
         if(values.defaultTimezone !== undefined) await ctx.settings.set('defaultTimezone',String(values.defaultTimezone));
       } catch(error) {return settings(ctx,error instanceof Error?error.message:'Check the collection settings.');}

@@ -1,3 +1,4 @@
+import { reject } from './domain/messages';
 import type { StorageCollection } from "emdash";
 import type { PluginContext } from "emdash/plugin";
 
@@ -110,10 +111,10 @@ async function syncCalendarCancellations(
 	const removed = previousOccurrences.filter((occurrence) => !nextIds.has(occurrence.id));
 	const removedLocales = Object.keys(previous?.translations ?? {}).filter(locale=>!Object.hasOwn(next?.translations ?? {},locale));
 	const localized = next ? previousOccurrences.flatMap(item=>removedLocales.map(locale=>({item,locale}))) : [];
-	for(const {item,locale} of localized) await cancellationCollection(ctx).put(localeKey(locale,item.id),{id:item.id,eventId:previous!.id,start:item.start,end:item.end,allDay:item.allDay,timezone:item.timezone,cancelledAt:new Date().toISOString(),locale:locale.toLowerCase(),categories:item.categories,calendarUid:previous!.calendarUid,translationGroup:previous!.translationGroup,calendarSequence:next?.calendarSequence});
+	const cancelledAt = new Date().toISOString();
+	const tombstones: {id: string; data: CalendarCancellation}[] = localized.map(({item,locale}) => ({id:localeKey(locale,item.id),data:{id:item.id,eventId:previous!.id,start:item.start,end:item.end,allDay:item.allDay,timezone:item.timezone,cancelledAt,locale:locale.toLowerCase(),categories:item.categories,calendarUid:previous!.calendarUid,translationGroup:previous!.translationGroup,calendarSequence:next?.calendarSequence}}));
 	if (removed.length) {
-		const cancelledAt = new Date().toISOString();
-		await cancellationCollection(ctx).putMany(removed.map((occurrence) => ({
+		tombstones.push(...removed.map((occurrence) => ({
 			id: occurrence.id,
 			data: {
 				id: occurrence.id,
@@ -131,6 +132,7 @@ async function syncCalendarCancellations(
 			},
 		})));
 	}
+	if (tombstones.length) await cancellationCollection(ctx).putMany(tombstones);
 	return activeIds;
 }
 
@@ -140,7 +142,7 @@ export async function listCalendarCancellations(ctx: EventualContext): Promise<C
 	do {
 		const page = await cancellationCollection(ctx).query({ limit: 100, cursor });
 		result.push(...page.items.map((item) => item.data));
-		if (page.hasMore && (!page.cursor || page.cursor===cursor)) throw new Error('Incomplete cancellation cursor.');
+		if (page.hasMore && (!page.cursor || page.cursor===cursor)) reject('Incomplete cancellation cursor.');
 		if (result.length > MAX_EVENT_SCAN) throw new EventScanLimitError(MAX_EVENT_SCAN);
 		cursor = page.hasMore ? page.cursor : undefined;
 	} while (cursor);
@@ -200,8 +202,8 @@ export async function listEvents(
 			cursor,
 		});
 		result.push(...page.items.map((item) => item.data));
-		if (page.hasMore && !page.cursor) throw new Error("Event storage returned an incomplete page without a cursor.");
-		if (page.hasMore && seen.has(page.cursor!)) throw new Error('Event storage returned a repeated cursor.');
+		if (page.hasMore && !page.cursor) reject("Event storage returned an incomplete page without a cursor.");
+		if (page.hasMore && seen.has(page.cursor!)) reject('Event storage returned a repeated cursor.');
 		if (page.cursor) seen.add(page.cursor);
 		cursor = page.hasMore ? page.cursor : undefined;
 		if (cursor && result.length >= maxItems) throw new EventScanLimitError(maxItems);
@@ -219,7 +221,7 @@ export async function listVenues(ctx: EventualContext): Promise<VenueRecord[]> {
 			cursor,
 		});
 		result.push(...page.items.map((item) => item.data));
-		if (page.hasMore && (!page.cursor || page.cursor===cursor)) throw new Error('Incomplete venue cursor.');
+		if (page.hasMore && (!page.cursor || page.cursor===cursor)) reject('Incomplete venue cursor.');
 		if (result.length > 5000) throw new EventScanLimitError(5000);
 		cursor = page.hasMore ? page.cursor : undefined;
 	} while (cursor);
@@ -244,7 +246,7 @@ export async function listOrganizers(ctx: EventualContext): Promise<OrganizerRec
   do {
     const page = await organizerCollection(ctx).query({ orderBy: { name: 'asc' }, limit: 100, cursor });
     items.push(...page.items.map(item => item.data));
-    if (page.hasMore && (!page.cursor || items.length >= 5000)) throw new Error('Organizer list exceeds the supported scan limit or has an incomplete page.');
+    if (page.hasMore && (!page.cursor || items.length >= 5000)) reject('Organizer list exceeds the supported scan limit or has an incomplete page.');
     cursor = page.hasMore ? page.cursor : undefined;
   } while (cursor);
   return items;

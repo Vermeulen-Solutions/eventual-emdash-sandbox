@@ -48,9 +48,10 @@ import {
   hydrateNativeAssets,
 } from "./domain/native-source";
 import { referenceTarget } from "./domain/native-references";
-import { saveCollectionBindings, COLLECTION_SETTINGS_KEY, type CollectionBindings } from './domain/collections';
+import { saveCollectionBindings, collectionSchemas, collectionSettings } from './domain/collections';
 import { normalizeVenueRecord, localizedVenue } from "./domain/venue-adapter";
 import { nativeEntryToEventRecord } from "./domain/event-expansion";
+import {withInvocationBudget} from './domain/invocation-budget';
 
 const validEventInput = (value: unknown) =>
   validateMcpInput("createEvent", value);
@@ -79,6 +80,7 @@ function route(
   return {
     permission: "plugins:manage" as const,
     handler: async (routeCtx: { input: unknown }, ctx: EventualContext) => {
+      if (nativeAllowed) ctx = withInvocationBudget(ctx);
       if (!validate(routeCtx.input))
         return { ok: false, error: "VALIDATION_ERROR" };
       if (!nativeAllowed && (await nativeSchema(ctx)))
@@ -238,7 +240,7 @@ export const mcpRoutes = {
       if (schema) {
         const target = referenceTarget(schema, "organizer_ref");
         if (
-          !(await ctx.schema!.listCollections()).some(
+          !(await collectionSchemas(ctx)).some(
             (item) => item.slug === target,
           )
         )
@@ -618,7 +620,7 @@ export const mcpRoutes = {
       ok: true,
       defaultTimezone:
         (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC",
-      collections: await ctx.settings.get<CollectionBindings>(COLLECTION_SETTINGS_KEY) ?? null,
+      collections: await collectionSettings(ctx) ?? null,
     }),
     true,
   ),

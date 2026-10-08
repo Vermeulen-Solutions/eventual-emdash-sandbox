@@ -20,6 +20,8 @@ Whether you run community meetups, webinars, conferences, workshops, or recurrin
 
 With **v0.13.0**, Eventual uses **native EmDash content types** for events, venues and organizers, with locale rows, drafts, revisions, scheduled publishing and Portable Text descriptions. Its sandbox supplies schedule controls and feeds; no Eventual frontend companion or second runtime package is required.
 
+**0.13.2** reduces sandbox RPCs with request memoization, atomic calendar state, direct image reads and batched imports. Guarded operations fail explicitly when they cannot finish within ten calls. Large sources, individual canonical URL resolution, and the migration job redesign remain constrained; local tests do not certify Cloudflare CPU limits. See the [release notes](./docs/release-notes-0.13.2.md).
+
 > **Breaking upgrade from 0.12.x and earlier:** Requires EmDash **1.2.x**. Back up and follow the [upgrade guide](./docs/upgrade-0.13.0.md). Updating Eventual does not create/convert schemas or migrate private data.
 
 ---
@@ -98,7 +100,7 @@ Venue choices combine translation siblings into one selection, show the name and
 ## Installation & Setup
 
 ### 1. Install via EmDash Plugin Registry
-Install Eventual **0.13.0** through EmDash's registry administration. The publisher CLI does not have an install command. Review changed capability consent and the [breaking upgrade guide](./docs/upgrade-0.13.0.md) first.
+Install Eventual **0.13.2** through EmDash's registry administration. The publisher CLI does not have an install command. Review changed capability consent and the [breaking upgrade guide](./docs/upgrade-0.13.0.md) first when upgrading from 0.12.x or earlier.
 
 The registry installs the self-contained sandbox backend. No mandatory host tarball, Eventual frontend companion or renderer patch is needed. Existing schemas are not created or upgraded by installation. Public-page screenshots show the optional Astro showcase; the native editor screenshot is from current acceptance.
 

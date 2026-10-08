@@ -2,6 +2,14 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.13.2 - 2026-10-08
+
+- Request-scoped settings/schema/directory/URL memoization and sandbox RPC accounting for public reads, native MCP reads, panels, policies and imports.
+- Atomic aggregate calendar reconciliation replaces per-group reads/writes, preserving existing identities and cancellation history.
+- Authoritative, deduplicated canonical URLs; direct native image retrieval with indexed legacy aliases.
+- Batch legacy import/reference reads and cancellation writes; resumable pending import rows and fail-closed scheduled-draft dependency checks.
+- Public requests fail explicitly before an eleventh call. Large native sources and the legacy migration/mutation job redesign remain limited; Cloudflare CPU headroom is not certified by local tests. See [release notes](docs/release-notes-0.13.2.md).
+
 ## 0.13.1 - 2026-10-08
 
 - Route public featured event image requests to the plugin's public image streamer endpoint (`/_emdash/api/plugins/eventual/publicEventImage?eventId=<eventId>`) instead of private CMS media asset URLs (`/_emdash/api/media/asset/`), preventing 401 Unauthorized errors on unauthenticated Astro frontends.

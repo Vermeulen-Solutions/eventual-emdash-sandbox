@@ -4,6 +4,7 @@ import type { EventualContext } from '../storage';
 import { eventSchema } from '../domain/native-references';
 import { computeSchedulePanel } from './schedule-panel';
 import { renderCompactSchedule } from './compact-panel';
+import {withInvocationBudget} from '../domain/invocation-budget';
 
 const token = (entry: {updatedAt:string;draftRevisionId?:string|null;status:string}) => JSON.stringify([entry.updatedAt, entry.draftRevisionId ?? '', entry.status]);
 const failure = (message:string):BlockResponse => ({blocks:[{type:'banner',title:message,variant:'error'}]});
@@ -13,6 +14,7 @@ const failure = (message:string):BlockResponse => ({blocks:[{type:'banner',title
  * Core owns drafts/publishing; changes are written to its latest draft only.
  */
 export async function handleSavedSchedulePanel(route: SandboxedRouteContext, ctx: EventualContext):Promise<BlockResponse> {
+  ctx = withInvocationBudget(ctx);
   const schema = await eventSchema(ctx), identity = route.ui?.entry;
   if (!schema || identity?.collection !== schema.slug) return {blocks:[{type:'context',text:'Eventual manages the event collection selected in its settings.'}]};
   const entry = await ctx.content?.get(schema.slug, identity.id);

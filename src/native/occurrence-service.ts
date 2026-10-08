@@ -1,3 +1,4 @@
+import { reject } from '../domain/messages';
 import { instantToLocalDateTime, isDateOnly } from "../domain/date-time";
 import type {
   EventException,
@@ -54,7 +55,7 @@ export function inspectNativeOccurrences(
   offset = 0,
 ): OccurrenceInspectionResult {
   if (!validOccurrenceRange(from, through)) {
-    throw new Error("Invalid occurrence date range. Must be <= 366 days.");
+    reject("Invalid occurrence date range. Must be <= 366 days.");
   }
 
   const recurrence = parseJson(fields.recurrence);

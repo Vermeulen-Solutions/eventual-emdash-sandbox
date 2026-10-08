@@ -5,6 +5,7 @@ import { formatPublicEvent } from "../public-event";
 import { EventScanLimitError, listVenuesById, listOrganizersById, type EventualContext } from "../storage";
 import { readEventSource, resolveEventVenues, selectEventLocales, hydrateNativeAssets } from '../domain/native-source';
 import { eventRecordToPublicEvent } from '../domain/event-expansion';
+import { withInvocationBudget, SandboxBudgetError } from '../domain/invocation-budget';
 
 const MAX_PUBLIC_EVENT_RANGE_DAYS = 366;
 
@@ -19,6 +20,10 @@ function addDays(date: string, count: number): string {
 }
 
 export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
+  try { return await readPublicEvents(input, withInvocationBudget(ctx)); }
+  catch (error) { if (error instanceof SandboxBudgetError) return {ok:false,error:'SANDBOX_BUDGET_EXCEEDED',details:error.message,events:undefined}; throw error; }
+}
+async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	if (!isRecord(input) || ["from", "through", "category", "locale"].some((key) => input[key] !== undefined && typeof input[key] !== "string") || input.strict !== undefined && typeof input.strict !== 'boolean' && input.strict !== 'true' && input.strict !== 'false') {
 		return { ok: false, error: "INVALID_QUERY" };
 	}

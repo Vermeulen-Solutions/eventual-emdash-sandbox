@@ -11,6 +11,9 @@ import { mcpRoutes } from "./mcp";
 import { transferRoutes } from './transfer';
 import { EventScanLimitError } from "./storage";
 import { handleContentBeforeSave, handleContentBeforeDelete, handleContentBeforePublish, handleContentBeforeUnpublish } from "./hooks/content-hooks";
+import { SandboxBudgetError } from './domain/invocation-budget';
+
+const unavailable = (error: Error) => pluginResponse({status: 503, headers: {'content-type':'text/plain; charset=utf-8', 'cache-control':'no-store', 'retry-after':'60'}, body:{kind:'text',value:error.message}});
 
 const plugin: SandboxedPlugin = {
 	hooks: {
@@ -36,7 +39,10 @@ const plugin: SandboxedPlugin = {
 			methods: ["GET"],
 			request: { body: "none" },
 			cacheControl: "public, max-age=60",
-			handler: async (routeCtx, ctx) => handlePublicEvents(routeCtx.input, ctx),
+			handler: async (routeCtx, ctx) => {
+                const result = await handlePublicEvents(routeCtx.input, ctx);
+                return result.error === 'SANDBOX_BUDGET_EXCEEDED' ? unavailable(new SandboxBudgetError()) : result;
+            },
 		}),
 		publicEventImage: pluginRoute({
 			public: true,
@@ -44,7 +50,10 @@ const plugin: SandboxedPlugin = {
 			request: { body: "none" },
 			response: "raw",
 			cacheControl: "no-store",
-			handler: async (routeCtx, ctx) => handlePublicEventImage(routeCtx.input, ctx),
+			handler: async (routeCtx, ctx) => {
+                try { return await handlePublicEventImage(routeCtx.input, ctx); }
+                catch (error) { if (error instanceof SandboxBudgetError) return unavailable(error); throw error; }
+            },
 		}),
 		calendar: pluginRoute({
 			public: true,
@@ -71,11 +80,7 @@ const plugin: SandboxedPlugin = {
 						},
 					});
 				} catch (error) {
-					return pluginResponse({
-						status: 503,
-						headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
-						body: { kind: "text", value: error instanceof EventScanLimitError ? error.message : 'Calendar feed unavailable; retry later.' },
-					});
+					return unavailable(error instanceof EventScanLimitError || error instanceof SandboxBudgetError ? error : new Error('Calendar feed unavailable; retry later.'));
 				}
 			},
 		}),

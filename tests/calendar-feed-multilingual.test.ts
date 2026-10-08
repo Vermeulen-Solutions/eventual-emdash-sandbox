@@ -315,12 +315,12 @@ describe("Milestone 3: Multilingual Calendar Feeds & iCalendar", () => {
 			expect(frFeed).toContain("LOCATION:Palais des Congrès · Place de Bordeaux\\, Strasbourg");
 
 			// 2. Fetch French feed with strict=true
-			const strictFrFeed = await handleCalendarFeed(mockCtx, "mysite.com", { locale: "fr", strict: true });
+			const strictFrFeed = await handleCalendarFeed({...mockCtx}, "mysite.com", { locale: "fr", strict: true });
 			expect(strictFrFeed).toContain("SUMMARY:Symposium International");
 			expect(strictFrFeed).not.toContain("Hands-on Workshop");
 
 			// 3. Fetch English feed
-			const enFeed = await handleCalendarFeed(mockCtx, "mysite.com", { locale: "en" });
+			const enFeed = await handleCalendarFeed({...mockCtx}, "mysite.com", { locale: "en" });
 			expect(enFeed).toContain("SUMMARY:International Symposium");
 			expect(enFeed).toContain("SUMMARY:Hands-on Workshop");
 			expect(enFeed).not.toContain("Symposium International");

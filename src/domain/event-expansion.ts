@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import { expandEventsInDateRange, scheduledOccurrence } from "./recurrence";
 import type { EventRecord, EventException } from "./event";
 import { portableTextToPlainText } from "./portable-text";
@@ -283,7 +284,7 @@ export function expandEventOccurrences(
     options.through,
   );
   if (expanded.length > 10000)
-    throw new Error("Too many expanded occurrences; narrow the date range.");
+    reject("Too many expanded occurrences; narrow the date range.");
   const category = options.category ? categoryKey(options.category) : "";
   const visible = category
     ? expanded.filter((record) =>

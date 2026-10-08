@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import { instantToLocalDateTime, isDateOnly } from "./date-time";
 import type { EventRecord } from "./event";
 import { expandEventsInDateRange, scheduledOccurrence } from "./recurrence";
@@ -31,7 +32,7 @@ function local(value: string, event: EventRecord): string {
 /** Editor/agent inspection includes cancelled dates; the public expansion stays unchanged. */
 export function inspectOccurrences(event: EventRecord, from: string, through: string, limit = 100, offset = 0) {
   if (!validOccurrenceRange(from, through) || !Number.isInteger(limit) || limit < 1 || limit > 100 ||
-      !Number.isInteger(offset) || offset < 0) throw new Error("Invalid occurrence range or limit.");
+      !Number.isInteger(offset) || offset < 0) reject("Invalid occurrence range or limit.");
   const visible = expandEventsInDateRange([{
     ...event, exceptions: event.exceptions.filter((item) => item.status !== "cancelled"),
   }], from, through);

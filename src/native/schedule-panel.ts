@@ -1,3 +1,4 @@
+import { reject } from '../domain/messages';
 import type {
   BlockResponse,
   FormField,
@@ -5,6 +6,7 @@ import type {
 } from "@emdash-cms/blocks";
 import type { SandboxedRouteContext } from "emdash/plugin";
 import type { EventualContext } from "../storage";
+import { collectionSchemas } from '../domain/collections';
 import {
   compileRecurrenceFromForm,
   recurrenceToFormValues,
@@ -228,7 +230,7 @@ function compileSchedule(values: Record<string, unknown>, prefix = "") {
   const startDate = text(values[prefix + "start_date"]);
   const endDate = text(values[prefix + "end_date"]) || startDate;
   if (!isDateOnly(startDate) || !isDateOnly(endDate))
-    throw new Error("Choose a valid start and end date.");
+    reject("Choose a valid start and end date.");
   if (allDay)
     return {
       all_day: true,
@@ -245,11 +247,9 @@ function compileSchedule(values: Record<string, unknown>, prefix = "") {
     timezone,
   );
   if (!start.value || !end.value)
-    throw new Error(
-      start.error ||
+    reject(start.error ||
         end.error ||
-        "Enter times as HH:MM in the selected time zone.",
-    );
+        "Enter times as HH:MM in the selected time zone.");
   return { all_day: false, timezone, start: start.value, end: end.value };
 }
 
@@ -311,7 +311,7 @@ export async function computeSchedulePanel(
   let windowStart: string | undefined;
   try {
     if (request.type !== "panel_load" && !request.draft)
-      throw new Error("Reload the editor before changing this event.");
+      reject("Reload the editor before changing this event.");
     const action = text(request.action_id);
     if (action === "apply-recurrence") {
       const frequency = text(values.frequency);
@@ -328,7 +328,7 @@ export async function computeSchedulePanel(
             }
           : { ...values, interval: Number(values["interval_" + (frequency === "daily" ? "days" : "weeks")] ?? values.interval ?? 1) },
       );
-      if (compiled.error) throw new Error(compiled.error);
+      if (compiled.error) reject(compiled.error);
       effect = patch(
         compiled.rule
           ? [set("recurrence", compiled.rule)]
@@ -351,16 +351,12 @@ export async function computeSchedulePanel(
             (item) => item.slug === referenceField(schema, field),
           )
         )
-          throw new Error(
-            "An administrator must upgrade the event reference schema before selecting a venue or organizer.",
-          );
+          reject("An administrator must upgrade the event reference schema before selecting a venue or organizer.");
         const id = text(values[field]);
         if (id && !(await ctx.content?.get(referenceTarget(schema, field), id)))
-          throw new Error(
-            "The selected " +
+          reject("The selected " +
               (field === "venue" ? "venue" : "organizer") +
-              " no longer exists. Choose another.",
-          );
+              " no longer exists. Choose another.");
       }
       effect = patch([
         ...(["venue", "organizer_ref"] as const).filter(key=>Object.hasOwn(values,key)).map((key) =>
@@ -399,9 +395,7 @@ export async function computeSchedulePanel(
       } as EventRecord;
       const original = scheduledOccurrence(series, selectedId);
       if (!original)
-        throw new Error(
-          "This date no longer belongs to the repeat schedule. Reload the dates.",
-        );
+        reject("This date no longer belongs to the repeat schedule. Reload the dates.");
       windowStart = local(
         original.start,
         original.allDay,
@@ -475,7 +469,7 @@ export async function computeSchedulePanel(
           ),
         ]);
       }
-    } else if (action) throw new Error("Unknown action. Reload the panel.");
+    } else if (action) reject("Unknown action. Reload the panel.");
     if (effect) {
       const next = { ...fields };
       for (const operation of effect.operations)
@@ -668,7 +662,7 @@ async function renderPanel(
     const target = referenceTarget(schema, field);
     if (
       schema &&
-      (await ctx.schema?.listCollections())?.some(
+      (await collectionSchemas(ctx)).some(
         (item) => item.slug === target,
       )
     ) {

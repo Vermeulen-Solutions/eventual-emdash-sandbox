@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import type { EventRecord } from "./event";
 import {
   readEventSource,
@@ -9,6 +10,7 @@ import { expandEventsInDateRange } from "./recurrence";
 import { eventUid } from "./icalendar";
 import { categoryKey } from "./category";
 import type { CalendarCancellation, EventualContext } from "../storage";
+import { reserveRpcCalls } from './invocation-budget';
 
 interface CalendarState {
   from?: string;
@@ -19,16 +21,28 @@ interface CalendarState {
   cancellations: CalendarCancellation[];
 }
 const prefix = "state:eventual-calendar:";
-export async function calendarHost(
+const snapshotKey = 'state:eventual-calendar-snapshot';
+interface CalendarSnapshot { version: 1; host: string; groups: Record<string, CalendarState> }
+const hosts = new WeakMap<EventualContext, Promise<string>>();
+export function calendarSiteHost(ctx: EventualContext, fallback = 'eventual.invalid'): string {
+  try { return new URL(ctx.site.url).host; } catch { return fallback; }
+}
+export function calendarHost(
   ctx: EventualContext,
   fallback = "eventual.invalid",
 ): Promise<string> {
+  const cached = hosts.get(ctx);
+  if (cached) return cached;
+  const promise = loadCalendarHost(ctx, fallback);
+  hosts.set(ctx, promise);
+  return promise;
+}
+async function loadCalendarHost(ctx: EventualContext, fallback: string): Promise<string> {
+  const snapshot = await ctx.kv.get<CalendarSnapshot>(snapshotKey);
+  if (snapshot?.version === 1 && snapshot.host) return snapshot.host;
   const current = await ctx.kv.get<string>("state:eventual-calendar-host");
   if (current) return current;
-  let host = fallback;
-  try {
-    host = new URL(ctx.site.url).host;
-  } catch {}
+  const host = calendarSiteHost(ctx, fallback);
   const result = await ctx.kv.compareAndSet(
     "state:eventual-calendar-host",
     null,
@@ -42,27 +56,33 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
   events: EventRecord[];
   cancellations: CalendarCancellation[];
   venues?: Map<string, NormalizedVenue>;
+  host?: string;
 }> {
   const now = new Date();
   const from = now.toISOString().slice(0, 10);
   const end = new Date(now);
   end.setUTCDate(end.getUTCDate() + 365);
   const through = end.toISOString().slice(0, 10);
-  const host = await calendarHost(ctx);
-  const lockKey = "state:eventual-calendar-lock";
-  const lock = await ctx.kv.getVersioned<{ until: number }>(lockKey);
-  if (lock && lock.value.until > Date.now())
-    throw new Error("Calendar reconciliation is busy; retry.");
-  const acquired = await ctx.kv.compareAndSet(lockKey, lock?.revision ?? null, {
-    until: Date.now() + 300000,
-  });
-  if (!acquired.applied)
-    throw new Error("Calendar reconciliation changed; retry.");
-  const lease = await ctx.kv.getVersioned(lockKey);
+  const previousSnapshot = await ctx.kv.getVersioned<CalendarSnapshot>(snapshotKey);
+  if (previousSnapshot && previousSnapshot.value.version !== 1) reject('Unsupported calendar snapshot.');
+  // Import existing sequence/cancellation state and host once. Retain old keys for rollback.
+  const legacy = previousSnapshot ? [] : await ctx.kv.list('state:eventual-calendar');
+  const oldLock = legacy.find(item => item.key === 'state:eventual-calendar-lock')?.value as {until: number} | undefined;
+  if (oldLock && oldLock.until > Date.now()) reject('Calendar busy; retry.');
+  let host = previousSnapshot?.value.host ?? legacy.find(item => item.key === 'state:eventual-calendar-host')?.value as string | undefined;
+  if (!host) host = calendarSiteHost(ctx);
+  hosts.set(ctx, Promise.resolve(host));
+  const cached = new Map<string, CalendarState>(previousSnapshot
+    ? Object.entries(previousSnapshot.value.groups)
+    : legacy.filter(item => item.key.startsWith(prefix)).map(item => [decodeURIComponent(item.key.slice(prefix.length)), item.value as CalendarState]));
+  if (cached.size > 10000) reject('Calendar state limit exceeded.');
+  const next = new Map(cached);
+  let changedSnapshot = !previousSnapshot;
+  const release = reserveRpcCalls(ctx, 1);
   try {
     const source = await readEventSource(ctx);
     if (!source.native) return { events: source.events, cancellations: [] };
-    source.events = await hydrateNativeAssets(ctx, source.events);
+    source.events = await hydrateNativeAssets(ctx, source.events, false);
     const venues = await resolveEventVenues(ctx, source.events, source.schema);
     const groups = new Map<string, EventRecord[]>();
     for (const event of source.events) {
@@ -71,65 +91,55 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
       rows.push(event);
       groups.set(key, rows);
     }
-    const stored = await ctx.kv.list(prefix);
-    const cached = new Map(
-      stored.map((item) => [item.key, item.value as CalendarState]),
-    );
-    if (stored.length > 10000)
-      throw new Error("Calendar state limit exceeded.");
     const keys = new Set([
       ...groups.keys(),
-      ...stored.map((item) =>
-        decodeURIComponent(item.key.slice(prefix.length)),
-      ),
+      ...cached.keys(),
     ]);
     const cancellations: CalendarCancellation[] = [];
     const events: EventRecord[] = [];
     let occurrenceCount = 0;
     for (const key of keys) {
-      const stateKey = prefix + encodeURIComponent(key);
       const rows = (groups.get(key) ?? []).sort((a, b) =>
         a.id.localeCompare(b.id),
       );
       const fingerprint = JSON.stringify(
-        rows.map((row) => ({
+        [ctx.site, source.schema?.urlPattern, source.schema?.routable, rows.map((row) => ({
           ...row,
           calendarSequence: undefined,
           venue: localizedVenue(venues, row),
-        })),
+        }))],
       );
-      const cache = cached.get(stateKey);
+      const cache = cached.get(key);
       if (cache?.fingerprint === fingerprint && cache.from === from) {
         occurrenceCount += cache.occurrences.length;
         if (occurrenceCount > 10000)
-          throw new Error("Calendar occurrence limit exceeded.");
+          reject("Calendar occurrence limit exceeded.");
         events.push(
           ...rows.map((row) => ({ ...row, calendarSequence: cache.sequence })),
         );
         cancellations.push(...cache.cancellations);
         if (cancellations.length > 10000)
-          throw new Error("Calendar cancellation limit exceeded.");
+          reject("Calendar cancellation limit exceeded.");
         continue;
       }
-      const previous = await ctx.kv.getVersioned<CalendarState>(stateKey);
-      const changed = previous?.value.fingerprint !== fingerprint;
-      const sequence = previous
-        ? previous.value.sequence + (changed ? 1 : 0)
+      const changed = cache?.fingerprint !== fingerprint;
+      const sequence = cache
+        ? cache.sequence + (changed ? 1 : 0)
         : rows.some((row) => row.calendarUid)
           ? Math.floor(now.getTime() / 1000)
           : 0;
       if (sequence > 2147483647)
-        throw new Error("Calendar sequence exhausted.");
+        reject("Calendar sequence exhausted.");
       const occurrences = expandEventsInDateRange(
         rows.slice(0, 1),
         from,
         through,
       );
       if (occurrences.length > 1000)
-        throw new Error("Calendar occurrence limit exceeded.");
+        reject("Calendar occurrence limit exceeded.");
       occurrenceCount += occurrences.length;
       if (occurrenceCount > 10000)
-        throw new Error("Calendar occurrence limit exceeded.");
+        reject("Calendar occurrence limit exceeded.");
       const active = new Set(occurrences.map((item) => eventUid(item, host)));
       const activeCategories = new Map(
         occurrences.map((item) => [
@@ -142,7 +152,7 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
           rows.flatMap((row) => (row.locale ? [row.locale.toLowerCase()] : [])),
         ),
       ];
-      const retained = (previous?.value.cancellations ?? []).filter(
+      const retained = (cache?.cancellations ?? []).filter(
         (item) =>
           Date.parse(item.cancelledAt) > now.getTime() - 366 * 86400000 &&
           (item.feedCategory
@@ -153,7 +163,7 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
               ? !locales.includes(item.locale)
               : !active.has(eventUid(item, host))),
       );
-      for (const old of previous?.value.occurrences ?? []) {
+      for (const old of cache?.occurrences ?? []) {
         if (!active.has(eventUid(old, host)) && old.end.slice(0, 10) >= from)
           retained.push({
             ...old,
@@ -174,9 +184,9 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
                 calendarSequence: sequence,
               });
       }
-      for (const locale of previous?.value.locales ?? [])
+      for (const locale of cache?.locales ?? [])
         if (!locales.includes(locale))
-          for (const old of previous?.value.occurrences ?? []) {
+          for (const old of cache?.occurrences ?? []) {
             if (active.has(eventUid(old, host)))
               retained.push({
                 ...old,
@@ -198,7 +208,7 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
         ).values(),
       ];
       if (unique.length > 1000)
-        throw new Error("Cancellation history limit exceeded for this series.");
+        reject("Cancellation history limit exceeded for this series.");
       const snapshot = occurrences.map((item) => ({
         id: item.id,
         eventId: item.id,
@@ -221,21 +231,26 @@ export async function reconcileNativeCalendar(ctx: EventualContext): Promise<{
         occurrences: snapshot,
         cancellations: unique,
       };
-      const saved = await ctx.kv.compareAndSet(
-        stateKey,
-        previous?.revision ?? null,
-        value,
-      );
-      if (!saved.applied) throw new Error("Calendar state conflict; retry.");
+      next.set(key, value);
+      changedSnapshot = true;
       events.push(
         ...rows.map((row) => ({ ...row, calendarSequence: sequence })),
       );
       cancellations.push(...unique);
       if (cancellations.length > 10000)
-        throw new Error("Calendar cancellation limit exceeded.");
+        reject("Calendar cancellation limit exceeded.");
     }
-    return { events, cancellations, venues };
+    const snapshot: CalendarSnapshot = {version: 1, host, groups: Object.fromEntries(next)};
+    if (new TextEncoder().encode(JSON.stringify(snapshot)).length > 1024 * 1024)
+      reject('Calendar snapshot exceeds 1 MiB.');
+    release();
+    if (changedSnapshot) {
+      const saved = await ctx.kv.compareAndSet(snapshotKey, previousSnapshot?.revision ?? null, snapshot);
+      if (!saved.applied) reject('Calendar state conflict; retry.');
+    }
+    return { events, cancellations, venues, host };
   } finally {
-    if (lease) await ctx.kv.compareAndDelete(lockKey, lease.revision);
+    // release is idempotent: failed reads must return the reserved allowance.
+    release();
   }
 }

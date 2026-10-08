@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import type {
   PluginContentItem as ContentItem,
   CollectionSchemaInfo,
@@ -10,10 +11,11 @@ import {
 } from "./portable-text";
 import { normalizeNativeSchedule } from "./native-validation";
 import { nativeEntryToEventRecord } from "./event-expansion";
-import { calendarHost, reconcileNativeCalendar } from "./native-calendar";
+import { calendarHost, calendarSiteHost, reconcileNativeCalendar } from "./native-calendar";
 import { eventUid } from "./icalendar";
 import { listNative } from "./native-source";
 import { eventSchema, referenceTarget, referenceField } from "./native-references";
+import { collectionSchemas } from './collections';
 
 export interface MigrateToNativeOptions {
   locale?: string;
@@ -80,7 +82,7 @@ function fitPayload(
       !(field.slug in filtered) &&
       field.default === undefined
     )
-      throw new Error("Missing required target field " + field.slug);
+      reject("Missing required target field " + field.slug);
   return filtered;
 }
 export async function migrateToNative(
@@ -108,7 +110,7 @@ export async function migrateToNative(
   const lockKey = "state:eventual-migration-lock";
   try {
     if (Intl.getCanonicalLocales(locale)[0] !== locale)
-      throw new Error("Use a canonical BCP 47 locale.");
+      reject("Use a canonical BCP 47 locale.");
     if (dryRun)
       result.warnings = [
         "Execution assigns native IDs and checks site locales and other plugins' content policies.",
@@ -119,17 +121,15 @@ export async function migrateToNative(
       !ctx.content.publish ||
       !ctx.content.getVersioned
     )
-      throw new Error(
-        "Native schema, content write and publication APIs are required.",
-      );
-    const schemas = await ctx.schema.listCollections();
+      reject("Native schema, content write and publication APIs are required.");
+    const schemas = await collectionSchemas(ctx);
     const eventsSchema = await eventSchema(ctx);
     if (!eventsSchema)
-      throw new Error("Apply the Eventual events blueprint before migrating.");
+      reject("Apply the Eventual events blueprint before migrating.");
     const reference = referenceTarget(eventsSchema,"venue");
     const venueField = referenceField(eventsSchema,"venue");
     if (!eventsSchema.fields.some(field => field.slug === venueField))
-      throw new Error("Upgrade the bound venue reference schema before migration.");
+      reject("Upgrade the bound venue reference schema before migration.");
     result.venueCollection =
       options.venueCollection ??
       (typeof reference === "string"
@@ -138,29 +138,23 @@ export async function migrateToNative(
           ? "locations"
           : "venues");
     if (reference !== result.venueCollection)
-      throw new Error(
-        "venueCollection must match the events.venue reference target.",
-      );
+      reject("venueCollection must match the events.venue reference target.");
     const venuesSchema = schemas.find(
       (schema) => schema.slug === result.venueCollection,
     );
-    if (!venuesSchema) throw new Error("Target venue collection is missing.");
+    if (!venuesSchema) reject("Target venue collection is missing.");
     for (const schema of [eventsSchema, venuesSchema]) {
       const legacy = schema.fields.find((field) => field.slug === "legacy_id");
       if (!legacy?.unique || !legacy.indexed)
-        throw new Error(
-          schema.slug +
-            " requires a unique indexed legacy_id field for resumable migration.",
-        );
+        reject(schema.slug +
+            " requires a unique indexed legacy_id field for resumable migration.");
       if (
         !schema.fields.some(
           (field) => field.slug === "legacy_metadata" && field.type === "json",
         )
       )
-        throw new Error(
-          schema.slug +
-            " requires legacy_metadata JSON for recovery and traceability.",
-        );
+        reject(schema.slug +
+            " requires legacy_metadata JSON for recovery and traceability.");
     }
     const required = [
       "start_date",
@@ -180,17 +174,17 @@ export async function migrateToNative(
     ];
     for (const slug of required)
       if (!eventsSchema.fields.some((field) => field.slug === slug))
-        throw new Error("Update the events blueprint: missing " + slug);
+        reject("Update the events blueprint: missing " + slug);
     if (!dryRun) {
       const old = await ctx.kv.getVersioned<{ until: number }>(lockKey);
       if (old && old.value.until > Date.now())
-        throw new Error("Migration is already running.");
+        reject("Migration is already running.");
       const applied = await ctx.kv.compareAndSet(
         lockKey,
         old?.revision ?? null,
         { until: Date.now() + 300000 },
       );
-      if (!applied.applied) throw new Error("Migration lock conflict; retry.");
+      if (!applied.applied) reject("Migration lock conflict; retry.");
       lease = await ctx.kv.getVersioned(lockKey);
     }
     const existingVenues = await listNative(ctx, result.venueCollection);
@@ -216,9 +210,9 @@ export async function migrateToNative(
     const mapping = new Map<string, string>();
     for (const [id, target] of Object.entries(options.venueMapping ?? {})) {
       if (typeof target !== "string" || !target)
-        throw new Error("venueMapping values must be non-empty native IDs.");
+        reject("venueMapping values must be non-empty native IDs.");
       if (!(await ctx.content.get(result.venueCollection, target)))
-        throw new Error("Mapped venue does not exist: " + target);
+        reject("Mapped venue does not exist: " + target);
       mapping.set(id, target);
       if (!dryRun)
         await ctx.kv.set(ledgerKey(result.venueCollection, id), {
@@ -276,22 +270,14 @@ export async function migrateToNative(
         resume.collection !== result.venueCollection ||
         (resume.cursor !== undefined && typeof resume.cursor !== "string")
       )
-        throw new Error("Invalid migration cursor.");
+        reject("Invalid migration cursor.");
       phase = resume.phase as typeof phase;
       cursor = resume.cursor;
     }
     let remaining = options.limit ?? 25;
     if (!Number.isInteger(remaining) || remaining < 1 || remaining > 100)
-      throw new Error("limit must be between 1 and 100.");
-    const host = dryRun
-      ? (() => {
-          try {
-            return new URL(ctx.site.url).host;
-          } catch {
-            return "eventual.invalid";
-          }
-        })()
-      : await calendarHost(ctx);
+      reject("limit must be between 1 and 100.");
+    const host = dryRun ? calendarSiteHost(ctx) : await calendarHost(ctx);
     const existingHost = await ctx.kv.get<string>(
       "state:eventual-calendar-host",
     );
@@ -301,7 +287,7 @@ export async function migrateToNative(
         until: Date.now() + 300000,
       });
       if (!result.applied)
-        throw new Error("Migration lease expired or changed; retry the batch.");
+        reject("Migration lease expired or changed; retry the batch.");
       lease = await ctx.kv.getVersioned(lockKey);
     };
     const migrate = async (
@@ -327,9 +313,7 @@ export async function migrateToNative(
       if (ledger?.id) {
         const row = await ctx.content!.get(collection, ledger.id);
         if (!row)
-          throw new Error(
-            "Native item removed; restore it explicitly.",
-          );
+          reject("Native item removed; restore it explicitly.");
         existing = row;
       }
       if (existing) {
@@ -338,11 +322,9 @@ export async function migrateToNative(
           existing.locale &&
           existing.locale !== locale
         )
-          throw new Error(
-            "Migration identity belongs to locale " +
+          reject("Migration identity belongs to locale " +
               existing.locale +
-              "; use its original locale.",
-          );
+              "; use its original locale.");
         const metadata =
           typeof existing.data.legacy_metadata === "string"
             ? JSON.parse(existing.data.legacy_metadata)
@@ -367,7 +349,7 @@ export async function migrateToNative(
             collection,
             existing.id,
           );
-          if (!current) throw new Error("Created item disappeared.");
+          if (!current) reject("Created item disappeared.");
           await ctx.content!.publish!(collection, existing.id, {
             _rev: current._rev,
           });
@@ -413,7 +395,7 @@ export async function migrateToNative(
           collection,
           created.id,
         );
-        if (!current) throw new Error("Created item disappeared.");
+        if (!current) reject("Created item disappeared.");
         await ctx.content!.publish!(collection, created.id, {
           _rev: current._rev,
         });
@@ -433,7 +415,7 @@ export async function migrateToNative(
         cursor,
       });
       if (page.hasMore && (!page.cursor || page.cursor === cursor))
-        throw new Error("Incomplete legacy storage cursor.");
+        reject("Incomplete legacy storage cursor.");
       for (const item of page.items) {
         remaining--;
         const legacyId = item.id;
@@ -452,7 +434,7 @@ export async function migrateToNative(
             });
             continue;
           }
-          if (!titleOrName) throw new Error("Missing title or venue name.");
+          if (!titleOrName) reject("Missing title or venue name.");
           let payload: Record<string, unknown>;
           let published = false;
           let schema: CollectionSchemaInfo;
@@ -466,7 +448,7 @@ export async function migrateToNative(
             collection = eventsSchema.slug;
             schema = eventsSchema;
             const event = row as unknown as EventRecord;
-            if(Object.keys(event.translations ?? {}).length) throw new Error('Manual translations need explicit native locale rows. Migration skipped; source retained.');
+            if(Object.keys(event.translations ?? {}).length) reject('Manual translations need explicit native locale rows. Migration skipped; source retained.');
             let nativeVenue = event.venueId
               ? (mapping.get(event.venueId) ??
                 (
@@ -489,28 +471,23 @@ export async function migrateToNative(
                 nativeVenue = "planned:" + event.venueId;
             }
             if (event.venueId && !nativeVenue)
-              throw new Error("Unmapped venue " + event.venueId);
-            if (
-              nativeVenue &&
-              !nativeVenue.startsWith("planned:") &&
-              !(await ctx.content.get(result.venueCollection, nativeVenue))
-            )
-              throw new Error("Mapped venue was removed.");
+              reject("Unmapped venue " + event.venueId);
+            const mappedVenue = nativeVenue && !nativeVenue.startsWith('planned:')
+              ? await ctx.content.get(result.venueCollection, nativeVenue) : undefined;
+            if (nativeVenue && !nativeVenue.startsWith('planned:') && !mappedVenue)
+              reject("Mapped venue was removed.");
             if (
               event.published &&
               nativeVenue &&
               !nativeVenue.startsWith("planned:") &&
-              (await ctx.content.get(result.venueCollection, nativeVenue))
-                ?.status !== "published"
+              mappedVenue?.status !== "published"
             )
-              throw new Error(
-                "Publish the mapped venue before migrating a published event.",
-              );
+              reject("Publish the mapped venue before migrating a published event.");
             if (
               event.imageMediaId &&
               !(await ctx.media?.get(event.imageMediaId))
             )
-              throw new Error("Legacy media item is unavailable.");
+              reject("Legacy media item is unavailable.");
             const editorialKeys = new Set([
               "title",
               "description",
@@ -612,7 +589,7 @@ export async function migrateToNative(
                 data: payload,
               })
             )
-              throw new Error("Invalid migrated event payload.");
+              reject("Invalid migrated event payload.");
             published = event.published === true;
           }
           const saved = await migrate(

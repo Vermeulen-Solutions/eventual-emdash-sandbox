@@ -41,7 +41,7 @@ describe("event scans", () => {
 
 	it("returns an error instead of a partial public feed above the scan budget", async () => {
 		await expect(handlePublicEvents({ from: "2026-10-01", through: "2026-10-31" }, contextWithEvents(10_001)))
-			.resolves.toMatchObject({ ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: 10_000 });
+			.resolves.toMatchObject({ ok: false, error: "SANDBOX_BUDGET_EXCEEDED" });
 	});
 
 	it("selects a bounded start range while retaining earlier recurring series", async () => {

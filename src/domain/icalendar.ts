@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import { calendarLocation, calendarStatus, calendarEventUrl } from "../../astro/event-details";
 import type { EventRecord } from "./event";
 import type { CalendarCancellation } from "../storage";
@@ -28,7 +29,7 @@ export function formatCalendarFeed(
 		"END:VCALENDAR",
 	];
 	const result = `${lines.flatMap(foldLine).join("\r\n")}\r\n`;
-	if (utf8Encoder.encode(result).length > 4*1024*1024) throw new Error('Calendar output exceeds 4 MiB; narrow the subscription.');
+	if (utf8Encoder.encode(result).length > 4*1024*1024) reject('Calendar output exceeds 4 MiB; narrow the subscription.');
 	return result;
 }
 
@@ -108,7 +109,7 @@ export function eventUid(
 	const safeHost = host.trim().replace(/[^a-zA-Z0-9.-]/g, "-").toLowerCase() || "eventual.invalid";
 	if (typeof item !== 'string' && item.calendarUid) {
 		const split = item.calendarUid.lastIndexOf('@');
-		if (split < 1 || /[\r\n\u0000-\u0020]/.test(item.calendarUid)) throw new Error('Invalid stored calendar UID.');
+		if (split < 1 || /[\r\n\u0000-\u0020]/.test(item.calendarUid)) reject('Invalid stored calendar UID.');
 		const recurrencePart = id.includes('#') ? encodeURIComponent(id.slice(id.indexOf('#'))) : '';
 		return item.calendarUid.slice(0,split) + recurrencePart + item.calendarUid.slice(split);
 	}

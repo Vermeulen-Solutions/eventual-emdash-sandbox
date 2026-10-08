@@ -5,8 +5,9 @@ import {
   MAX_PUBLIC_EVENT_IMAGE_BYTES,
 } from "../domain/image";
 import { getEvent, type EventualContext } from "../storage";
-import { nativeSchema, listNative } from "../domain/native-source";
+import { nativeSchema } from "../domain/native-source";
 import { nativeEntryToEventRecord } from "../domain/event-expansion";
+import { withInvocationBudget } from '../domain/invocation-budget';
 
 const textResponse = (status: number, value: string) =>
   pluginResponse({
@@ -20,6 +21,7 @@ export async function handlePublicEventImage(
   input: unknown,
   ctx: EventualContext,
 ) {
+  ctx = withInvocationBudget(ctx);
   if (typeof input !== "object" || input === null || Array.isArray(input))
     return notFound();
   const eventId = (input as { eventId?: unknown }).eventId;
@@ -27,11 +29,12 @@ export async function handlePublicEventImage(
     return notFound();
   const [baseId, occ] = eventId.split("#");
   const schema = await nativeSchema(ctx);
-  const record = schema
-    ? (await listNative(ctx, schema.slug, true)).find(
-        (i) => [eventId, baseId].includes(i.id) || [eventId, baseId].includes(i.data.legacy_id as string),
-      )
-    : undefined;
+  let record = schema ? await ctx.content!.get(schema.slug, baseId!) : undefined;
+  if (schema && !record && schema.fields.some(field => field.slug === 'legacy_id' && field.indexed)) {
+    const page = await ctx.content!.list(schema.slug, {limit: 2, where: {status: 'published', fieldFilters: {legacy_id: baseId!}}});
+    if (page.hasMore || page.items.length > 1) return notFound();
+    record = page.items[0];
+  }
   let event = schema
     ? nativeEntryToEventRecord(record)
     : (await getEvent(ctx, eventId)) ?? (await getEvent(ctx, baseId!));

@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import type {
   PluginContentItem as ContentItem,
   CollectionSchemaInfo,
@@ -8,6 +9,7 @@ import { normalizeVenueRecord, type NormalizedVenue } from "./venue-adapter";
 import { referenceTarget, eventSchema } from "./native-references";
 import { safeHttpUrl } from "./venue";
 import { publicEventImageUrl } from "./image";
+import {requestMemo} from './request-memo';
 import {
   listEvents,
   listVenuesById,
@@ -22,7 +24,7 @@ export async function nativeSchema(
   if (!ctx.schema || !ctx.content) return undefined;
   const schema = await eventSchema(ctx);
   if (schema && !schema.fields?.some((field) => field.slug === "start"))
-    throw new Error("The events collection is not an Eventual schema.");
+    reject("The events collection is not an Eventual schema.");
   return schema;
 }
 export async function listNative(
@@ -44,7 +46,7 @@ export async function listNative(
       throw new EventScanLimitError(MAX_EVENT_SCAN);
     if (!page.hasMore) break;
     if (!page.cursor || seen.has(page.cursor))
-      throw new Error("Incomplete or repeated native content cursor.");
+      reject("Invalid content cursor.");
     seen.add(page.cursor);
     cursor = page.cursor;
   } while (true);
@@ -66,7 +68,7 @@ export async function readEventSource(ctx: EventualContext, through?: string) {
   const events: EventRecord[] = [];
   for (const entry of entries) {
     const event = nativeEntryToEventRecord(entry);
-    if (!event) throw new Error("Invalid native event " + entry.id);
+    if (!event) reject("Invalid native event " + entry.id);
     if (event.published) events.push(event);
   }
   return { native: true, events, schema };
@@ -82,28 +84,16 @@ export async function resolveEventVenues(
       events.flatMap((event) => (event.venueId ? [event.venueId] : [])),
     ),
   ];
-  if (!schema) {
-    const stored = await listVenuesById(ctx, ids);
-    for (const [id, value] of stored) {
-      const venue = normalizeVenueRecord(value);
-      if (venue) result.set(id, venue);
-    }
-  } else {
-    const collection = referenceTarget(schema, "venue");
-    if (ids.length && typeof collection !== "string")
-      throw new Error("Missing native venue reference target.");
-    for (const [key, record] of await localizedReferences(
-      ctx,
-      collection,
-      events,
-      (event) => event.venueId,
-    )) {
-      const venue = normalizeVenueRecord(record);
-      if (venue) result.set(key, venue);
-    }
+  const entries = schema
+    ? await localizedReferences(ctx, referenceTarget(schema, 'venue'), events, event => event.venueId)
+    : await listVenuesById(ctx, ids);
+  for (const [key, record] of entries) {
+    const venue = normalizeVenueRecord(record);
+    if (venue) result.set(key, venue);
   }
   return result;
 }
+
 async function localizedReferences(
   ctx: EventualContext,
   target: string,
@@ -119,29 +109,34 @@ async function localizedReferences(
     requested.set(id, locales);
   }
   const result = new Map<string, ContentItem>();
-  const ids = [...requested.keys()];
-  for (let i = 0; i < ids.length; i += 20)
-    await Promise.all(
-      ids.slice(i, i + 20).map(async (id) => {
-        const base = await ctx.content!.get(target, id);
-        if (base?.status !== "published") return;
-        result.set(id, base);
-        const locales = [...requested.get(id)!].filter(
-          (locale) => locale && locale !== base.locale?.toLowerCase(),
-        );
-        if (!locales.length || !ctx.content?.getTranslations) return;
-        const siblings = await ctx.content.getTranslations(target, id);
-        for (const locale of locales) {
-          const sibling = siblings.translations.find(
-            (row) => row.locale?.toLowerCase() === locale,
-          );
-          if (!sibling) continue;
-          const translated = await ctx.content.get(target, sibling.id);
-          if (translated?.status === "published")
-            result.set(id + "|" + locale, translated);
-        }
-      }),
-    );
+  if (!requested.size || !ctx.content) return result;
+
+  const items = await requestMemo(ctx, 'directory:'+target, () => listNative(ctx, target, true));
+  const byId = new Map<string, ContentItem>();
+  const byGroupLocale = new Map<string, ContentItem>();
+
+  for (const item of items) {
+    if (item.status !== 'published') continue;
+    byId.set(item.id, item);
+    const groupKey = item.translationGroup || item.id;
+    const loc = (item.locale ?? "").toLowerCase();
+    byGroupLocale.set(`${groupKey}|${loc}`, item);
+  }
+
+  for (const [id, locales] of requested) {
+    const base = byId.get(id);
+    if (!base) continue;
+    result.set(id, base);
+    for (const locale of locales) {
+      if (!locale || locale === (base.locale ?? "").toLowerCase()) continue;
+      const groupKey = base.translationGroup || base.id;
+      const translated = byGroupLocale.get(`${groupKey}|${locale}`);
+      if (translated) {
+        result.set(`${id}|${locale}`, translated);
+      }
+    }
+  }
+
   return result;
 }
 export function selectEventLocales(
@@ -189,7 +184,7 @@ export function selectEventLocales(
         title: prefix + fallback.title,
         exceptions: (fallback.exceptions ?? []).map((item) =>
           item.overrides?.title !== undefined
-            ? {
+        ? {
                 ...item,
                 overrides: {
                   ...item.overrides,
@@ -207,15 +202,15 @@ export function selectEventLocales(
 export async function hydrateNativeAssets(
   ctx: EventualContext,
   events: EventRecord[],
+  publicUrls = true,
 ): Promise<EventRecord[]> {
-  const urls = new Map<string, string>();
   const organizers = new Map<
     string,
     NonNullable<EventRecord["organizerDetails"]>
   >();
-  const organizerIds = [...new Set(events.flatMap((e) => e.organizerId ? [e.organizerId] : []))];
-  if (organizerIds.length) {
-    const target = referenceTarget(await eventSchema(ctx), "organizer_ref");
+  const schema = await eventSchema(ctx);
+  if (events.some(e => e.organizerId)) {
+    const target = referenceTarget(schema, "organizer_ref");
     for (const [key, entry] of await localizedReferences(ctx, target, events, (e) => e.organizerId)) {
       organizers.set(key, {
         id: entry.id,
@@ -225,26 +220,25 @@ export async function hydrateNativeAssets(
       });
     }
   }
-  const ids = [...new Set(events.map((e) => e.id.split("#")[0]!))];
-  const collection = (await eventSchema(ctx))?.slug ?? "events";
-  if (ctx.content?.getPublicUrl) {
-    for (let i = 0; i < ids.length; i += 20)
-      await Promise.all(ids.slice(i, i + 20).map(async (id) => {
-        const u = await ctx.content!.getPublicUrl!(collection, id);
-        if (u) urls.set(id, u);
-      }));
-  }
+
   const pId = ctx.plugin?.id ?? "eventual";
-  return events.map((e) => {
+  const hydrated: EventRecord[] = [];
+  for (const e of events) {
     const org = organizers.get((e.organizerId ?? "") + "|" + (e.locale ?? "").toLowerCase()) ?? organizers.get(e.organizerId ?? "");
-    return {
+    let publicUrl = e.publicUrl;
+    if (publicUrls && schema && e.published && e.slug && ctx.content?.getPublicUrl) {
+      const id = e.id.split('#')[0]!;
+      publicUrl = await requestMemo(ctx, 'url:'+schema.slug+':'+id, () => ctx.content!.getPublicUrl!(schema.slug, id)) ?? e.publicUrl;
+    }
+    hydrated.push({
       ...e,
       organizer: e.organizer || org?.name || e.organizerDetails?.name || "",
       organizerDetails: org ?? e.organizerDetails,
-      publicUrl: urls.get(e.id.split("#")[0]!) ?? e.publicUrl,
+      publicUrl,
       imageUrl: (e.featuredMediaId || e.imageMediaId)
         ? publicEventImageUrl(pId, e.id)
         : (e.imageUrl || ""),
-    };
-  });
+    });
+  }
+  return hydrated;
 }

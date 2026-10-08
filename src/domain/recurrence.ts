@@ -1,3 +1,4 @@
+import { reject } from './messages';
 import { normalizeEventStatus } from "./event-data";
 import {
   calendarDateKey,
@@ -328,7 +329,7 @@ export function expandEventsInDateRange(
       expanded.push(...expandRecurringEvent(event, from, through));
     else if (overlaps(event, from, through)) expanded.push(event);
     if (expanded.length > 10000)
-      throw new Error("Occurrence limit exceeded; narrow the date range.");
+      reject("Occurrence limit exceeded; narrow the date range.");
   }
   return expanded.sort((left, right) => left.start.localeCompare(right.start));
 }

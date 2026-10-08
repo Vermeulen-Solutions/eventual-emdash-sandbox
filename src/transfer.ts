@@ -1,3 +1,4 @@
+import { reject } from './domain/messages';
 import type { StorageCollection } from "emdash";
 import type { EventRecord, VenueRecord, OrganizerRecord } from "./domain/event";
 import { eventToDraft, prepareEventData } from "./domain/event-data";
@@ -16,6 +17,7 @@ import {
 } from "./domain/migration";
 import { nativeSchema } from "./domain/native-source";
 import { referenceTarget } from "./domain/native-references";
+import { withInvocationBudget, remainingRpcCalls } from './domain/invocation-budget';
 
 type Collection = "events" | "venues" | "organizers";
 type RecordData = EventRecord | VenueRecord | OrganizerRecord;
@@ -63,7 +65,7 @@ function checkSchedule(
 }
 
 async function prepare(
-  ctx: EventualContext,
+  references: Set<string>,
   input: TransferInput,
   data: RecordData,
   id: string,
@@ -71,11 +73,11 @@ async function prepare(
   warnings: string[],
 ): Promise<RecordData> {
   if (![data.createdAt, data.updatedAt].every(validTimestamp))
-    throw new Error("Invalid record timestamp.");
+    reject("Invalid record timestamp.");
   const now = new Date().toISOString();
   if (input.collection !== "events") {
     const named = data as VenueRecord | OrganizerRecord;
-    if (!named.name.trim()) throw new Error("Name is required.");
+    if (!named.name.trim()) reject("Name is required.");
     if (
       input.collection === "organizers" &&
       [
@@ -83,7 +85,7 @@ async function prepare(
         (data as OrganizerRecord).contactUrl,
       ].some((url) => url && !safeHttpUrl(url))
     )
-      throw new Error("Public URLs must use HTTP(S).");
+      reject("Public URLs must use HTTP(S).");
     return { ...data, name: named.name.trim(), id, updatedAt: now };
   }
   const event = data as EventRecord;
@@ -91,12 +93,12 @@ async function prepare(
     !checkSchedule(event) ||
     (event.recurrence && !validRecurrence(event.recurrence))
   )
-    throw new Error("Invalid schedule or recurrence.");
+    reject("Invalid schedule or recurrence.");
   const fields = prepareEventData(
     eventToDraft({ ...event, published: false, status: "draft" }),
     { start: event.start, end: event.end },
   );
-  if (!fields.data) throw new Error(fields.error);
+  if (!fields.data) reject(fields.error);
   const imported: EventRecord = {
     ...event,
     ...fields.data,
@@ -113,44 +115,42 @@ async function prepare(
       input.mode === "restore"
         ? reference
         : await transferId(input.source, collection, reference);
-    if (!(await ctx.storage[collection]!.get(mapped))) {
+    if (!references.has(collection + ':' + mapped)) {
       const message = `Missing ${collection} reference: ${reference}. Import referenced records first.`;
-      if (write) throw new Error(message);
+      if (write) reject(message);
       warnings.push(message);
     }
     imported[key] = mapped;
   }
   // Media bytes are outside the export. An ID is useful only on its original site.
   if (event.imageMediaId)
-    throw new Error(
-      "Remove imageMediaId or replace it with an external image URL; media is not restored by this tool.",
-    );
+    reject("Remove imageMediaId or replace it with an external image URL; media is not restored by this tool.");
   for (const exception of imported.exceptions) {
     const original = scheduledOccurrence(imported, exception.recurrenceId);
-    if (!original) throw new Error("Invalid exception recurrenceId.");
+    if (!original) reject("Invalid exception recurrenceId.");
     if (exception.status === "modified") {
       const patch = exception.overrides;
       if (!patch || !Object.keys(patch).length)
-        throw new Error("Modified exceptions require overrides.");
+        reject("Modified exceptions require overrides.");
       if (patch.imageMediaId)
-        throw new Error("Exception media IDs require a host media restore.");
+        reject("Exception media IDs require a host media restore.");
       if (
         ["virtualUrl", "externalUrl", "imageUrl"].some((key) => {
           const url = patch[key as "virtualUrl" | "externalUrl" | "imageUrl"];
           return url && !safeHttpUrl(url);
         })
       )
-        throw new Error("Exception URLs must use HTTP(S).");
+        reject("Exception URLs must use HTTP(S).");
       if (
         (patch.start === undefined) !== (patch.end === undefined) ||
         (patch.allDay !== undefined &&
           patch.allDay !== original.allDay &&
           patch.start === undefined)
       )
-        throw new Error("Replacement schedule requires start and end.");
+        reject("Replacement schedule requires start and end.");
       const effective = { ...original, ...patch };
       if (!checkSchedule(effective))
-        throw new Error("Invalid exception schedule.");
+        reject("Invalid exception schedule.");
       patch.status = "draft";
     }
   }
@@ -159,20 +159,20 @@ async function prepare(
       .size !== imported.exceptions.length ||
     !exceptionIdsMatchRecurrence(imported)
   )
-    throw new Error("Duplicate or invalid exception IDs.");
+    reject("Duplicate or invalid exception IDs.");
   if (
     event.scheduleHistory?.some(
       (schedule) =>
         !checkSchedule(schedule) || !validTimestamp(schedule.changedAt),
     )
   )
-    throw new Error("Invalid schedule history.");
+    reject("Invalid schedule history.");
   if (
     event.previousStartDate &&
     !isDateOnly(event.previousStartDate) &&
     !validTimestamp(event.previousStartDate)
   )
-    throw new Error("Invalid previous start.");
+    reject("Invalid previous start.");
   if (event.scheduleHistory) imported.scheduleHistory = event.scheduleHistory;
   if (event.previousStartDate)
     imported.previousStartDate = event.previousStartDate;
@@ -184,6 +184,7 @@ export async function importRecords(
   input: TransferInput,
   write: boolean,
 ) {
+  ctx = withInvocationBudget(ctx);
   if (await nativeSchema(ctx)) {
     return {
       ok: false,
@@ -201,37 +202,40 @@ export async function importRecords(
     return { ok: false, error: "VALIDATION_ERROR", maxBytes: 65536 };
   const rows = [];
   const seen = new Set<string>();
+  const ids = await Promise.all(input.records.map(row => input.mode === 'restore' ? row.sourceId : transferId(input.source, input.collection, row.sourceId)));
+  const collection = ctx.storage[input.collection] as StorageCollection<RecordData>;
+  const existing = await collection.getMany([...new Set(ids)]);
+  const references = new Set<string>();
+  if (input.collection === 'events') {
+    for (const [field, target] of [['venueId', 'venues'], ['organizerId', 'organizers']] as const) {
+      const sourceIds = [...new Set(input.records.flatMap(row => validateSavedRecord('events', row.data) && (row.data as EventRecord)[field] ? [(row.data as EventRecord)[field]!] : []))];
+      const mapped = await Promise.all(sourceIds.map(id => input.mode === 'restore' ? id : transferId(input.source, target, id)));
+      if (mapped.length) for (const id of (await ctx.storage[target]!.getMany(mapped)).keys()) references.add(target + ':' + id);
+    }
+  }
   for (const [index, row] of input.records.entries()) {
-    const id =
-      input.mode === "restore"
-        ? row.sourceId
-        : await transferId(input.source, input.collection, row.sourceId);
+    const id = ids[index]!;
     try {
       if (!validateSavedRecord(input.collection, row.data))
-        throw new Error("Record does not match its collection schema.");
+        reject("Record does not match its collection schema.");
       if (row.sourceId !== row.data.id)
-        throw new Error("sourceId must match the record ID.");
-      if (seen.has(id)) throw new Error("Duplicate source ID in this batch.");
+        reject("sourceId must match the record ID.");
+      if (seen.has(id)) reject("Duplicate source ID in this batch.");
       seen.add(id);
       const warnings: string[] = [];
       const data = await prepare(
-        ctx,
+        references,
         input,
         structuredClone(row.data),
         id,
         write,
         warnings,
       );
-      const collection = ctx.storage[
-        input.collection
-      ] as StorageCollection<RecordData>;
-      const status = write
-        ? (await collection.compareAndSet(id, null, data)).applied
+      const status = existing.has(id) ? 'skipped' : write
+        ? remainingRpcCalls(ctx) === 0 ? 'pending' : (await collection.compareAndSet(id, null, data)).applied
           ? "imported"
           : "skipped"
-        : (await collection.exists(id))
-          ? "skipped"
-          : "ready";
+        : 'ready';
       rows.push({
         row: index + 1,
         sourceId: row.sourceId,
@@ -250,8 +254,9 @@ export async function importRecords(
     }
   }
   return {
-    ok: rows.every((row) => row.status !== "error"),
+    ok: rows.every((row) => row.status !== "error" && row.status !== 'pending'),
     preview: !write,
+    ...(rows.some(row => row.status === 'pending') ? {error:'SANDBOX_BUDGET_EXCEEDED', details:'Retry pending rows; existing IDs are skipped.'} : {}),
     rows,
   };
 }

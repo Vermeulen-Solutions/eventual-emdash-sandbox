@@ -10,6 +10,7 @@ import {referenceField,referenceId,eventSchema,referenceTarget} from '../domain/
 import {listNative} from '../domain/native-source';
 import {directoryChoices} from './directory';
 import {portableTextToPlainText} from '../domain/portable-text';
+import {collectionSchemas} from '../domain/collections';
 
 const input=(id:string,label:string,value:unknown='',multiline=false):FormField=>({type:'text_input',action_id:id,label,initial_value:String(value ?? ''),multiline});
 const select=(id:string,label:string,options:{value:string;label:string}[],value:unknown):FormField=>({type:'select',action_id:id,label,options,initial_value:String(value ?? '')});
@@ -43,7 +44,7 @@ export async function renderCompactSchedule(fields:Record<string,unknown>,ctx:Ev
     const column=referenceField(schema,field);
     if(!schema?.fields.some(item=>item.slug===column)) continue;
     const target=referenceTarget(schema,field),id=referenceId(fields[column]);
-    const schemas=await ctx.schema?.listCollections() ?? [];
+    const schemas=await collectionSchemas(ctx);
     const rows=schemas.some(item=>item.slug===target)?await listNative(ctx,target):[];
     const choices=directoryChoices(rows,state.locale,id,undefined,field==='venue',998).choices;
     directory.push({type:'combobox',action_id:field,label,options:[{value:'',label:field==='venue'?'No saved venue':'No saved organizer'},...choices],initial_value:id ?? ''});

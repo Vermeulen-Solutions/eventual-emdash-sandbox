@@ -1,3 +1,4 @@
+import { reject } from './messages';
 /** Normalize category labels while retaining the first label's display casing. */
 export function normalizeCategories(values: string | string[]): string[] {
 	const labels = typeof values === "string" ? values.split(/[,\r\n]+/) : values;
@@ -26,6 +27,6 @@ export function readCategories(value: unknown): string[] {
     value = JSON.parse(value);
   if (typeof value === "string") return normalizeCategories(value);
   if (!Array.isArray(value) || value.some(item => typeof item !== "string"))
-    throw new Error("Categories must be comma-separated text or an array of names.");
+    reject("Categories must be comma-separated text or an array of names.");
   return normalizeCategories(value);
 }

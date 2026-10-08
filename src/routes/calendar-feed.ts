@@ -1,3 +1,4 @@
+import { reject } from '../domain/messages';
 import { expandEventsInDateRange } from "../domain/recurrence";
 import { formatCalendarFeed } from "../domain/icalendar";
 import { eventRecordToPublicEvent } from "../domain/event-expansion";
@@ -14,6 +15,7 @@ import {
 } from "../domain/native-calendar";
 import { categoryKey } from "../domain/category";
 import { listCalendarCancellations, type EventualContext } from "../storage";
+import { withInvocationBudget } from '../domain/invocation-budget';
 export interface CalendarFeedOptions {
   locale?: string;
   strict?: boolean;
@@ -29,6 +31,7 @@ export async function handleCalendarFeed(
   host: string,
   options?: CalendarFeedOptions,
 ): Promise<string> {
+  ctx = withInvocationBudget(ctx);
   const from = new Date().toISOString().slice(0, 10);
   const end = new Date(from + "T00:00:00Z");
   end.setUTCDate(end.getUTCDate() + 365);
@@ -47,7 +50,7 @@ export async function handleCalendarFeed(
   );
   const expanded = expandEventsInDateRange(selected, from, through);
   if (expanded.length > 10000)
-    throw new Error("Too many calendar occurrences.");
+    reject("Too many calendar occurrences.");
   const category = options?.category ? categoryKey(options.category) : "";
   const occurrences = category
     ? expanded.filter((event) =>
@@ -57,9 +60,8 @@ export async function handleCalendarFeed(
   const venues =
     ("venues" in state && state.venues) ||
     (await resolveEventVenues(ctx, occurrences, source.schema));
-  const hydrated = source.native
-    ? await hydrateNativeAssets(ctx, occurrences)
-    : occurrences;
+  // Resolve canonical URLs only for selected base events; directory reads are memoized.
+  const hydrated = source.native ? await hydrateNativeAssets(ctx, occurrences) : occurrences;
   const events = hydrated.map((event) => ({
     ...event,
     location: eventRecordToPublicEvent(event, venues).location,
@@ -83,7 +85,7 @@ export async function handleCalendarFeed(
   return formatCalendarFeed(
     events,
     cancellations,
-    await calendarHost(ctx, host),
+    ('host' in state && state.host) || await calendarHost(ctx, host),
     undefined,
     options?.calendarName,
   );
