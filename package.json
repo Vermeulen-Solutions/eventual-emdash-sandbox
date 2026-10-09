@@ -1,6 +1,6 @@
 {
   "name": "eventual",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "license": "MIT",
   "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
   "type": "module",
@@ -58,7 +58,8 @@
     "docs/upgrade-0.13.0.md",
     "docs/release-notes-0.13.0.md",
     "docs/release-notes-0.13.1.md",
-    "docs/release-notes-0.13.2.md"
+    "docs/release-notes-0.13.2.md",
+    "docs/release-notes-0.13.3.md"
   ],
   "scripts": {
     "validate": "emdash-plugin validate",

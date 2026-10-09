@@ -56,7 +56,7 @@ export async function fetchPublicFeed(
 	from: string,
 	through: string,
 	category = "",
-	options: {locale?:string;strict?:boolean} = {},
+	options: {locale?:string;strict?:boolean;publicUrls?:boolean} = {},
 ): Promise<PublicFeed> {
 	let url: URL;
 	try {
@@ -72,6 +72,7 @@ export async function fetchPublicFeed(
 	if (category) url.searchParams.set("category", category);
 	if (options.locale) url.searchParams.set('locale',options.locale);
 	if (options.strict !== undefined) url.searchParams.set('strict',String(options.strict));
+	if (options.publicUrls !== undefined) url.searchParams.set('publicUrls',String(options.publicUrls));
 
 	let response: Response;
 	try {

@@ -2,6 +2,12 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.13.3 - 2026-10-09
+
+- Add `publicUrls=false` to the public JSON feed and optional Astro helper to skip canonical URL RPCs when the consumer supplies event links. The default remains `true`; locale selection, recurrence, relationships and media are preserved.
+- Throw sandbox budget failures from the JSON route so EmDash returns a failed, uncacheable request instead of wrapping a raw error response in successful JSON.
+- Add focused RPC-count, input-validation and EmDash runtime response-contract regressions. Large-source pagination remains deferred. See [release notes](docs/release-notes-0.13.3.md).
+
 ## 0.13.2 - 2026-10-08
 
 - Request-scoped settings/schema/directory/URL memoization and sandbox RPC accounting for public reads, native MCP reads, panels, policies and imports.

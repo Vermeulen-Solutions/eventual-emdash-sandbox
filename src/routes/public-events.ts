@@ -24,10 +24,11 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
   catch (error) { if (error instanceof SandboxBudgetError) return {ok:false,error:'SANDBOX_BUDGET_EXCEEDED',details:error.message,events:undefined}; throw error; }
 }
 async function readPublicEvents(input: unknown, ctx: EventualContext) {
-	if (!isRecord(input) || ["from", "through", "category", "locale"].some((key) => input[key] !== undefined && typeof input[key] !== "string") || input.strict !== undefined && typeof input.strict !== 'boolean' && input.strict !== 'true' && input.strict !== 'false') {
-		return { ok: false, error: "INVALID_QUERY" };
+	const invalidQuery = { ok: false as const, error: "INVALID_QUERY" };
+	if (!isRecord(input) || ["from", "through", "category", "locale"].some((key) => input[key] !== undefined && typeof input[key] !== "string") || [input.strict, input.publicUrls].some((value) => !([undefined, true, false, 'true', 'false'] as unknown[]).includes(value))) {
+		return invalidQuery;
 	}
-	try { if (input.locale) Intl.getCanonicalLocales(input.locale as string); } catch { return {ok:false,error:'INVALID_QUERY'}; }
+	try { if (input.locale) Intl.getCanonicalLocales(input.locale as string); } catch { return invalidQuery; }
 	const today = new Date().toISOString().slice(0, 10);
 	const from = (input.from as string | undefined) ?? today;
 	const through = (input.through as string | undefined) ?? addDays(from, 180);
@@ -43,7 +44,7 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	let source;
 	try {
 		source = await readEventSource(ctx,through);
-		storedEvents = selectEventLocales(source.events,input.locale as string|undefined,input.strict === true || input.strict === 'true');
+		storedEvents = selectEventLocales(source.events,input.locale as string|undefined,([true, 'true'] as unknown[]).includes(input.strict));
 	} catch (error) {
 		if (error instanceof EventScanLimitError) return { ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: error.limit };
 		throw error;
@@ -56,7 +57,7 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	if (visible.length>10000) return {ok:false,error:'OCCURRENCE_LIMIT_EXCEEDED'};
 	if (source!.native) {
 		const venues=await resolveEventVenues(ctx,visible,source!.schema);
-		const hydrated=await hydrateNativeAssets(ctx,visible);
+		const hydrated=await hydrateNativeAssets(ctx,visible,([undefined, true, 'true'] as unknown[]).includes(input.publicUrls));
 		return {ok:true,from,through,events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url,ctx.plugin.id))};
 	}
 	const [venues, organizers] = await Promise.all([

@@ -20,7 +20,7 @@ Whether you run community meetups, webinars, conferences, workshops, or recurrin
 
 With **v0.13.0**, Eventual uses **native EmDash content types** for events, venues and organizers, with locale rows, drafts, revisions, scheduled publishing and Portable Text descriptions. Its sandbox supplies schedule controls and feeds; no Eventual frontend companion or second runtime package is required.
 
-**0.13.2** reduces sandbox RPCs with request memoization, atomic calendar state, direct image reads and batched imports. Guarded operations fail explicitly when they cannot finish within ten calls. Large sources, individual canonical URL resolution, and the migration job redesign remain constrained; local tests do not certify Cloudflare CPU limits. See the [release notes](./docs/release-notes-0.13.2.md).
+**0.13.3** adds `publicUrls=false` for sites that supply event links and corrects JSON route error handling. It retains 0.13.2's RPC memoization and containment. Large sources and the migration job redesign remain constrained; local tests do not certify Cloudflare CPU limits. See the [release notes](./docs/release-notes-0.13.3.md).
 
 > **Breaking upgrade from 0.12.x and earlier:** Requires EmDash **1.2.x**. Back up and follow the [upgrade guide](./docs/upgrade-0.13.0.md). Updating Eventual does not create/convert schemas or migrate private data.
 
@@ -100,7 +100,7 @@ Venue choices combine translation siblings into one selection, show the name and
 ## Installation & Setup
 
 ### 1. Install via EmDash Plugin Registry
-Install Eventual **0.13.2** through EmDash's registry administration. The publisher CLI does not have an install command. Review changed capability consent and the [breaking upgrade guide](./docs/upgrade-0.13.0.md) first when upgrading from 0.12.x or earlier.
+Install Eventual **0.13.3** through EmDash's registry administration. The publisher CLI does not have an install command. Review changed capability consent and the [breaking upgrade guide](./docs/upgrade-0.13.0.md) first when upgrading from 0.12.x or earlier.
 
 The registry installs the self-contained sandbox backend. No mandatory host tarball, Eventual frontend companion or renderer patch is needed. Existing schemas are not created or upgraded by installation. Public-page screenshots show the optional Astro showcase; the native editor screenshot is from current acceptance.
 
@@ -216,6 +216,9 @@ GET /_emdash/api/plugins/eventual/publicEvents?from=YYYY-MM-DD&through=YYYY-MM-D
 - `locale` *(string, optional)*: Target locale code (e.g. `fr`, `en-US`).
 - `strict` *(boolean, optional)*: When `true`, omits events lacking a translation in the requested locale. When `false`, falls back to available sibling with prefix tag (e.g. `[EN]`). Defaults to `false`.
 - `category` *(string, optional)*: Case-insensitive category filter.
+- `publicUrls` *(boolean, optional)*: Defaults to `true`. Set `false` when your site builds event links from `slug` or `id`: native feeds skip canonical URL lookups while preserving event content, relationships, locale selection and image links. The Astro helper accepts `{ publicUrls: false }` in its options argument. This avoids one sandbox RPC per distinct base event; complete source and directory pagination still consume the invocation budget.
+
+Budget exhaustion fails the JSON route through EmDash's error contract rather than returning a raw response envelope as successful data. On EmDash 1.2.0, the HTTP endpoint returns `success: false`, `ROUTE_ERROR`, HTTP 400 and `Cache-Control: private, no-store`; the SSR dispatcher returns a failure result. No partial event feed is returned.
 
 **Response Structure:**
 ```json

@@ -1,3 +1,9 @@
+## 0.13.3
+
+- Add publicUrls=false to publicEvents and the Astro helper to skip canonical URL RPCs when a site supplies links. Default: true.
+- Budget failures use EmDash's JSON error contract, correcting successful raw error envelopes.
+- Preserve content, locales, relationships and media; large-source pagination remains deferred. See [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.13.3.md).
+
 ## 0.13.2
 
 - Memoize settings, schema, directories and canonical URLs per invocation.

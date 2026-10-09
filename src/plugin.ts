@@ -41,7 +41,9 @@ const plugin: SandboxedPlugin = {
 			cacheControl: "public, max-age=60",
 			handler: async (routeCtx, ctx) => {
                 const result = await handlePublicEvents(routeCtx.input, ctx);
-                return result.error === 'SANDBOX_BUDGET_EXCEEDED' ? unavailable(new SandboxBudgetError()) : result;
+                // JSON routes must throw transport failures, not return raw envelopes.
+                if (result.error === 'SANDBOX_BUDGET_EXCEEDED') throw new SandboxBudgetError();
+                return result;
             },
 		}),
 		publicEventImage: pluginRoute({
