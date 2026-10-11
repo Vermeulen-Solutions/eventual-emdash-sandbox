@@ -1,6 +1,6 @@
 {
   "name": "eventual",
-  "version": "0.13.3",
+  "version": "0.13.4",
   "license": "MIT",
   "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
   "type": "module",
@@ -59,7 +59,8 @@
     "docs/release-notes-0.13.0.md",
     "docs/release-notes-0.13.1.md",
     "docs/release-notes-0.13.2.md",
-    "docs/release-notes-0.13.3.md"
+    "docs/release-notes-0.13.3.md",
+    "docs/release-notes-0.13.4.md"
   ],
   "scripts": {
     "validate": "emdash-plugin validate",
@@ -73,6 +74,7 @@
     "publish": "emdash-plugin publish",
     "release:setup": "emdash-plugin release setup",
     "budget": "node scripts/bundle-budget.mjs",
+    "registry:media": "node scripts/check-registry-media.mjs",
     "test:tooling": "node --test scripts/*.test.mjs",
     "test:package": "node scripts/verify-packed-astro.mjs",
     "test:editor": "node scripts/verify-editor-host.mjs",
@@ -80,26 +82,28 @@
     "release:prepare": "node scripts/prepare-release.mjs"
   },
   "peerDependencies": {
-    "astro": "~7.3.2",
-    "vite": "~8.3.0",
     "@emdash-cms/admin": ">=1.2.0 <2.0.0",
+    "astro": "~7.3.2",
     "emdash": ">=1.2.0 <2.0.0",
     "kysely": "^0.29.0",
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "vite": "~8.3.0"
   },
   "devDependencies": {
+    "@emdash-cms/admin": "1.2.0",
     "@emdash-cms/plugin-cli": "0.13.3",
     "@emdash-cms/plugin-test": "0.2.8",
     "@playwright/test": "1.58.2",
     "emdash": "1.2.0",
     "ical.js": "^2.2.1",
+    "jsonc-parser": "3.3.1",
+    "sharp": "0.35.5",
     "typescript": "^5.9.0",
-    "vitest": "^4.1.0",
-    "@emdash-cms/admin": "1.2.0"
+    "vitest": "^4.1.0"
   },
   "dependencies": {
-    "@lingui/core": "5.9.5",
     "@emdash-cms/blocks": "1.2.0",
+    "@lingui/core": "5.9.5",
     "zod": "4.5.4"
   },
   "allowScripts": {

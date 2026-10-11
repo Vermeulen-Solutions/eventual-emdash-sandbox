@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import {createServer} from "node:http";
 import {once} from "node:events";
-import {readFileSync,mkdirSync,writeFileSync} from "node:fs";
+import {copyFileSync,readFileSync,mkdirSync,writeFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {chromium} from "@playwright/test";
 const events=[
@@ -52,7 +52,10 @@ try {
     await page.locator(".calendar-menu > summary").click();
     assert(await page.getByRole("link",{name:"Google Agenda",exact:true}).isVisible());
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${size} detail overflow`);
+    // The assertions above prove the open menu; registry screenshots show the closed page.
+    await page.locator(".calendar-menu").evaluate(menu=>{menu.open=false;});
     const path=resolve(output,`${size}-detail.png`);await page.screenshot({path,fullPage:true});reports.push({size,view:"detail",path,status:detail.status()});
+    if(size === "desktop") {mkdirSync("images/registry-0.13.4",{recursive:true});copyFileSync(path,resolve("images/registry-0.13.4/public-event-detail-fr-desktop.png"));}
     state="empty";
     const empty=await page.goto(`${origin}/events?month=2026-10&view=list`);assert.equal(empty.status(),200);
     await page.screenshot({path:resolve(output,`${size}-empty.png`),fullPage:true});

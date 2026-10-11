@@ -28,6 +28,7 @@ jobs:
       - run: npm run profile
       - run: npm run bundle
       - run: npm run budget
+      - run: npm run registry:media
       - run: npm run test:package
       - run: npx playwright install --with-deps chromium
       - run: npm run test:editor

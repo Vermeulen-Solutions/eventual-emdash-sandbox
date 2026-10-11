@@ -1,8 +1,8 @@
-# Eventual 0.13.3
+# Eventual 0.13.4
 
 Requires EmDash >=1.2.0 <2.0.0. Update in EmDash plugin administration. Existing 0.13.x installations need no new capabilities or schemas.
 
-Sites supplying event links can request publicEvents with publicUrls=false to skip canonical URL RPCs. Default: true. Budget failures use EmDash's failed JSON response contract. Large feeds and legacy migrations remain constrained; local tests do not certify Cloudflare CPU limits. Read the [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.13.3.md).
+0.13.4 replaces a registry gallery screenshot whose derived image exceeded EmDash's 1 MiB artifact proxy cap. Runtime is unchanged from 0.13.3: publicUrls=false works for supplied links (default: true); budget failures use the failed JSON contract; large feeds remain constrained. Read the [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.13.4.md).
 
 **Upgrading from 0.12.x or earlier is breaking:** back up and follow the [upgrade guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md). An update does not create schemas or migrate data. Native sources are authoritative even while empty. Preserve calendar and migration identity.
 

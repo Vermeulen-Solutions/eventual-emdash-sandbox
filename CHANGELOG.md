@@ -2,6 +2,11 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.13.4 - 2026-10-11
+
+- Replace the 0.11-era public event detail screenshot in the registry gallery. Its derived 2000 px lossless `feed_thumbnail` measured 1,196,250 bytes, above EmDash's 1 MiB artifact proxy cap, so releases 0.11.0–0.13.3 show a failing image in the admin gallery. The current `images/registry-0.13.4/public-event-detail-fr-desktop.png` capture derives to roughly 483 KB.
+- Add `npm run registry:media`, enforced in CI and `npm run release:prepare`, with a `--published <version>` check of the real CDN bytes. No runtime, capability, schema or route changes. See [release notes](docs/release-notes-0.13.4.md).
+
 ## 0.13.3 - 2026-10-09
 
 - Add `publicUrls=false` to the public JSON feed and optional Astro helper to skip canonical URL RPCs when the consumer supplies event links. The default remains `true`; locale selection, recurrence, relationships and media are preserved.

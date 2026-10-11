@@ -20,7 +20,7 @@ Whether you run community meetups, webinars, conferences, workshops, or recurrin
 
 With **v0.13.0**, Eventual uses **native EmDash content types** for events, venues and organizers, with locale rows, drafts, revisions, scheduled publishing and Portable Text descriptions. Its sandbox supplies schedule controls and feeds; no Eventual frontend companion or second runtime package is required.
 
-**0.13.3** adds `publicUrls=false` for sites that supply event links and corrects JSON route error handling. It retains 0.13.2's RPC memoization and containment. Large sources and the migration job redesign remain constrained; local tests do not certify Cloudflare CPU limits. See the [release notes](./docs/release-notes-0.13.3.md).
+**0.13.4** replaces the registry gallery screenshot whose derived image exceeded EmDash's 1 MB artifact cap and adds a registry media budget check. Runtime behavior is unchanged from 0.13.3, which retains 0.13.2's RPC memoization and containment. Large sources and the migration job redesign remain constrained; local tests do not certify Cloudflare CPU limits. See the [release notes](./docs/release-notes-0.13.4.md).
 
 > **Breaking upgrade from 0.12.x and earlier:** Requires EmDash **1.2.x**. Back up and follow the [upgrade guide](./docs/upgrade-0.13.0.md). Updating Eventual does not create/convert schemas or migrate private data.
 
@@ -55,7 +55,7 @@ Render public events on your site using the included Astro showcase with seven r
 Visitors can view full event details, join virtual meetings, get venue directions, and add events to Google Calendar, Outlook, Yahoo, or Apple Calendar.
 
 <p align="center">
-  <img src="./images/registry-0.11.0/06-hybrid-event-detail.jpg" alt="Public Event Detail View" width="90%" />
+  <img src="./images/registry-0.13.4/public-event-detail-fr-desktop.png" alt="Public event detail view" width="90%" />
 </p>
 
 ---
@@ -100,7 +100,7 @@ Venue choices combine translation siblings into one selection, show the name and
 ## Installation & Setup
 
 ### 1. Install via EmDash Plugin Registry
-Install Eventual **0.13.3** through EmDash's registry administration. The publisher CLI does not have an install command. Review changed capability consent and the [breaking upgrade guide](./docs/upgrade-0.13.0.md) first when upgrading from 0.12.x or earlier.
+Install Eventual **0.13.4** through EmDash's registry administration. The publisher CLI does not have an install command. Review changed capability consent and the [breaking upgrade guide](./docs/upgrade-0.13.0.md) first when upgrading from 0.12.x or earlier.
 
 The registry installs the self-contained sandbox backend. No mandatory host tarball, Eventual frontend companion or renderer patch is needed. Existing schemas are not created or upgraded by installation. Public-page screenshots show the optional Astro showcase; the native editor screenshot is from current acceptance.
 
@@ -307,6 +307,7 @@ npm test             # Run unit & worker integration tests
 npm run test:tooling # Run migration, AST, and helper tests
 npm run bundle       # Build distribution bundle
 npm run budget       # Verify bundle size constraints
+npm run registry:media # Enforce registry image derivative budgets
 npm run test:package # Check installed packed Astro/source exports
 npm run test:editor  # Test packed plugin in stock native editor
 ```

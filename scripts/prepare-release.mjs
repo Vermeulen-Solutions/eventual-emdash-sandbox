@@ -30,6 +30,7 @@ const archive=resolve("dist",`${pkg.name}-${pkg.version}.tar.gz`);
 const measured=measureArchive(readFileSync(archive));
 const errors=[...checkBudget(measured),...checkBudget(measured,hardLimits)];
 if(errors.length) throw new Error(errors.join("\n"));
+run("scripts/check-registry-media.mjs",[]);
 const manifest=JSON.parse(readFileSync("dist/manifest.json","utf8"));
 if(manifest.version !== pkg.version) throw new Error("Manifest and package versions differ.");
 const destination=resolve("dist/source");mkdirSync(destination,{recursive:true});
