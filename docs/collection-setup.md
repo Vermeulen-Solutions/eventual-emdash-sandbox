@@ -2,6 +2,30 @@
 
 Eventual stores events in native EmDash content types. Its sandbox has read-only schema access; creating schemas is a one-time administrator task. The setup tool produces a schema-only seed and never connects to a database or overwrites an output file. It installs no frontend code.
 
+## Start here (no technical knowledge needed)
+
+**What "content type" means:** the place in your EmDash admin where events are listed and edited. A club whose events live there can edit them like any other page.
+
+**Which situation are you in?**
+
+| What you see | What it means | What to do |
+| --- | --- | --- |
+| Open **Content** in the admin and the events are there; you can edit them | Nothing to do — the site is set up correctly | Leave **Show old events saved inside the plugin** off. Editing happens in **Content**. |
+| The calendar on the public site shows events, but you cannot find them anywhere in the admin | Your events are the old ones kept inside Eventual itself (the plugin's own storage, used before 0.13). They cannot be edited there because Eventual no longer writes to it. | Best: choose or create the content type that holds events, then move the old events across (ask whoever set up the site, or see **Moving old events across** below). Quick fix: turn on **Show old events saved inside the plugin** in **Eventual → Settings** so the calendar keeps working exactly as it does today. |
+| The public calendar shows nothing and mentions an error | Eventual is not connected to a content type, and old events are not being served either | In **Eventual → Settings**, choose the **Event collection** (or create one), or turn on **Show old events saved inside the plugin** if this site's events still live inside the plugin. |
+
+**What the switch does, in one sentence:** with it **off** (the normal setting), a site that has no event content type refuses to show events and says so clearly; with it **on**, Eventual quietly shows the old events saved inside the plugin — the same behaviour as before version 0.14.
+
+**How to check what a site is using:** open **Eventual → Settings**. The switch shows its current state, and **Eventual → Events** shows either your editable events or the message *"Connect Eventual to content types"* when nothing is connected.
+
+## Moving old events across (needs technical help)
+
+Old events can be **copied** into a content type — nothing is deleted or changed in the old copies. Eventual previews the copy first, then works through it in small batches, and every copied event keeps the same calendar identity, so people who subscribed to the calendar keep their existing entries.
+
+Ask whoever set up your site to run the migration (the steps are in [native-modernization.md](native-modernization.md) and [upgrade-0.13.0.md](upgrade-0.13.0.md)), or hand them the [copyable prompt for an administrator's MCP agent](#copyable-prompt-for-an-administrators-mcp-agent).
+
+Afterwards, open **Eventual → Events**: if the events you can edit are the ones you expect, leave **Show old events saved inside the plugin** off. Turn it on only if you deliberately want the old copies served as well.
+
 ## Export the schema
 
 From this source package after `npm run build`, or from an optionally installed source package:

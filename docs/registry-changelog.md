@@ -1,6 +1,6 @@
 ## 0.14.0
 
-- Public reads use private plugin storage only when an administrator enables **Read legacy events** (MCP `legacyReads`); a missing collection now fails instead of serving pre-0.13 records under an assumed locale.
+- Public reads use private plugin storage only when an administrator turns on **Show old events saved inside the plugin** (MCP `legacyReads`); without a content type the feed now fails with a clear message instead of showing old records in an assumed language.
 
 ## 0.13.4
 

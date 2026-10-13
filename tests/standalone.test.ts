@@ -21,8 +21,21 @@ describe('Sandbox native onboarding',{timeout:60_000},()=>{
  expect(JSON.stringify(await h.admin.loadPage('/settings',{user}))).toContain('An administrator must');
  }finally{await h.dispose();}
  });
- it('localizes controls while preserving collection labels and initial values',()=>{
- const result:any=localizeResponse({blocks:[{type:'header',text:'Events'},{type:'section',block_id:'eventual-verbatim:2026-10-19T08:00:00Z',text:'Daily'},{type:'form',block_id:'unchanged',fields:[{type:'text_input',action_id:'title',label:'Title',initial_value:'Daily'},{type:'select',action_id:'venues',label:'Venue collection',initial_value:'hall',options:[{label:'Daily',value:'hall'}]}],submit:{action_id:'save-settings',label:'Save settings'}}]},'fr-CH');
+ it('lets an administrator switch old plugin events on and off from settings',async()=>{
+ const h=await createPluginRuntimeTestHost({site:{url:'https://audit.example.com',locale:'fr'}});
+ try{const user=await h.fixtures.user({email:'settings@example.com',role:'admin',emailVerified:true});
+ const before=await h.admin.loadPage('/settings',{user});
+ expect(validateBlockResponse(before,{}).valid).toBe(true);
+ expect(JSON.stringify(before)).toContain('Show old events saved inside the plugin');
+ expect(await h.inspect.setting('legacyReads')).toBeNull();
+ await h.admin.submit('/settings','save-legacy-reads',{legacyReads:true},{user});
+ expect(await h.inspect.setting('legacyReads')).toBe(true);
+ expect(JSON.stringify(await h.admin.loadPage('/settings',{user}))).toContain('"initial_value":true');
+ await h.admin.submit('/settings','save-legacy-reads',{legacyReads:false},{user});
+ expect(await h.inspect.setting('legacyReads')).toBe(false);
+ }finally{await h.dispose();}
+ });
+ it('localizes controls while preserving collection labels and initial values',()=>{ const result:any=localizeResponse({blocks:[{type:'header',text:'Events'},{type:'section',block_id:'eventual-verbatim:2026-10-19T08:00:00Z',text:'Daily'},{type:'form',block_id:'unchanged',fields:[{type:'text_input',action_id:'title',label:'Title',initial_value:'Daily'},{type:'select',action_id:'venues',label:'Venue collection',initial_value:'hall',options:[{label:'Daily',value:'hall'}]}],submit:{action_id:'save-settings',label:'Save settings'}}]},'fr-CH');
  expect(result.blocks[0].text).toBe('Événements');expect(result.blocks[1].text).toBe('Daily');expect(result.blocks[2].fields[0].initial_value).toBe('Daily');expect(result.blocks[2].fields[1].options).toEqual([{label:'Daily',value:'hall'}]);expect(validateBlockResponse(result,{}).valid).toBe(true);
  });
 });

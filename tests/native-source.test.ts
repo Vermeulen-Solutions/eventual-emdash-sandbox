@@ -120,7 +120,7 @@ describe("Native pagination and source authority", () => {
       settings: { get: async () => undefined },
       storage: { events: { query } },
     } as unknown as EventualContext;
-    await expect(readEventSource(ctx)).rejects.toThrow(/legacy reads/i);
+    await expect(readEventSource(ctx)).rejects.toThrow(/old events saved inside the plugin/i);
     expect(query).not.toHaveBeenCalled();
   });
 

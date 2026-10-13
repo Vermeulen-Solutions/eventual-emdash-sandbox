@@ -138,7 +138,7 @@ describe("Eventual compatibility routes", { timeout: 60_000 }, () => {
           { from: "2026-11-01", through: "2026-11-30" },
           { method: "GET" },
         ),
-      ).rejects.toThrow(/legacy reads/i);
+      ).rejects.toThrow(/old events saved inside the plugin/i);
     } finally {
       await runtimeHost.dispose();
     }

@@ -58,7 +58,7 @@ export async function readEventSource(ctx: EventualContext, through?: string) {
   if (!schema) {
     // Private plugin storage is pre-0.13 data: public reads use it only on explicit opt-in.
     if (!(await legacyReadsEnabled(ctx)))
-      reject("No Eventual event collection is configured. Choose one in Eventual settings, or enable legacy reads to serve the pre-0.13 plugin data.");
+      reject('Eventual is not connected to a content type. An administrator can choose one under Eventual settings, or turn on "Show old events saved inside the plugin" when this site’s events still live in the plugin.');
     return {
       native: false,
       events: (await listEvents(ctx, {

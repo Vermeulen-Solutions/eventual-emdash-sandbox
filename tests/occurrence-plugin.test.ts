@@ -65,7 +65,7 @@ describe("legacy occurrence MCP compatibility", {timeout:60_000}, () => {
     const page = await h.admin.loadPage("/events");
     expect(JSON.stringify(page)).toContain("Connect Eventual to content types");
     expect(JSON.stringify(page)).not.toContain("save-event");
-    expect(JSON.stringify(page)).toContain("migration");
+    expect(JSON.stringify(page)).toContain("copy the old events into a content type");
   }, 60000);
 
   it("shares legacy multi-day rules across MCP, public routes and calendar cancellations", async () => {

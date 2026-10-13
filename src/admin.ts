@@ -21,12 +21,12 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
   const choose=(key:keyof CollectionBindings,label:string):FormField=>({type:'select',action_id:key,label,
     options:[{value:'',label:key==='events'?'Choose a collection':'No collection'},...schemas.map(item=>({value:item.slug,label:(item.label || item.slug)+' ('+item.slug+')'}))],
     initial_value:selected?.[key] ?? (key==='events' ? defaultEvents?.slug ?? '' : schemas.some(item=>item.slug===target(key==='venues'?'venue':'organizer_ref',key))?target(key==='venues'?'venue':'organizer_ref',key):'')});
-  return {blocks:[nav(),{type:'header',text:'Settings'},context('Events, venues and organizers are edited in EmDash content types. Choose their collections here. This does not move or delete any content.'),
+  return {blocks:[nav(),{type:'header',text:'Settings'},context('Events, venues and organizers live in EmDash content types. Choose which content type holds each one. This does not move or delete any content.'),
     ...(error ? [{type:'banner' as const,title:'Settings not saved',description:error,variant:'error' as const}] : []),
     {type:'form',block_id:'collection-settings:'+Object.values(selected ?? {}).join(':'),fields:[choose('events','Event collection'),choose('venues','Venue collection'),choose('organizers','Organizer collection')],submit:{action_id:'save-settings',label:'Save settings'}},
-    context('Create missing collections with the optional setup script or MCP guide. Ask your administrator; no Eventual frontend package is required.'),
-    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Read legacy events',description:'Serve pre-0.13 private plugin records when no collection is configured. Leave this off so a missing collection fails with an explicit error instead of returning stale data.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save legacy read setting'}},
-    {type:'actions',elements:[{type:'link',label:'Collection setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md'}}]}]};
+    context('Missing a content type? Ask your administrator to create it, or follow the setup guide. No extra software or frontend code is needed.'),
+    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Turn this on only when this site’s events still live inside Eventual itself — for example a site that never moved them into an EmDash content type. While it is off and no content type is chosen, the calendar and feeds stop with a clear error instead of showing old copies that may be in the wrong language.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
+    {type:'actions',elements:[{type:'link',label:'Setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md'}}]}]};
 }
 
 /** Companion navigation only. Creation and editorial editing belong to core. */
@@ -60,7 +60,7 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
     const bindings=await collectionBindings(ctx);
     if(!bindings.schema) {
       const legacyReads=await legacyReadsEnabled(ctx);
-      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose or create native collections in Eventual settings. Eventual does not create events in private plugin storage. Existing legacy data is retained for an explicit migration.'),context(legacyReads?'Public feeds currently serve that legacy data because legacy reads are enabled.':'Public feeds fail explicitly until a collection is chosen. Enable legacy reads in Eventual settings to serve the legacy data instead.')]};
+      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose the EmDash content type that holds this site’s events. Eventual no longer keeps events in its own storage, and the old ones cannot be edited here.'),context(legacyReads?'While this is unresolved, public calendars show the old events saved inside the plugin.':'Until a content type is chosen, public calendars and feeds stop with a clear error. Turn on “Show old events saved inside the plugin” if this site’s events still live in the plugin.'),context('You can copy the old events into a content type; the originals stay untouched. See the setup guide for the steps.')]};
     }
     if(page==='/venues' || page==='/organizers') {
       const slug=page==='/venues'?bindings.venues:bindings.organizers;

@@ -4,8 +4,8 @@ All notable changes to Eventual are documented here.
 
 ## 0.14.0 - unreleased (breaking)
 
-- **Public reads no longer fall back to private plugin storage by default.** When the selected (or default `events`) collection is missing, `publicEvents`, the calendar feed and the calendar-state reconciliation now fail with an actionable error instead of silently serving pre-0.13 records — the failure mode that labelled French events `[EN]` and left editors unable to see their events. Administrators enable **Read legacy events** in Eventual settings, or set `legacyReads` through MCP `updateSettings`, to keep serving that data.
-- The settings page reports the current legacy read state, and the "Connect Eventual to content types" panel explains whether public feeds fail or serve legacy data.
+- **Public reads no longer fall back to private plugin storage by default.** When no event content type is configured or the selected one is missing, `publicEvents`, the calendar feed and the calendar-state reconciliation now fail with an actionable error instead of silently serving old plugin records — the failure mode that labelled French events `[EN]` and hid the events from editors. Administrators turn on **Show old events saved inside the plugin** in Eventual settings, or set `legacyReads` through MCP `updateSettings`, to keep serving that data.
+- The settings page shows the switch with a plain-language explanation, and the "Connect Eventual to content types" panel says whether public feeds fail or show the old events.
 - Migration, legacy write tools and native reads are unchanged. See [release notes](docs/release-notes-0.14.0.md).
 
 ## 0.13.4 - 2026-10-11

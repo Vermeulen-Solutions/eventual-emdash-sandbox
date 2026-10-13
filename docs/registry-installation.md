@@ -1,17 +1,15 @@
-# Eventual 0.13.4
+# Eventual 0.14.0
 
-Requires EmDash >=1.2.0 <2.0.0. Update in EmDash plugin administration. Existing 0.13.x installations need no new capabilities or schemas.
+Requires EmDash >=1.2.0 <2.0.0. Update in EmDash plugin administration. No new capabilities, schemas or permissions are required.
 
-0.13.4 replaces a registry gallery screenshot whose derived image exceeded EmDash's 1 MiB artifact proxy cap. Runtime is unchanged from 0.13.3: publicUrls=false works for supplied links (default: true); budget failures use the failed JSON contract; large feeds remain constrained. Read the [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.13.4.md).
+**What changes:** when Eventual cannot find the content type that holds your events, the public calendar now says so clearly instead of quietly showing the old events saved inside the plugin. Those old copies carry no language information, so a French site showed titles prefixed `[EN]` while the admin panel offered no way to edit them.
 
-**Upgrading from 0.12.x or earlier is breaking:** back up and follow the [upgrade guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md). An update does not create schemas or migrate data. Native sources are authoritative even while empty. Preserve calendar and migration identity.
+**If that is your site:** open **Eventual → Settings**. Connect the content type that holds events, or turn on **Show old events saved inside the plugin** to keep serving the old copies exactly as before. The switch is visible at all times and shows its current state; [collection setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md) explains the choices without technical steps. Sites whose events already live in a content type see no change at all.
 
-An administrator must create/review compatible native collections with the optional exporter or [MCP setup guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md), then select event, venue and organizer collections under Eventual → Settings. Custom collection names are supported.
+Read the [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.14.0.md) for the before/after table and upgrade steps.
 
-No Eventual frontend companion or second runtime package is required. Remove historical eventual/install adapters on EmDash 1.2. Themes and Astro helpers are optional.
+**Upgrading from 0.12.x or earlier is breaking:** back up and follow the [upgrade guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md). An update does not create schemas or migrate data. Preserve calendar and migration identity.
 
-Edit announcements in core. Save first, open Dates, venue & repeat, save schedule changes, reload, and publish in core. Dates/references are shared across languages. Internal fields remain visible in stock core.
+An administrator must create/review compatible native collections with the optional exporter or the [setup guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md), then select event, venue and organizer collections under Eventual → Settings. Custom collection names are supported.
 
-Public JSON: /_emdash/api/plugins/eventual/publicEvents. ICS: /_emdash/api/plugins/eventual/calendar. Filters: locale, strict, category. JSON: publicUrls=false for sites supplying event links.
-
-Enable intended tools under Eventual → Agent access. Editors need content:edit_any; settings/MCP management need plugins:manage. Schema access is read-only; no outbound hosts.
+No Eventual frontend companion or second runtime package is required. Themes and Astro helpers are optional.

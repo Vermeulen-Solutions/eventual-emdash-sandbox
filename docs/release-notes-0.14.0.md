@@ -1,52 +1,63 @@
-# Eventual 0.14.0 — legacy public reads are opt-in
+# Eventual 0.14.0 — old plugin events are shown only when you ask for them
 
-## What changes
+**In one line:** if Eventual cannot find the content type that holds your events, it now says so clearly
+instead of quietly showing the old events that are saved inside the plugin itself.
 
-Until 0.13.x, a site without a configured event collection silently fell back to Eventual's private
-plugin storage: the pre-0.13 event records. That storage has no locale rows, so a request for a
-locale that the records never carried is answered by the non-strict fallback — a title prefixed with
-the record's assumed locale (`[EN] …` on a French site). The admin panel meanwhile says
-"Connect Eventual to content types", so editors cannot see or fix the events while the public site
-keeps serving them.
+## What you see in the admin
 
-0.14.0 makes that fallback explicit:
-
-| Situation | Before | Now |
+| What you see | What it means | What to do |
 | --- | --- | --- |
-| Configured collection exists | Native records | Native records (unchanged) |
-| Configured collection is missing | Hard error (`The selected event collection is missing.`) | Unchanged |
-| **No collection configured and none named `events`** | Legacy records served, wrong locale labels | **Error**: `No Eventual event collection is configured. Choose one in Eventual settings, or enable legacy reads to serve the pre-0.13 plugin data.` |
+| **Content → Events** lists your events and you can edit them | The site is set up correctly | Nothing. The switch **Show old events saved inside the plugin** stays off; do not touch it. |
+| The public calendar shows events, but they are nowhere in the admin | Those are the old events saved inside Eventual itself (from before version 0.13). They cannot be edited there any more. | Either connect a content type and copy the old events across, or turn the switch on to keep showing them as before. |
+| The public calendar shows an error | No content type is connected, and old events are not being served | In **Eventual → Settings**, choose the **Event collection**; if that is not possible yet, turn the switch on when this site's events still live in the plugin. |
 
-Enable **Read legacy events** in Eventual settings → the previous behaviour returns. The same flag is
-available through MCP as `legacyReads` on `getSettings` / `updateSettings`.
+**What the switch does, in one sentence:** off (the default) means "if there is no content type, stop and
+say so"; on means "show the old events saved inside the plugin exactly like before version 0.14".
+
+The switch lives in **Eventual → Settings**, is visible at all times, and shows its current state. The
+same setting is available to automation as `legacyReads` on the MCP tools `getSettings` and
+`updateSettings`.
+
+## What changed for the public calendar
+
+| Situation | Before 0.14 | From 0.14 |
+| --- | --- | --- |
+| A content type holds your events | Events shown from it | Unchanged |
+| A content type is *selected* in Eventual but has gone missing | Clear error | Unchanged |
+| **No content type at all** | Old events shown, without any language information — a French site shows titles prefixed `[EN]`, and nobody can edit the events in the admin | Clear error, unless the switch is on |
+
+The error names the two ways out, so whoever sees it knows what to do:
+
+> Eventual is not connected to a content type. An administrator can choose one under Eventual settings,
+> or turn on "Show old events saved inside the plugin" when this site's events still live in the plugin.
 
 ## Who is affected
 
-- **Sites with a configured (or default `events`) collection:** nothing changes. The flag is not read
-  on that path.
-- **Sites still on private plugin storage only:** the public JSON feed, the calendar feed and the
-  calendar-state reconciliation stop answering until an administrator either selects a collection or
-  turns the flag on. Migration tooling, the MCP legacy write tools and admin listing are unaffected —
-  they exist for exactly this transition.
+- A site whose events are in a content type (normal installs, including sites that migrated to 0.13 or
+  later): **nothing changes**.
+- A site that still keeps its events only inside the plugin (typically an install from before 0.13 that
+  never migrated): its calendar and feeds stop until an administrator either connects a content type or
+  turns the switch on. That is the intended, visible choice — the old behaviour hid the missing setup.
+- Even a brand-new site with no content type and no old events now gets the clear error instead of an
+  empty calendar; the message points at the setup step.
 
-## Upgrade
+## Upgrade steps
 
-1. Check the state: Eventual settings → **Settings** shows the collection selects and the new
-   **Read legacy events** toggle; MCP `getSettings` returns `legacyReads`.
-2. Preferred: choose the native collections (see
-   [collection-setup.md](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md))
-   and migrate with `migrateToNative`, which retains legacy data.
-3. Interim: turn **Read legacy events** on. Feeds keep working exactly as before, including the
-   locale-prefixed titles; this is a deliberate, visible choice rather than a silent fallback.
-4. Nothing is deleted or rewritten by this release.
+1. Open **Eventual → Settings**. The switch shows whether old events are being shown.
+2. Prefer connecting a content type (**Event collection**) and copying the old events across — the copy
+   is previewed first, changes nothing in the old records, and keeps every event's calendar identity.
+   Steps for whoever helps with the site: [collection setup](collection-setup.md) and
+   [native-modernization.md](native-modernization.md).
+3. If migrating is not possible yet, turn the switch on. The calendar behaves exactly as in 0.13.
+4. Nothing is deleted, moved or rewritten by this release.
 
-## Design notes
+## Notes for developers
 
-- The gate lives in `readEventSource`, so it covers every public consumer (`publicEvents`, the
-  calendar feed and the calendar reconciliation) and nothing else. MCP/admin paths read storage
-  directly and are unchanged.
-- The flag is read through the same request-scoped memo as the collection bindings, and
-  `updateSettings` clears the memo after a write so the response reports the new value.
-- Fail-closed is the default because a missing collection is a configuration error: a loud failure is
-  diagnosable in minutes, while the silent fallback produced wrong-locale content and an unusable
-  editor without any signal. Sites that need the old behaviour keep it with one documented toggle.
+- The gate lives in `readEventSource`, so it covers every public consumer — the JSON feed, the iCalendar
+  feed and the calendar-state reconciliation — and nothing else. MCP and admin paths read storage
+  directly and are unchanged, so migration and the legacy write tools keep working.
+- The setting is read through the same request-scoped memo as the collection bindings, and
+  `updateSettings` clears that memo after a write so its response reports the new value.
+- Fail-closed is the default because a missing content type is a configuration mistake: a loud failure
+  is diagnosable in minutes, while the silent fallback produced wrong-language content and an admin
+  panel that told editors to connect content types while the site served records they could not edit.
