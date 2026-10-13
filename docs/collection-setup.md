@@ -24,7 +24,7 @@ Old events can be **copied** into a content type — nothing is deleted or chang
 
 Ask whoever set up your site to run the migration (the steps are in [native-modernization.md](native-modernization.md) and [upgrade-0.13.0.md](upgrade-0.13.0.md)), or hand them the [copyable prompt for an administrator's MCP agent](#copyable-prompt-for-an-administrators-mcp-agent).
 
-Afterwards, open **Eventual → Events**: if the events you can edit are the ones you expect, leave **Show old events saved inside the plugin** off. Turn it on only if you deliberately want the old copies served as well.
+Afterwards, open **Eventual → Events**: if the events you can edit are the ones you expect, leave **Show old events saved inside the plugin** off. The switch permits old copies only when no native event collection is connected; native collections remain authoritative.
 
 ## Export the schema
 

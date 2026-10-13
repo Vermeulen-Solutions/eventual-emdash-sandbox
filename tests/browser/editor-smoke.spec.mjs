@@ -38,6 +38,27 @@ const savePanel=async(page,label)=>{
  } finally {page.off('framenavigated',listener);}
 };
 const login=async(page,context,locale)=>{await context.addCookies([{name:'emdash-locale',value:locale,url:origin+'/_emdash'}]);await page.goto('/_emdash/api/auth/dev-bypass?redirect='+encodeURIComponent('/_emdash/admin/plugins/eventual/settings'));const welcome=page.getByRole('dialog').getByRole('button',{name:locale==='fr'?'Commencer':'Get Started',exact:true});await welcome.waitFor({state:'visible',timeout:15000}).then(()=>welcome.click()).catch(()=>{});};
+test('English legacy switch persists booleans and an unconfigured feed fails closed',async({page,context})=>{
+ await login(page,context,'en');
+ const toggle=page.getByRole('switch',{name:'Show old events saved inside the plugin',exact:true});
+ await expect(toggle).not.toBeChecked();
+ const feed=async()=>{const response=await page.request.get('/_emdash/api/plugins/eventual/publicEvents?from='+fixtures.from+'&through='+fixtures.through);return response.json();};
+ const unavailable=await feed();
+ expect(unavailable.success).toBe(false);
+ expect(unavailable.error.message).toContain('Eventual is not connected to a content type');
+ expect(unavailable.error.message).toContain('Show old events saved inside the plugin');
+ for(const enabled of [true,false]) {
+  await toggle.setChecked(enabled);
+  const saved=page.waitForResponse(response=>response.url().endsWith('/plugins/eventual/admin')&&response.request().method()==='POST');
+  await page.getByRole('button',{name:'Save switch',exact:true}).click();
+  const response=await saved;
+  expect(response.request().postDataJSON().action_id).toBe('save-legacy-reads');
+  expect(response.request().postDataJSON().values.legacyReads).toBe(enabled);
+  await page.reload();
+  if(enabled) {await expect(toggle).toBeChecked();const result=await feed();expect(result.success).toBe(true);expect(result.data.events).toEqual([]);}
+  else {await expect(toggle).not.toBeChecked();expect((await feed()).success).toBe(false);}
+ }
+});
 test('French settings connect native content types and rich editor',async({page,context})=>{
  await login(page,context,'fr');
  await choose(page,'Collection des événements','Events (activities)');

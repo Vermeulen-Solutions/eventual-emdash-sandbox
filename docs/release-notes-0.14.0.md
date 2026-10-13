@@ -28,8 +28,7 @@ same setting is available to automation as `legacyReads` on the MCP tools `getSe
 
 The error names the two ways out, so whoever sees it knows what to do:
 
-> Eventual is not connected to a content type. An administrator can choose one under Eventual settings,
-> or turn on "Show old events saved inside the plugin" when this site's events still live in the plugin.
+> Eventual is not connected to a content type. Choose one under Eventual settings, or turn on "Show old events saved inside the plugin".
 
 ## Who is affected
 
@@ -53,11 +52,11 @@ The error names the two ways out, so whoever sees it knows what to do:
 
 ## Notes for developers
 
-- The gate lives in `readEventSource`, so it covers every public consumer — the JSON feed, the iCalendar
-  feed and the calendar-state reconciliation — and nothing else. MCP and admin paths read storage
-  directly and are unchanged, so migration and the legacy write tools keep working.
+- `readEventSource` gates the JSON feed, iCalendar feed and calendar-state reconciliation. The public
+  image route also checks the setting before reading legacy storage and returns 404 when disabled.
+  Administrative inspection, migration and legacy write tools remain available.
 - The setting is read through the same request-scoped memo as the collection bindings, and
-  `updateSettings` clears that memo after a write so its response reports the new value.
+  both `updateSettings` and the admin `save-legacy-reads` action clear that memo after a write.
 - Fail-closed is the default because a missing content type is a configuration mistake: a loud failure
   is diagnosable in minutes, while the silent fallback produced wrong-language content and an admin
   panel that told editors to connect content types while the site served records they could not edit.

@@ -4,6 +4,13 @@ import {validateBlockResponse} from '@emdash-cms/blocks/server';
 import {localizeResponse} from '../src/ui/localize';
 import {putVenueIfUnchanged,type EventualContext} from '../src/storage';
 describe('Sandbox native onboarding',{timeout:60_000},()=>{
+ it('localizes all recurrence weekday labels without changing stored weekday values',()=>{
+ const weekdays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+ const response:any=localizeResponse({blocks:[{type:'form',fields:[{type:'checkbox',action_id:'weekdays',label:'Days of the week',options:weekdays.map(label=>({label,value:label.toLowerCase()})),initial_value:['monday']}],submit:{action_id:'save-repeat',label:'Save repeat settings'}}]},'fr');
+ expect(response.blocks[0].fields[0].options.map((option:any)=>option.label)).toEqual(['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche']);
+ expect(response.blocks[0].fields[0].options.map((option:any)=>option.value)).toEqual(weekdays.map(day=>day.toLowerCase()));
+ expect(response.blocks[0].fields[0].initial_value).toEqual(['monday']);
+ });
  it('rejects a stale legacy venue update when the clock has not advanced',async()=>{
  const stamp='2099-01-01T00:00:00.000Z';
  let saved={id:'hall',name:'Hall',street:'',street2:'',locality:'',region:'',postalCode:'',country:'',createdAt:stamp,updatedAt:stamp};

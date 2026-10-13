@@ -21,11 +21,10 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
   const choose=(key:keyof CollectionBindings,label:string):FormField=>({type:'select',action_id:key,label,
     options:[{value:'',label:key==='events'?'Choose a collection':'No collection'},...schemas.map(item=>({value:item.slug,label:(item.label || item.slug)+' ('+item.slug+')'}))],
     initial_value:selected?.[key] ?? (key==='events' ? defaultEvents?.slug ?? '' : schemas.some(item=>item.slug===target(key==='venues'?'venue':'organizer_ref',key))?target(key==='venues'?'venue':'organizer_ref',key):'')});
-  return {blocks:[nav(),{type:'header',text:'Settings'},context('Events, venues and organizers live in content types. Choose which holds each. Does not move or delete content.'),
+  return {blocks:[nav(),{type:'header',text:'Settings'},context('Choose content types; no content is moved or deleted.'),
     ...(error ? [{type:'banner' as const,title:'Settings not saved',description:error,variant:'error' as const}] : []),
     {type:'form',block_id:'collection-settings:'+Object.values(selected ?? {}).join(':'),fields:[choose('events','Event collection'),choose('venues','Venue collection'),choose('organizers','Organizer collection')],submit:{action_id:'save-settings',label:'Save settings'}},
-    context('Missing a content type? Create one or follow the setup guide.'),
-    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Turn on only if events still live inside the plugin. If off without a content type, feeds stop with an error.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
+    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Enable only to serve old plugin events without a content type.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
     {type:'actions',elements:[{type:'link',label:'Setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md'}}]}]};
 }
 
