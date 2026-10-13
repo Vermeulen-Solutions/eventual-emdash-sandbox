@@ -3,7 +3,7 @@ import type {BlockResponse, FormField} from '@emdash-cms/blocks';
 import type {SandboxedRouteContext} from 'emdash/plugin';
 import type {EventualContext} from './storage';
 import {handleAdmin as nativeWorkspace} from './native-admin';
-import {collectionBindings, saveCollectionBindings, collectionSettings, collectionSchemas, legacyReadsEnabled, LEGACY_READS_SETTING_KEY, type CollectionBindings} from './domain/collections';
+import {collectionBindings, saveCollectionBindings, collectionSettings, collectionSchemas, legacyReadsEnabled, saveLegacyReadsSetting, type CollectionBindings} from './domain/collections';
 import {isValidTimeZone} from './domain/date-time';
 import {withInvocationBudget} from './domain/invocation-budget';
 
@@ -21,11 +21,11 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
   const choose=(key:keyof CollectionBindings,label:string):FormField=>({type:'select',action_id:key,label,
     options:[{value:'',label:key==='events'?'Choose a collection':'No collection'},...schemas.map(item=>({value:item.slug,label:(item.label || item.slug)+' ('+item.slug+')'}))],
     initial_value:selected?.[key] ?? (key==='events' ? defaultEvents?.slug ?? '' : schemas.some(item=>item.slug===target(key==='venues'?'venue':'organizer_ref',key))?target(key==='venues'?'venue':'organizer_ref',key):'')});
-  return {blocks:[nav(),{type:'header',text:'Settings'},context('Events, venues and organizers live in EmDash content types. Choose which content type holds each one. This does not move or delete any content.'),
+  return {blocks:[nav(),{type:'header',text:'Settings'},context('Events, venues and organizers live in content types. Choose which holds each. Does not move or delete content.'),
     ...(error ? [{type:'banner' as const,title:'Settings not saved',description:error,variant:'error' as const}] : []),
     {type:'form',block_id:'collection-settings:'+Object.values(selected ?? {}).join(':'),fields:[choose('events','Event collection'),choose('venues','Venue collection'),choose('organizers','Organizer collection')],submit:{action_id:'save-settings',label:'Save settings'}},
-    context('Missing a content type? Ask your administrator to create it, or follow the setup guide. No extra software or frontend code is needed.'),
-    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Turn this on only when this site’s events still live inside Eventual itself — for example a site that never moved them into an EmDash content type. While it is off and no content type is chosen, the calendar and feeds stop with a clear error instead of showing old copies that may be in the wrong language.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
+    context('Missing a content type? Create one or follow the setup guide.'),
+    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Turn on only if events still live inside the plugin. If off without a content type, feeds stop with an error.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
     {type:'actions',elements:[{type:'link',label:'Setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md'}}]}]};
 }
 
@@ -43,7 +43,7 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
       try {
         const submitted=(request.values as Record<string,unknown>|undefined)?.legacyReads;
         if(!(submitted===true || submitted===false || submitted==='true' || submitted==='false')) reject('The legacy read setting must be on or off.');
-        await ctx.settings.set(LEGACY_READS_SETTING_KEY,submitted===true || submitted==='true');
+        await saveLegacyReadsSetting(ctx,submitted===true || submitted==='true');
       } catch(error) {return settings(ctx,error instanceof Error?error.message:'Check the legacy read setting.');}
     }
     if(request.action_id==='save-settings') {
@@ -60,7 +60,7 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
     const bindings=await collectionBindings(ctx);
     if(!bindings.schema) {
       const legacyReads=await legacyReadsEnabled(ctx);
-      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose the EmDash content type that holds this site’s events. Eventual no longer keeps events in its own storage, and the old ones cannot be edited here.'),context(legacyReads?'While this is unresolved, public calendars show the old events saved inside the plugin.':'Until a content type is chosen, public calendars and feeds stop with a clear error. Turn on “Show old events saved inside the plugin” if this site’s events still live in the plugin.'),context('You can copy the old events into a content type; the originals stay untouched. See the setup guide for the steps.')]};
+      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose the content type for events. Old events in plugin storage cannot be edited here.'),context(legacyReads?'While unresolved, public calendars show the old events saved inside the plugin.':'Until a content type is chosen, public feeds stop with an error. Turn on “Show old events saved inside the plugin” if events still live in the plugin.'),context('You can copy the old events into a content type; originals stay untouched. See the setup guide.')]};
     }
     if(page==='/venues' || page==='/organizers') {
       const slug=page==='/venues'?bindings.venues:bindings.organizers;

@@ -48,8 +48,7 @@ import {
   hydrateNativeAssets,
 } from "./domain/native-source";
 import { referenceTarget } from "./domain/native-references";
-import { saveCollectionBindings, collectionSchemas, collectionSettings, legacyReadsEnabled, LEGACY_READS_SETTING_KEY } from './domain/collections';
-import { forgetRequestMemo } from './domain/request-memo';
+import { saveCollectionBindings, collectionSchemas, collectionSettings, legacyReadsEnabled, saveLegacyReadsSetting } from './domain/collections';
 import { normalizeVenueRecord, localizedVenue } from "./domain/venue-adapter";
 import { nativeEntryToEventRecord } from "./domain/event-expansion";
 import {withInvocationBudget} from './domain/invocation-budget';
@@ -636,8 +635,7 @@ export const mcpRoutes = {
         catch(error) {return {ok:false,error:'INVALID_COLLECTIONS',details:error instanceof Error?error.message:'Review the collection schemas.'};}
       }
       if(legacyReads !== undefined) {
-        await ctx.settings.set(LEGACY_READS_SETTING_KEY,legacyReads);
-        forgetRequestMemo(ctx,'legacy-reads');
+        await saveLegacyReadsSetting(ctx, legacyReads);
       }
       await ctx.settings.set("defaultTimezone", defaultTimezone);
       return { ok: true, defaultTimezone, legacyReads: await legacyReadsEnabled(ctx) };

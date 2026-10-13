@@ -10,6 +10,7 @@ import {
 import { nativeEntryToEventRecord } from "../src/domain/event-expansion";
 import { expandRecurringEvent } from "../src/domain/recurrence";
 import { createEventsCollectionBlueprint } from "../src/schema/blueprint";
+import { handlePublicEventImage } from "../src/routes/public-media";
 import type { EventualContext } from "../src/storage";
 
 describe("Native pagination and source authority", () => {
@@ -157,6 +158,44 @@ describe("Native pagination and source authority", () => {
     expect(source.events).toHaveLength(1);
     expect(source.events[0]).toMatchObject({ id: "legacy-1", locale: "fr", title: "Legacy match" });
     expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects string 'true' and requires strict boolean true to enable legacy reads", async () => {
+    const query = vi.fn();
+    const ctx = {
+      schema: { listCollections: async () => [] },
+      content: {},
+      settings: { get: async (key: string) => (key === "legacyReads" ? "true" : undefined) },
+      storage: { events: { query } },
+    } as unknown as EventualContext;
+    await expect(readEventSource(ctx)).rejects.toThrow(/old events saved inside the plugin/i);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("never queries legacyReads when native schema exists", async () => {
+    const settingsGetSpy = vi.fn(async () => undefined);
+    const ctx = {
+      schema: {
+        listCollections: async () => [createEventsCollectionBlueprint()],
+      },
+      content: { list: async () => ({ items: [], hasMore: false }) },
+      settings: { get: settingsGetSpy },
+    } as unknown as EventualContext;
+    const source = await readEventSource(ctx);
+    expect(source.native).toBe(true);
+    expect(settingsGetSpy).not.toHaveBeenCalledWith("legacyReads");
+  });
+
+  it("publicEventImage returns 404 and does not query storage when legacy reads are disabled", async () => {
+    const getSpy = vi.fn();
+    const ctx = {
+      schema: { listCollections: async () => [] },
+      settings: { get: async () => undefined },
+      storage: { events: { get: getSpy } },
+    } as unknown as EventualContext;
+    const res = await handlePublicEventImage({ eventId: "legacy-1" }, ctx);
+    expect(res.status).toBe(404);
+    expect(getSpy).not.toHaveBeenCalled();
   });
 
   it("resolves localized venues in bulk via content.list without N+1 get or getTranslations calls", async () => {

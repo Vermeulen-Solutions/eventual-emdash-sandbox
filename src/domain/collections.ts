@@ -23,6 +23,10 @@ export function collectionSettings(ctx: EventualContext) {
 export function legacyReadsEnabled(ctx: EventualContext) {
   return requestMemo(ctx, 'legacy-reads', async () => (await ctx.settings?.get<boolean>(LEGACY_READS_SETTING_KEY)) === true);
 }
+export async function saveLegacyReadsSetting(ctx: EventualContext, enabled: boolean) {
+  await ctx.settings.set(LEGACY_READS_SETTING_KEY, enabled);
+  forgetRequestMemo(ctx, 'legacy-reads');
+}
 /** Raw discovery stays available when a selected collection needs repair. */
 export function collectionSchemas(ctx: EventualContext) {
   return requestMemo(ctx, 'schemas', async () => await ctx.schema?.listCollections() ?? []);

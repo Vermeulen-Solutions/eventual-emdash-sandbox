@@ -6,6 +6,7 @@ import {
 } from "../domain/image";
 import { getEvent, type EventualContext } from "../storage";
 import { nativeSchema } from "../domain/native-source";
+import { legacyReadsEnabled } from "../domain/collections";
 import { nativeEntryToEventRecord } from "../domain/event-expansion";
 import { withInvocationBudget } from '../domain/invocation-budget';
 
@@ -35,9 +36,10 @@ export async function handlePublicEventImage(
     if (page.hasMore || page.items.length > 1) return notFound();
     record = page.items[0];
   }
+  const canReadLegacy = !schema && (await legacyReadsEnabled(ctx));
   let event = schema
     ? nativeEntryToEventRecord(record)
-    : (await getEvent(ctx, eventId)) ?? (await getEvent(ctx, baseId!));
+    : (canReadLegacy ? ((await getEvent(ctx, eventId)) ?? (await getEvent(ctx, baseId!))) : undefined);
   if (event && occ) {
     const ex = event.exceptions?.find((e) => e.recurrenceId === occ);
     const m = ex?.overrides?.featuredMediaId || ex?.overrides?.imageMediaId;

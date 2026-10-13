@@ -291,8 +291,8 @@ export const mcpTools = {
 	createVenue: { description: "Create a saved Eventual venue.", route: "mcp/venues/create", input: mcpInput(venue), destructive: false },
 	updateVenue: { description: "Update a saved Eventual venue.", route: "mcp/venues/update", input: mcpInput(updateVenue), destructive: true },
 	deleteVenue: { description: "Delete an unassigned Eventual venue. Assigned venues cannot be deleted.", route: "mcp/venues/delete", input: mcpInput(venueId), destructive: true },
-	getSettings: { description: "Read Eventual settings: default timezone, collection bindings and the legacy read setting.", route: "mcp/settings/get", input: mcpInput(noInput), destructive: false },
-	updateSettings: { description: "Update Eventual settings: default timezone, collection bindings and the legacy read setting. Legacy reads serve private pre-0.13 records when no collection is configured and are off by default.", route: "mcp/settings/update", input: mcpInput(updateSettings), destructive: true },
+	getSettings: { description: "Read Eventual settings: timezone, collections, legacy reads.", route: "mcp/settings/get", input: mcpInput(noInput), destructive: false },
+	updateSettings: { description: "Update Eventual settings: timezone, collections, legacy reads.", route: "mcp/settings/update", input: mcpInput(updateSettings), destructive: true },
 	migrateToNative: {
 		description: "Optionally migrate plugin storage to native collections with Portable Text and target locale. Preview with dryRun; legacy data is retained.",
 		route: "mcp/transfer/migrateToNative",
