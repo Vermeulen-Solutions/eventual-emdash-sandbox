@@ -1,0 +1,87 @@
+
+> eventual@0.14.0 registry:media
+> node scripts/check-registry-media.mjs --published 0.14.0
+
+{
+  "mode": "published",
+  "version": "0.14.0",
+  "limitBytes": 1048576,
+  "cdn": "https://cdn.em-da.sh",
+  "checked": [
+    {
+      "kind": "icon",
+      "label": "icon",
+      "blob": "bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy",
+      "preset": "avatar",
+      "url": "https://cdn.em-da.sh/img/avatar/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy",
+      "bytes": 450996,
+      "status": "ok"
+    },
+    {
+      "kind": "banner",
+      "label": "banner",
+      "blob": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "preset": "banner",
+      "url": "https://cdn.em-da.sh/img/banner/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "bytes": 958008,
+      "status": "warn"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[0]",
+      "blob": "bafkreic4w4rhmqecl45tbtmxz3e5mdqoouguzo6aghfhdajkfwr4cla4ju",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreic4w4rhmqecl45tbtmxz3e5mdqoouguzo6aghfhdajkfwr4cla4ju",
+      "bytes": 306110,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[1]",
+      "blob": "bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru",
+      "bytes": 192518,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[2]",
+      "blob": "bafkreidku3qc4gybouwjgc5xlbpfbn6raekyfswzkt6monzaroaza4ztvu",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreidku3qc4gybouwjgc5xlbpfbn6raekyfswzkt6monzaroaza4ztvu",
+      "bytes": 232626,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[3]",
+      "blob": "bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva",
+      "bytes": 516112,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[4]",
+      "blob": "bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy",
+      "bytes": 500710,
+      "status": "ok"
+    }
+  ],
+  "violations": [],
+  "warnings": [
+    {
+      "kind": "banner",
+      "label": "banner",
+      "blob": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "preset": "banner",
+      "url": "https://cdn.em-da.sh/img/banner/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0/bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y/bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "bytes": 958008,
+      "status": "warn"
+    }
+  ]
+}

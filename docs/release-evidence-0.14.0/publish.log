@@ -1,0 +1,74 @@
+
+> eventual@0.14.0 publish
+> emdash-plugin publish --json
+
+info: Loaded manifest: C:\dev\eventual-em\eventual-emdash-sandbox\emdash-plugin.jsonc
+info: Publisher: @vermeulen.solutions (did:plc:g2hei4vcwndrdl3gdbb6np6c)
+start: Bundling plugin...
+start: Building plugin...
+info: Manifest: C:\dev\eventual-em\eventual-emdash-sandbox\emdash-plugin.jsonc
+info: Plugin entry: C:\dev\eventual-em\eventual-emdash-sandbox\src\plugin.ts
+info: npm package: eventual
+start: Building runtime entry...
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-MDJmaT\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 300ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-MDJmaT\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+[PLUGIN_TIMINGS] Warning: Your build spent significant time in plugin `rolldown-plugin-dts:generate`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+✔ Build complete in 8175ms
+success: Built plugin.mjs
+start: Probing plugin surface...
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-MDJmaT\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 99ms
+info:   Hooks: content:beforeSave, content:beforeDelete, content:beforePublish, content:beforeSchedule, content:beforeUnpublish
+info:   Routes: mcp/organizers/list, mcp/organizers/create, mcp/organizers/update, mcp/events/list, mcp/events/get, mcp/events/occurrences, mcp/events/create, mcp/events/update, mcp/events/publish, mcp/events/unpublish, mcp/events/delete, mcp/events/exception/set, mcp/events/exception/remove, mcp/venues/list, mcp/venues/create, mcp/venues/update, mcp/venues/delete, mcp/settings/get, mcp/settings/update, mcp/transfer/preview, mcp/transfer/import, mcp/transfer/export, mcp/transfer/migrateToNative, admin, admin/editor/schedule, publicEvents, publicEventImage, calendar
+success: Wrote manifest.json
+start: Generating descriptor module...
+success: Wrote index.mjs
+success: Plugin built: @vermeulen.solutions/eventual@0.14.0
+success: Plugin: @vermeulen.solutions/eventual@0.14.0
+info:   Capabilities: content:read, content:revisions:read, content:write, content:publish, schema:read, hooks.content-policy:register, media:read, media:bytes:read
+start: Validating bundle...
+start: Collecting assets...
+success: Included README.md
+info: Bundle size: 193.9 KB across 3 files
+success: Validation passed
+start: Creating tarball...
+success: Created eventual-0.14.0.tar.gz (51.2KB)
+info:   SHA-256: 6fd95c5363d9405d55c1a96a8c83e66baef6702b574510335697b7eb8b158fe2
+info:   Path: C:\dev\eventual-em\eventual-emdash-sandbox\dist\eventual-0.14.0.tar.gz
+info: Tarball: 51.2 KB
+info: Multihash: bciqg7wk4knr5sqc5kxa2s2umqptgxlxwoavvoriqgnljpn7lrmky7yq
+info: Package: @vermeulen.solutions/eventual@0.14.0
+info: Uploading icon (1254x1254) to the publisher PDS
+success: Uploaded icon
+info: Uploading banner (2172x724) to the publisher PDS
+success: Uploaded banner
+info: Uploading screenshot 1 (1280x900) to the publisher PDS
+success: Uploaded screenshot 1
+info: Uploading screenshot 2 (1280x900) to the publisher PDS
+success: Uploaded screenshot 2
+info: Uploading screenshot 3 (390x844) to the publisher PDS
+success: Uploaded screenshot 3
+info: Uploading screenshot 4 (1019x1122) to the publisher PDS
+success: Uploaded screenshot 4
+info: Uploading screenshot 5 (1440x1190) to the publisher PDS
+success: Uploaded screenshot 5
+info: Updating package profile for did:plc:g2hei4vcwndrdl3gdbb6np6c/eventual
+warn: Ignored on subsequent publish (existing package record wins): license, name, description, keywords, authors, security, sections. To edit these on the existing package, run `emdash-plugin update-package` (dry-run prints the diff; pass `--yes` to apply).
+{"identifier":"@vermeulen.solutions/eventual","profile":"at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual","release":"at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0","cid":"bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y","checksum":"bciqg7wk4knr5sqc5kxa2s2umqptgxlxwoavvoriqgnljpn7lrmky7yq","hosting":"blob","profileCreated":false,"releaseOverwritten":false,"page":"https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual"}

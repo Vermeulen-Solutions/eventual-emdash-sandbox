@@ -1,0 +1,33 @@
+
+> eventual@0.14.0 budget
+> node scripts/bundle-budget.mjs
+
+{
+  "entries": [
+    {
+      "name": "backend.js",
+      "bytes": 130764
+    },
+    {
+      "name": "manifest.json",
+      "bytes": 46284
+    },
+    {
+      "name": "README.md",
+      "bytes": 21472
+    }
+  ],
+  "total": 198520,
+  "files": 3,
+  "budgets": {
+    "file": 130816,
+    "total": 225280,
+    "files": 16
+  },
+  "hardLimits": {
+    "file": 131072,
+    "total": 262144,
+    "files": 20
+  },
+  "errors": []
+}

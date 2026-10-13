@@ -1,0 +1,8 @@
+{
+  "browserTestedSha256": "141c3405c692eafda47c01ea44830a232c450c3ae5d6311340fa2634be9b0212",
+  "finalSha256": "f28477072d645fbd3dc6b380ccaed2932ab5cb70fcb09b6cd95bbb4c0a87b972",
+  "changedFiles": [
+    "package/docs/collection-setup.md"
+  ],
+  "runtimeAndAllOtherFilesIdentical": true
+}
