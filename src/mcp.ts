@@ -48,7 +48,8 @@ import {
   hydrateNativeAssets,
 } from "./domain/native-source";
 import { referenceTarget } from "./domain/native-references";
-import { saveCollectionBindings, collectionSchemas, collectionSettings } from './domain/collections';
+import { saveCollectionBindings, collectionSchemas, collectionSettings, legacyReadsEnabled, LEGACY_READS_SETTING_KEY } from './domain/collections';
+import { forgetRequestMemo } from './domain/request-memo';
 import { normalizeVenueRecord, localizedVenue } from "./domain/venue-adapter";
 import { nativeEntryToEventRecord } from "./domain/event-expansion";
 import {withInvocationBudget} from './domain/invocation-budget';
@@ -621,20 +622,25 @@ export const mcpRoutes = {
       defaultTimezone:
         (await ctx.settings.get<string>("defaultTimezone")) ?? "UTC",
       collections: await collectionSettings(ctx) ?? null,
+      legacyReads: await legacyReadsEnabled(ctx),
     }),
     true,
   ),
   "mcp/settings/update": route(
     validSettingsUpdate,
-    async ({ defaultTimezone, collections }, ctx) => {
+    async ({ defaultTimezone, collections, legacyReads }, ctx) => {
       if (!isValidTimeZone(defaultTimezone))
         return { ok: false, error: "INVALID_TIMEZONE" };
       if(collections) {
         try { await saveCollectionBindings(ctx,collections); }
         catch(error) {return {ok:false,error:'INVALID_COLLECTIONS',details:error instanceof Error?error.message:'Review the collection schemas.'};}
       }
+      if(legacyReads !== undefined) {
+        await ctx.settings.set(LEGACY_READS_SETTING_KEY,legacyReads);
+        forgetRequestMemo(ctx,'legacy-reads');
+      }
       await ctx.settings.set("defaultTimezone", defaultTimezone);
-      return { ok: true, defaultTimezone };
+      return { ok: true, defaultTimezone, legacyReads: await legacyReadsEnabled(ctx) };
     },
     true,
   ),

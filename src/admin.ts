@@ -3,7 +3,7 @@ import type {BlockResponse, FormField} from '@emdash-cms/blocks';
 import type {SandboxedRouteContext} from 'emdash/plugin';
 import type {EventualContext} from './storage';
 import {handleAdmin as nativeWorkspace} from './native-admin';
-import {collectionBindings, saveCollectionBindings, collectionSettings, collectionSchemas, type CollectionBindings} from './domain/collections';
+import {collectionBindings, saveCollectionBindings, collectionSettings, collectionSchemas, legacyReadsEnabled, LEGACY_READS_SETTING_KEY, type CollectionBindings} from './domain/collections';
 import {isValidTimeZone} from './domain/date-time';
 import {withInvocationBudget} from './domain/invocation-budget';
 
@@ -14,6 +14,7 @@ const collectionLink=(ctx:EventualContext,slug:string,label:string):BlockRespons
 async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse> {
   // This page repairs removed/broken bindings; do not resolve them first.
   const selected=await collectionSettings(ctx);
+  const legacyReads=await legacyReadsEnabled(ctx);
   const schemas=await collectionSchemas(ctx);
   const defaultEvents=schemas.find(item=>item.slug==='events');
   const target=(field:string,fallback:string)=>String(defaultEvents?.fields.find(item=>item.slug===field)?.options?.collection ?? fallback);
@@ -24,6 +25,7 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
     ...(error ? [{type:'banner' as const,title:'Settings not saved',description:error,variant:'error' as const}] : []),
     {type:'form',block_id:'collection-settings:'+Object.values(selected ?? {}).join(':'),fields:[choose('events','Event collection'),choose('venues','Venue collection'),choose('organizers','Organizer collection')],submit:{action_id:'save-settings',label:'Save settings'}},
     context('Create missing collections with the optional setup script or MCP guide. Ask your administrator; no Eventual frontend package is required.'),
+    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Read legacy events',description:'Serve pre-0.13 private plugin records when no collection is configured. Leave this off so a missing collection fails with an explicit error instead of returning stale data.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save legacy read setting'}},
     {type:'actions',elements:[{type:'link',label:'Collection setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md'}}]}]};
 }
 
@@ -34,9 +36,16 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
   if(request.type==='form_submit' && (!request.values || typeof request.values!=='object' || Array.isArray(request.values))) return {blocks:[{type:'banner',title:'Invalid admin request',variant:'error'}]};
   if(String(request.action_id ?? '').startsWith('open-page:')) {request.type='page_load';request.page=request.value;delete request.action_id;}
   const page=request.page;
-  if(page==='/settings' || request.action_id==='save-settings') {
+  if(page==='/settings' || request.action_id==='save-settings' || request.action_id==='save-legacy-reads') {
     // plugins:manage is the administrator role in core; use host-attested identity.
     if(!user || user.role<50) return {blocks:[nav(),context('An administrator must manage Eventual collection settings.')]};
+    if(request.action_id==='save-legacy-reads') {
+      try {
+        const submitted=(request.values as Record<string,unknown>|undefined)?.legacyReads;
+        if(!(submitted===true || submitted===false || submitted==='true' || submitted==='false')) reject('The legacy read setting must be on or off.');
+        await ctx.settings.set(LEGACY_READS_SETTING_KEY,submitted===true || submitted==='true');
+      } catch(error) {return settings(ctx,error instanceof Error?error.message:'Check the legacy read setting.');}
+    }
     if(request.action_id==='save-settings') {
       try {
         const values=request.values as Record<string,unknown>;
@@ -49,7 +58,10 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
   }
   try {
     const bindings=await collectionBindings(ctx);
-    if(!bindings.schema) return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose or create native collections in Eventual settings. Eventual does not create events in private plugin storage. Existing legacy data is retained for an explicit migration.')]};
+    if(!bindings.schema) {
+      const legacyReads=await legacyReadsEnabled(ctx);
+      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose or create native collections in Eventual settings. Eventual does not create events in private plugin storage. Existing legacy data is retained for an explicit migration.'),context(legacyReads?'Public feeds currently serve that legacy data because legacy reads are enabled.':'Public feeds fail explicitly until a collection is chosen. Enable legacy reads in Eventual settings to serve the legacy data instead.')]};
+    }
     if(page==='/venues' || page==='/organizers') {
       const slug=page==='/venues'?bindings.venues:bindings.organizers;
       return {blocks:[nav(),context('Create and edit these entries in the EmDash content editor.'),...(slug?[collectionLink(ctx,slug,page==='/venues'?'Manage venues':'Manage organizers')]:[context('No collection selected. Ask an administrator to configure it in Eventual settings.')])]};

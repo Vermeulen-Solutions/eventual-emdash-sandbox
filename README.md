@@ -273,6 +273,8 @@ GET /_emdash/api/plugins/eventual/calendar?locale=fr&strict=true&category=Music
 
 For private-storage prototypes, prepare explicit `--legacy-compatibility` schemas and follow the [upgrade guide](./docs/upgrade-0.13.0.md). The migration engine copies events/venues non-destructively; organizer directories and manual translations may need separate preparation. Native source activation changes feeds even when the collection is empty.
 
+Public feeds read private plugin storage **only when an administrator enables Read legacy events** in Eventual settings (MCP `legacyReads`); without it a site whose event collection is missing fails with an explicit error instead of serving pre-0.13 records under an assumed locale. See the [0.14.0 release notes](./docs/release-notes-0.14.0.md).
+
 1. **Dry-Run Preview:** Inspect payloads, counts, and potential warnings with zero database writes:
    ```json
    { "dryRun": true, "limit": 50, "locale": "en" }

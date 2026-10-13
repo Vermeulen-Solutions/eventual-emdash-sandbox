@@ -43,6 +43,7 @@ it('maps structured address and public organizer metadata, omitting empty fields
 
 it('retains legacy organizer management and guards concurrent edits', async () => {
   const h = await createPluginRuntimeTestHost();
+  await h.fixtures.plugin.setting('legacyReads', true);
   try {
     const saved=await h.transport.invokeRoute('mcp/organizers/create',{name:'Association',website:'https://example.com',contactUrl:'https://example.com/contact'});
     expect(saved).toMatchObject({ok:true});

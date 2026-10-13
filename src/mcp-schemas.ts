@@ -179,7 +179,7 @@ const listOccurrences = obj({
 	through: dateStr,
 	limit: int(1, 100),
 }, ["id"]);
-const updateSettings = obj({ defaultTimezone: str(1, 100), collections: obj({events:str(1,63),venues:str(0,63),organizers:str(0,63)},['events','venues','organizers']) }, ["defaultTimezone"]);
+const updateSettings = obj({ defaultTimezone: str(1, 100), collections: obj({events:str(1,63),venues:str(0,63),organizers:str(0,63)},['events','venues','organizers']), legacyReads: bool }, ["defaultTimezone"]);
 const organizerFields = { name: str(1, 200), website: str(0, 2048), contactUrl: str(0, 2048) };
 const createOrganizer = obj(organizerFields, ['name']);
 const updateOrganizer = obj({ id: str(1, 200), expectedUpdatedAt: str(1, 32), patch: obj(organizerFields) }, ['id', 'expectedUpdatedAt', 'patch']);
@@ -291,8 +291,8 @@ export const mcpTools = {
 	createVenue: { description: "Create a saved Eventual venue.", route: "mcp/venues/create", input: mcpInput(venue), destructive: false },
 	updateVenue: { description: "Update a saved Eventual venue.", route: "mcp/venues/update", input: mcpInput(updateVenue), destructive: true },
 	deleteVenue: { description: "Delete an unassigned Eventual venue. Assigned venues cannot be deleted.", route: "mcp/venues/delete", input: mcpInput(venueId), destructive: true },
-	getSettings: { description: "Read Eventual settings, including the default timezone for new events.", route: "mcp/settings/get", input: mcpInput(noInput), destructive: false },
-	updateSettings: { description: "Set Eventual's default IANA timezone for new events.", route: "mcp/settings/update", input: mcpInput(updateSettings), destructive: true },
+	getSettings: { description: "Read Eventual settings: default timezone, collection bindings and the legacy read setting.", route: "mcp/settings/get", input: mcpInput(noInput), destructive: false },
+	updateSettings: { description: "Update Eventual settings: default timezone, collection bindings and the legacy read setting. Legacy reads serve private pre-0.13 records when no collection is configured and are off by default.", route: "mcp/settings/update", input: mcpInput(updateSettings), destructive: true },
 	migrateToNative: {
 		description: "Optionally migrate plugin storage to native collections with Portable Text and target locale. Preview with dryRun; legacy data is retained.",
 		route: "mcp/transfer/migrateToNative",

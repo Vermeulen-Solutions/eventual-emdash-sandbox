@@ -10,6 +10,7 @@ import { formatPublicEvent } from "../src/public-event";
 // hosted Windows runners the same wall-time budget as other runtime workflows.
 it("updates new fields, clears URLs, and normalizes publication transitions through MCP", async () => {
 	const h = await createPluginRuntimeTestHost();
+	await h.fixtures.plugin.setting("legacyReads", true);
 	try {
 		const created = await h.transport.invokeRoute("mcp/events/create", { title: "Meetup", start: "2026-10-10", end: "2026-10-10", allDay: true, recurrence: { frequency: "daily", until: "2026-10-12" } }) as {
 			event: EventRecord;

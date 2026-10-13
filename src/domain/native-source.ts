@@ -7,6 +7,7 @@ import type { EventRecord } from "./event";
 import { nativeEntryToEventRecord } from "./event-expansion";
 import { normalizeVenueRecord, type NormalizedVenue } from "./venue-adapter";
 import { referenceTarget, eventSchema } from "./native-references";
+import { legacyReadsEnabled } from "./collections";
 import { safeHttpUrl } from "./venue";
 import { publicEventImageUrl } from "./image";
 import {requestMemo} from './request-memo';
@@ -55,6 +56,9 @@ export async function listNative(
 export async function readEventSource(ctx: EventualContext, through?: string) {
   const schema = await nativeSchema(ctx);
   if (!schema) {
+    // Private plugin storage is pre-0.13 data: public reads use it only on explicit opt-in.
+    if (!(await legacyReadsEnabled(ctx)))
+      reject("No Eventual event collection is configured. Choose one in Eventual settings, or enable legacy reads to serve the pre-0.13 plugin data.");
     return {
       native: false,
       events: (await listEvents(ctx, {

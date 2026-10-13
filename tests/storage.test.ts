@@ -6,6 +6,8 @@ import { EventScanLimitError, listEvents, type EventualContext } from "../src/st
 
 function contextWithEvents(count: number): EventualContext {
 	return {
+		// These scans exercise the pre-0.13 storage path, which reads only on explicit opt-in.
+		settings: { get: async (key: string) => (key === 'legacyReads' ? true : undefined) },
 		storage: {
 			events: {
 				query: async ({ cursor, limit }: { cursor?: string; limit: number }) => {

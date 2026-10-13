@@ -15,6 +15,7 @@ afterEach(async () => {
 
 async function seed() {
   host = await createPluginRuntimeTestHost();
+  await host.fixtures.plugin.setting('legacyReads', true);
   const event: EventRecord = {
     id: "practice",
     title: "Practice",

@@ -12,7 +12,7 @@ for (const scenario of [{ name: '500 single events', count: 500, recurring: fals
     const data = prepareEventData({ ...EMPTY_EVENT_DRAFT, title: 'Performance fixture', start: '2026-10-01', end: '2026-10-01', allDay: true, published: true }).data!;
     const stored = Array.from({ length: scenario.count }, (_, i): EventRecord => ({ ...data, id: String(i), venueId: 'venue', organizerId: 'organizer', createdAt: '', updatedAt: '', ...(scenario.recurring ? { recurrence: { frequency: 'daily', until: '2026-10-31' } } : {}) }));
     const calls = { queries: 0, venues: 0, organizers: 0 };
-    const ctx = { plugin: { id: 'eventual' }, storage: {
+    const ctx = { plugin: { id: 'eventual' }, settings: { get: async (key: string) => (key === 'legacyReads' ? true : undefined) }, storage: {
       events: { query: async ({ cursor, limit }: { cursor?: string; limit: number }) => {
         calls.queries++;
         const offset = Number(cursor ?? 0);

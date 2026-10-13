@@ -112,6 +112,53 @@ describe("Native pagination and source authority", () => {
     expect(query).not.toHaveBeenCalled();
   });
 
+  it("fails closed when no collection is configured and legacy reads are off", async () => {
+    const query = vi.fn();
+    const ctx = {
+      schema: { listCollections: async () => [] },
+      content: {},
+      settings: { get: async () => undefined },
+      storage: { events: { query } },
+    } as unknown as EventualContext;
+    await expect(readEventSource(ctx)).rejects.toThrow(/legacy reads/i);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("serves private plugin storage only when legacy reads are enabled", async () => {
+    const legacy = {
+      id: "legacy-1",
+      title: "Legacy match",
+      description: "",
+      start: "2026-03-01T10:00:00Z",
+      end: "2026-03-01T11:00:00Z",
+      allDay: false,
+      timezone: "Europe/Zurich",
+      location: "",
+      organizer: "",
+      externalUrl: "",
+      imageUrl: "",
+      categories: [],
+      published: true,
+      exceptions: [],
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+    };
+    const query = vi.fn(async () => ({ items: [{ data: legacy }], hasMore: false }));
+    const ctx = {
+      plugin: { id: "eventual" },
+      site: { url: "https://club.example", locale: "fr" },
+      schema: { listCollections: async () => [] },
+      content: {},
+      settings: { get: async (key: string) => (key === "legacyReads" ? true : undefined) },
+      storage: { events: { query } },
+    } as unknown as EventualContext;
+    const source = await readEventSource(ctx, "2026-12-31");
+    expect(source.native).toBe(false);
+    expect(source.events).toHaveLength(1);
+    expect(source.events[0]).toMatchObject({ id: "legacy-1", locale: "fr", title: "Legacy match" });
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
   it("resolves localized venues in bulk via content.list without N+1 get or getTranslations calls", async () => {
     const venueRows = [
       {

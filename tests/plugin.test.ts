@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  createPluginRuntimeTestHost,
   createPluginTestHost,
   type PluginTestHost,
 } from "@emdash-cms/plugin-test";
@@ -13,8 +14,9 @@ afterEach(async () => {
 // runners. Keep the domain-test deadline unchanged; allow this integration suite
 // a bounded minute without retries or weaker assertions.
 describe("Eventual compatibility routes", { timeout: 60_000 }, () => {
-  it("keeps legacy MCP publication and cancellation feeds usable without native collections", async () => {
+  it("keeps legacy MCP publication and cancellation feeds usable with legacy reads enabled", async () => {
     host = await createPluginTestHost();
+    await host.invokeRoute("mcp/settings/update", { defaultTimezone: "UTC", legacyReads: true });
     const created = (await host.invokeRoute("mcp/events/create", {
       title: "Legacy calendar event",
       description: "**Readable** copy",
@@ -100,6 +102,7 @@ describe("Eventual compatibility routes", { timeout: 60_000 }, () => {
   });
   it("accepts exactly 366 inclusive dates in the public event range", async () => {
     host = await createPluginTestHost();
+    await host.invokeRoute("mcp/settings/update", { defaultTimezone: "UTC", legacyReads: true });
     await expect(
       host.invokeRoute(
         "publicEvents",
@@ -115,6 +118,30 @@ describe("Eventual compatibility routes", { timeout: 60_000 }, () => {
       through: "2027-01-01",
       events: [],
     });
+  });
+  it("refuses public feeds when no collection is configured and legacy reads are off", async () => {
+    const runtimeHost = await createPluginRuntimeTestHost();
+    try {
+      const created = (await runtimeHost.transport.invokeRoute("mcp/events/create", {
+        title: "Stale legacy record",
+        start: "2026-11-15",
+        end: "2026-11-15",
+        allDay: true,
+        timezone: "UTC",
+      })) as { event: { id: string } };
+      await runtimeHost.transport.invokeRoute("mcp/events/publish", { id: created.event.id });
+      // The harness surfaces the route rejection; EmDash's HTTP layer converts it into
+      // `{ success: false, error: { code: "ROUTE_ERROR", message } }` (emdash-runtime).
+      await expect(
+        runtimeHost.transport.invokeRoute(
+          "publicEvents",
+          { from: "2026-11-01", through: "2026-11-30" },
+          { method: "GET" },
+        ),
+      ).rejects.toThrow(/legacy reads/i);
+    } finally {
+      await runtimeHost.dispose();
+    }
   });
   it("validates MCP input and creates an ordinary timezone-aware one-off event", async () => {
     host = await createPluginTestHost();

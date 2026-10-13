@@ -5,6 +5,7 @@ import {requestMemo, forgetRequestMemo} from './request-memo';
 
 export interface CollectionBindings { events: string; venues: string; organizers: string }
 export const COLLECTION_SETTINGS_KEY = 'collections';
+export const LEGACY_READS_SETTING_KEY = 'legacyReads';
 const slug = /^[a-z][a-z0-9_]{0,62}$/;
 export async function eventCollectionName(ctx:EventualContext) {
   return (await collectionSettings(ctx))?.events ?? 'events';
@@ -12,6 +13,15 @@ export async function eventCollectionName(ctx:EventualContext) {
 
 export function collectionSettings(ctx: EventualContext) {
   return requestMemo(ctx, 'collection-settings', async () => await ctx.settings?.get<CollectionBindings>(COLLECTION_SETTINGS_KEY) ?? undefined);
+}
+/**
+ * Private plugin storage holds pre-0.13 event records. Public reads only fall back to it
+ * when an administrator explicitly enables legacy reads; otherwise a site without a
+ * configured collection fails with an actionable error instead of serving stale data
+ * under the requested locale.
+ */
+export function legacyReadsEnabled(ctx: EventualContext) {
+  return requestMemo(ctx, 'legacy-reads', async () => (await ctx.settings?.get<boolean>(LEGACY_READS_SETTING_KEY)) === true);
 }
 /** Raw discovery stays available when a selected collection needs repair. */
 export function collectionSchemas(ctx: EventualContext) {

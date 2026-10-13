@@ -45,6 +45,6 @@ Core tool parameter names and available operations must be checked through that 
 
 ## Connect and verify
 
-In Eventual → Settings, select the three collections and save. The settings route validates Portable Text, schedule field types, localization flags and exact reference targets. Selection does not move data. Choose no directory only when the corresponding event reference field is absent. Missing explicitly selected collections fail closed until repaired.
+In Eventual → Settings, select the three collections and save. The settings route validates Portable Text, schedule field types, localization flags and exact reference targets. Selection does not move data. Choose no directory only when the corresponding event reference field is absent. Missing explicitly selected collections fail closed until repaired. A site with no collection configured at all also fails closed: public JSON/ICS reads serve private plugin storage only after an administrator enables **Read legacy events** (0.14.0+).
 
 Create a native draft, enter rich text, save, then open Dates, venue & repeat. Pick a native venue, save schedule changes, reload, and publish through core. Verify the JSON and ICS feeds contain the event only after publication. For localization, create a core translation row and verify shared dates/reference IDs and localized text. Preview any legacy migration separately before executing it.
