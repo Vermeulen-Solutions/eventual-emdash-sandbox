@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-14",
+  "sourceCommit": "c6023f5",
+  "scope": "Repository and Registry listing documentation",
+  "documentation": {
+    "before": 38,
+    "after": 8,
+    "primaryGuides": [
+      "docs/user-guide.md",
+      "docs/collection-setup.md",
+      "docs/upgrade-0.13.0.md",
+      "docs/native-modernization.md"
+    ],
+    "readmeWords": {
+      "before": 2531,
+      "after": 1
+    },
+    "preserved": "README banner, artwork, button layout and colors; GitHub/Registry badge labels corrected",
+    "historySnapshot": "9bd38934de72c562639093e38a56fe6b3e3e2818"
+  },
+  "verification": {
+    "localLinks": "passed (14 Markdown files)",
+    "manifest": "passed",
+    "packageDocumentationEntries": "passed",
+    "documentationBundleBudget": {
+      "entries": [
+        {
+          "name": "backend.js",
+          "bytes": 130764
+        },
+        {
+          "name": "manifest.json",
+          "bytes": 46284
+        },
+        {
+          "name": "README.md",
+          "bytes": 7620
+        }
+      ],
+      "total": 184668,
+      "files": 3,
+      "errors": []
+    },
+    "registrySectionCaps": [
+      {
+        "file": "docs/registry-installation.md",
+        "bytes": 1680,
+        "graphemes": 1676
+      },
+      {
+        "file": "docs/registry-changelog.md",
+        "bytes": 1305,
+        "graphemes": 1305
+      }
+    ],
+    "runtimeSha256": "27a97351e2d9801378e839a7339907bf17fdd72fde00b57e9211c287b7c3d132"
+  },
+  "registry": {
+    "changedFields": [
+      "sections"
+    ],
+    "identifier": "did:plc:g2hei4vcwndrdl3gdbb6np6c/eventual@0.14.0",
+    "profileCid": "bafyreicuuhq5ey37gkejikqljm7hpmd3gb24utubphh5ge76fhnuvve7me",
+    "releaseCid": "bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y",
+    "profileApproved": true,
+    "releaseApproved": true,
+    "checksum": "bciqg7wk4knr5sqc5kxa2s2umqptgxlxwoavvoriqgnljpn7lrmky7yq",
+    "blobCid": "bafkreidp3fofgy6zibovlqnjnkgihztlv33hak2xiuidgvuxw7vywfmp4i",
+    "bytes": 52428,
+    "sha256": "6fd95c5363d9405d55c1a96a8c83e66baef6702b574510335697b7eb8b158fe2"
+  },
+  "releaseArtifactPolicy": "Existing 0.14.0 archive retained; QA documentation bundle was not published"
+}\n
