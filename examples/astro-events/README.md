@@ -1,89 +1,55 @@
-# Eventual Astro Event Browser Example
+# Astro visitor showcase
 
 <p align="center">
-  <img src="../../images/registry-0.11.0/05-public-events.jpg" alt="Astro Event Browser - 7 Public Views" width="90%" />
+  <img src="../../images/registry-0.11.0/05-public-events.jpg" alt="Astro event browser with seven views" width="90%" />
 </p>
 
-An official, site-owned Astro frontend integration showcasing how to render events from [Eventual](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox).
-
-This example demonstrates how an Astro website can consume Eventual's public JSON API to deliver **seven fast, responsive, and accessible visitor views** with zero client-side JavaScript.
-
----
-
-## What It Looks Like
+This optional, site-owned example renders Eventual feeds. It supplies list, timeline, cards, daily schedule, date strip, month and location views (`/events?view=month`), plus event details, JSON-LD and calendar actions. Navigation, filters and disclosures use HTML rather than client JavaScript.
 
 <p align="center">
-  <img src="../../images/registry-0.11.0/06-hybrid-event-detail.jpg" alt="Astro Event Detail Page with Calendar Actions" width="90%" />
+  <img src="../../images/registry-0.13.4/public-event-detail-fr-desktop.png" alt="Event details with calendar actions" width="90%" />
 </p>
 
-### Included Views
-Visitors can switch between seven viewing formats via query parameter (e.g., `/events?view=month`):
+## Run it
 
-| View | Query Param | Description |
-| :--- | :--- | :--- |
-| **List** *(Default)* | `?view=list` | Chronological agenda list with high-contrast date blocks. |
-| **Timeline** | `?view=timeline` | Vertical timeline with visual event nodes and summary cards. |
-| **Card Grid** | `?view=cards` | Rich card grid displaying event cover images, organizers, and tags. |
-| **Daily Schedule** | `?view=schedule` | Collapsible daily disclosures grouping events per date. |
-| **Date Strip** | `?view=dates` | Horizontal date jump bar for quick navigation across the month. |
-| **Month Calendar** | `?view=month` | Full week-aligned calendar grid on desktop; day-by-day agenda on mobile. |
-| **Locations** | `?view=locations` | Events grouped by physical venue or virtual attendance with map directions. |
+Use Node 24+ and a reachable EmDash site with published Eventual events. Build the parent plugin first; the example depends on `file:../..`.
 
-In addition, clicking any event opens a **shareable detail page** (`/events/[id]`) with:
-- Schema.org JSON-LD structured data for search engines.
-- Virtual meeting links (Zoom, Google Meet, YouTube Live) and map directions.
-- "Add to Calendar" dropdown (Google Calendar, Outlook, Yahoo Calendar, and Apple `.ics` download).
-- Feed subscription link for live calendar updates via `webcal://`.
-
----
-
-## Quick Start
-
-### Requirements
-- Node.js `24` or newer
-- An active EmDash site with the Eventual plugin installed (or test server)
-
-### 1. Install & Configure
 ```sh
-npm install
+# From the repository root:
+npm ci
+npm run build
+cd examples/astro-events
+npm ci
 cp .env.example .env
-```
-*(On Windows PowerShell, use `Copy-Item .env.example .env`)*
-
-In your `.env` file, point to your EmDash site:
-```env
-EVENTUAL_API_ORIGIN=http://127.0.0.1:4322
-EVENTUAL_LOCALE=en-GB
-EVENTUAL_DISPLAY_TIMEZONE=Europe/Amsterdam
-```
-
-### 2. Run Locally
-```sh
 npm run dev
 ```
-Navigate to `http://localhost:4321/` in your browser. The root route automatically redirects to `/events`.
 
----
+In PowerShell, use `Copy-Item .env.example .env`. Edit the environment values:
 
-Eventual 0.13.0 is a breaking upgrade. Follow [the upgrade guide](../../docs/upgrade-0.13.0.md). This example is optional public rendering, not an editor installation requirement.
+```env
+EVENTUAL_API_ORIGIN=http://127.0.0.1:4322
+EVENTUAL_LOCALE=fr
+EVENTUAL_DISPLAY_TIMEZONE=Europe/Paris
+```
 
-## How It Works
+Open the URL Astro prints; its default port is 4321 and `/` redirects to `/events`.
 
-- **Zero-JavaScript by Default:** Everything—filtering, month navigation, view switching, and calendar disclosures—uses standard HTML links, GET forms, and native `<details>` elements. There are no client-side bundles or heavy calendar libraries.
-- **Server-Side Rendered (SSR):** Built with Astro's `@astrojs/node` adapter in standalone mode. Every page request fetches the latest event data from EmDash, ensuring real-time accuracy without rebuilds.
-- **Accessible & SEO Ready:** Includes semantic landmark regions, skip links, ARIA labels, polite screen reader announcements, and JSON-LD structured data in the document `<head>`.
-- **Localization:** Supports multi-language labels (English, Dutch, French included) and locale-aware week layouts (Monday-first vs Sunday-first).
-- **Native Multilingual Feeds (v0.13.0):** Communicates with Eventual 0.13.0's native feeds via `locale` and `strict` query parameters. Uses `expandEventOccurrences` to expand occurrences across language siblings with localized titles, Portable Text, and fallback handling.
+## Integration assumptions
 
+The feed helper and subscription links currently use plugin ID **eventual**. Registry installations have generated IDs and need an adapter: see the [developer guide](../../docs/native-modernization.md#astro-integration). A remote API origin must be reachable by the SSR server; subscription links must also be reachable by visitors' calendar apps.
 
----
+EVENTUAL_LOCALE controls interface labels, date formatting and week layout (English, Dutch and French labels). The current example requests do **not** pass locale/strict to the feed. To select translated event content, add those options to each fetchPublicFeed call. Display time zone does not rewrite stored event schedules.
 
-## Available Scripts
+Every request fetches the feed; host caching may still apply. The browser shows an unavailable state with HTTP 502 when fetching fails, rather than substituting stale rows. There are no RSVP/registration workflows in this example.
+
+## Checks
 
 ```sh
-npm run check       # Run Astro diagnostics and TypeScript validation
-npm test            # Run Vitest unit tests (calendar logic, timezone math, routes)
-npm run test:page   # Build and verify rendered event HTML against a mock CMS
-npm run build       # Build SSR server production bundle
-npm run preview     # Preview built standalone server
+npm run check
+npm test
+npm run test:page
+npm run build
+npm run preview
 ```
+
+For editing and installation, use the [main README](../../README.md); this showcase is optional website code.

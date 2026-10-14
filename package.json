@@ -49,18 +49,14 @@
     "src/public-event.ts",
     "docs/native-modernization.md",
     "docs/registry-installation.md",
-    "docs/self-contained-plugin.md",
     "scripts/export-native-schema.mjs",
     "scripts/upgrade-native-editor.mjs",
     "scripts/check-editor-installation.mjs",
-    "docs/editor-upgrade.md",
     "docs/collection-setup.md",
     "docs/upgrade-0.13.0.md",
-    "docs/release-notes-0.13.0.md",
-    "docs/release-notes-0.13.1.md",
-    "docs/release-notes-0.13.2.md",
-    "docs/release-notes-0.13.3.md",
-    "docs/release-notes-0.13.4.md"
+    "docs/user-guide.md",
+    "docs/history.md",
+    "docs/release-notes-0.14.0.md"
   ],
   "scripts": {
     "validate": "emdash-plugin validate",

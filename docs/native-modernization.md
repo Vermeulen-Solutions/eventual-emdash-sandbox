@@ -1,89 +1,86 @@
-# Configurable native architecture (0.13.0)
+# Developer guide — Eventual 0.14.0
 
-Eventual Settings selects the event, venue and organizer collection slugs. Native collections own all editorial content; the plugin supplies validation, recurrence, occurrence exceptions, multilingual feeds and a saved-entry schedule panel. The optional setup script/MCP prompt creates compatible schemas outside the read-only sandbox. No frontend companion is required on EmDash 1.2.
+EmDash collections own content, rich text, languages, drafts, revisions and publication. Eventual's sandbox supplies schedule validation, recurrence, saved-entry controls and feeds. See [setup](collection-setup.md) and [upgrading](upgrade-0.13.0.md).
 
-Selections drive feeds, MCP inspection/export, migration, validation, dependency guards, duplication and schedule controls. An explicit missing collection fails closed. An empty selected native collection remains authoritative. Non-event save/publish hooks are unaffected. Settings are administrator-only and validate rich-text types, translatable flags and reference targets.
+## Installation and plugin ID
 
-The global panel supports custom collection names and only mutates the configured event collection. Core owns rich text, drafts, translations and publication. Panel operations read the latest draft, reject stale tokens and update schedule fields only. The content update API has no atomic revision predicate; genuinely simultaneous writes remain a core API limitation. Save unsaved announcement edits before using the panel and reload after changes. Generic managed fields may remain visible in core.
+Registry installations use the host's sandbox runner and downloaded bundle. Config-managed installations register the source descriptor in `sandboxed: [eventual]`. Use one backend per site. Cloudflare Registry hosts need Worker Loader and PluginBridge: [EmDash sandbox setup](https://docs.emdashcms.com/deployment/plugin-sandbox/).
 
-[Setup and MCP instructions](collection-setup.md). See [the breaking 0.13.0 upgrade guide](upgrade-0.13.0.md).
+**Use the installed plugin ID in URLs and MCP names.** Config-managed installs normally use `eventual`; Registry installs have generated IDs such as `r_hxn32uyal53iahxf`. Read it from the install result or authenticated `GET /_emdash/api/admin/plugins`. MCP names are `<pluginId>__<toolName>`.
 
-## Earlier domain and migration notes
-
-> **Superseded installation proposal:** The 0.13.0 is self-contained. Do not follow a two-package installation requirement below. See [self-contained architecture](./self-contained-plugin.md) and [current installation](./registry-installation.md). Historical evidence below refers to the earlier companion candidate; publication is on hold.
-
-# Native setup and migration
-
-The following instructions are specifically for migrating an older private-storage prototype; new sites use the clean default schema in collection-setup.md. They do not apply a schema, migrate data or publish a release automatically.
-
-For the current native setup, follow [collection-setup.md](collection-setup.md). The historical editor-upgrade script targets EmDash 1.0.1 and must not patch an EmDash 1.2 installation. A blueprint cannot hide fields in stock core.
-
-## Apply a reviewed schema
-
-From this repository, after `npm run build`, using Node 24:
+Astro/schema/transfer helpers use this repository's npm-format source package, not the Registry `.tar.gz`. As of 14 October 2026, GitHub's latest downloadable source archive is 0.13.1. For matching 0.14.0 helpers, use a checkout containing release commit `16a832d` whose package.json version is 0.14.0:
 
 ```sh
-node scripts/export-native-schema.mjs --legacy-compatibility --output eventual.seed.json
-npx emdash seed eventual.seed.json --validate
+npm ci
+npm run build
+npm pack
+# In your site repository, install the resulting file:
+npm install /path/to/eventual-0.14.0.tgz
 ```
 
-Review the seed. For an existing locations collection, use `--venue-collection locations --reuse-venues`; the exporter omits locations and includes events and the default organizers directory. Add shared `legacy_id` (string, unique, indexed) and `legacy_metadata` (JSON) fields to locations. Its required fields must be satisfiable by the name/address mapper, or pre-create compatible locations and supply `venueMapping`. New reference fields default to column-backed IDs; previously relation-bound fields need the upgrade runbook.
+Source tooling needs Node 24+. Peer ranges are in [package.json](../package.json); release acceptance used EmDash/Admin/Block Kit 1.2.0, Astro 7.3.2 and React 19. Historical editor compatibility exports target 1.0.1.
 
-Apply the definitions through EmDash's schema editor/MCP tools or `applySeed` in the site's database workflow. For local SQLite, the CLI supports `npx emdash seed eventual.seed.json --database <actual-site-database> --no-content --on-conflict update`. Confirm the database path: the CLI defaults to `./data.db`. Cloudflare/D1 sites must use their own EmDash schema workflow. Eventual has no `schema:write` capability.
+## Public routes
 
-Adding events changes public authority immediately, including while empty. Plan schema application and migration together. Configure site locales first. Public routes come from the collection's `urlPattern`; Eventual does not provision Astro pages.
+Routes are relative to `/_emdash/api/plugins/<pluginId>/`.
 
-## Field contract
-
-| Purpose | Native representation |
+| Route | Inputs and behavior |
 | --- | --- |
-| Timed schedule | ISO `start`/`end`, IANA `timezone`, `all_day: false` |
-| All-day schedule | Inclusive YYYY-MM-DD `start_date`/`end_date`, `all_day: true` |
-| Publication | Core status, separate from event business status |
-| Business status | `event_status`: published, cancelled, postponed, rescheduled |
-| Recurrence | Structured JSON daily/weekly/monthly rule with finite until |
-| Shared occurrence changes | `exceptions` JSON schedule overrides |
-| Localized occurrence copy | `occurrence_content` JSON editorial overrides |
-| Venue | Native ID in the schema's referenced collection |
-| Image | Native `featured_image`; optional prototype `image_url` compatibility |
-| Migration identity (opt-in only) | Shared calendar_uid, unique indexed legacy_id, legacy_metadata |
-| Categories | Comma-separated text on new sites; prototype JSON arrays remain readable |
-| History | Native revisions; prototype history/previous_start_date columns are optional |
+| `GET publicEvents` | Inclusive `from`/`through` dates (YYYY-MM-DD); default UTC today through 180 days later; maximum 366 inclusive dates. Also `locale`, `strict` (false), `category`, `publicUrls` (true). |
+| `GET calendar` | Raw text/calendar; fixed window from UTC today through 365 days later. Supports locale, strict and category. |
+| `GET publicEventImage?eventId=…` | Published featured image with MIME/size checks; absent, unpublished or disabled legacy images return 404. |
 
-New translations may contain only editorial fields: core inherits shared fields after beforeSave. Save validation uses the latest editable revision. Publication/scheduling policies validate the full schedule and require referenced venues to be published. Non-event collections are unaffected. Native identity fields cannot change after creation.
+`strict=true` omits events without the requested translation; false can use another language with a `[FR]`/`[EN]` title prefix. Categories match without case sensitivity. `publicUrls=false` skips native canonical-URL lookups; slug/id remain available for site-owned links.
 
-Localized occurrence copy can become unmatched when a shared schedule changes. Those overrides remain stored for restoration and are ignored during expansion until their recurrence IDs match again. Explicit edits to occurrence_content must use currently scheduled IDs. New drafts without dates defer full schedule validation until publication, allowing core translation inheritance to complete.
-
-Sharing follows core publication synchronization; pending revisions can differ from live values. Secondary-locale editors may edit shared fields under normal core permissions. The recurrence engine implements structured daily/weekly/monthly rules, not arbitrary RFC RRULE parsing. Timed recurrence starts require minute precision; DST gaps are skipped and ambiguous wall times use the earlier offset.
-
-Venue names/addresses are shared; directions are localized. Categories, registration links and images are shared as site policy. Deliberately changing those policies requires reassessing feed synchronization.
-
-## Preview and execute
-
-Preview with the administrator-only migrateToNative tool:
+JSON success:
 
 ```json
-{"dryRun":true,"locale":"fr","limit":25}
+{"success":true,"data":{"ok":true,"from":"2026-11-01","through":"2026-11-30","events":[]}}
 ```
 
-Review venues/events, payloads, errors, counts and optional nextCursor. The action field distinguishes creation, resumed publication and unchanged existing items. Follow preview cursors for subsequent batches. Preview writes neither content nor migration state. New native IDs are empty because core generates them. `planned:<legacy-id>` venue values are placeholders, not usable native IDs.
+The feed has no top-level locale. Event rows carry title, description/plain text, optional descriptionBlocks, start/end, allDay, timezone, location, organizer, externalUrl, imageUrl, categories, venue and directionsUrl. Optional native metadata includes locale, translationGroup, slug and publicUrl. Business status is `status`, not `eventStatus`: see [PublicEvent](../src/public-event.ts). All-day end dates are inclusive here and exclusive in ICS.
 
-Execute without dryRun, then follow the execution's own nextCursor. Keep locale/collection consistent while resuming. The default locale is fr; venueCollection follows and must match events.venue. venueMapping targets must exist in that collection, and be published for published events.
+Handle both `success:false` host failures and `data.ok:false` plugin failures. EmDash 1.2.0 JSON configuration/RPC failures use HTTP 400, ROUTE_ERROR and private/no-store caching. Preserve errors instead of substituting stale rows or a successful empty feed.
 
-Migration scans bounded source pages, including recurring series that began in the past. It preserves recurrence, shared/editorial exceptions, original descriptions, available media, external images, organizer details, prior-start/history metadata and legacy calendar UIDs. Published events/venues are explicitly published through core's versioned API; drafts stay drafts. Missing optional venue fields become empty values; unmapped or invalid required dependencies cause errors rather than dangling references.
+## Astro integration
 
-A renewed durable lease prevents overlapping migrations. Unique legacy IDs and recovery tokens identify a create whose response was lost. Matching interrupted creations can resume publication. Completed native records are neither overwritten nor republished. Removed migrated items require explicit restoration. Legacy records and cancellation storage remain intact. Batches are not database-wide transactions.
+`fetchPublicFeed(origin, from, through, category, {locale, strict, publicUrls})` from `eventual/astro` validates responses and throws FeedError. **It hardcodes ID `eventual`**; its options do not accept a Registry ID. The showcase has the same assumption. Registry sites need a site-owned adapter to the actual URL or EmDash's SSR dispatcher:
 
-Preview shares structural schema/schedule/media/dependency checks with execution, but cannot predict generated IDs, concurrent changes, configured locales through an exposed API, or other plugins' save/publication policies. Per-item and batch errors remain possible during execution. Correct the cause and retry.
+```ts
+const pluginId = 'YOUR_INSTALLED_PLUGIN_ID';
+const url = new URL(`/_emdash/api/plugins/${pluginId}/publicEvents`, Astro.url);
+url.searchParams.set('from', '2026-11-01');
+url.searchParams.set('through', '2026-11-30');
+url.searchParams.set('locale', 'fr');
+const runtime = Astro.locals.emdash;
+if (!runtime) throw new Error('EmDash is unavailable');
+const result = await runtime.handlePublicPluginApiRoute(
+  pluginId, 'GET', '/publicEvents', new Request(url),
+);
+if (!result.success) throw new Error(result.error?.message ?? 'Event feed unavailable');
+// Validate result.data.ok and result.data.events before rendering.
+```
 
-Markdown conversion supports paragraphs, headings, lists, blockquotes, common emphasis/code marks and HTTP(S)/mailto links. It is not complete CommonMark. Original Markdown remains in legacy_metadata and legacy storage; inspect complex rendering before accepting it. Non-text custom Portable Text blocks are omitted from calendar descriptions.
+`eventual/astro/EventList.astro` is an optional unstyled list. JSON-LD helpers are eventToJsonLd and serializeJsonLd; use the safe serializer. The [showcase](../examples/astro-events/README.md) supplies seven complete visitor layouts.
 
-## Calendar operations and limits
+## Settings, tools and transfer
 
-Native reconciliation uses a KV lease and committed published rows. Pre-delete snapshots record existing publication; feed access derives matching cancellations after committed changes. Feed caching can delay visibility by five minutes.
+Tools `getSettings` and `updateSettings` use `mcp/settings/get` and `mcp/settings/update`. **updateSettings requires defaultTimezone**, even when only changing legacyReads. Read and retain its value first:
 
-UIDs survive translations, migration and hostname aliases. Logical native SEQUENCE counters replace invalid millisecond values. Existing subscribers that cached older invalid SEQUENCE values may need their subscription re-added; verify actual client behavior. Removed strict-locale/category subscriptions receive scoped cancellations while other subscriptions keep active events. Historical legacy tombstones without category metadata are omitted from category feeds because their scope is unknown.
+```json
+{"defaultTimezone":"Europe/Paris","legacyReads":false}
+```
 
-Bounds: 10,000 scanned event/native/cancellation rows, 5,000 legacy venues, 10,000 expanded occurrences, 1,000 active occurrences/history tombstones per native group, 4 MiB calendar output, and 366 exception/copy items. Migration batches default to 25 and allow 1–100. Cancellations are retained for 366 days. Group identity/sequence state is retained; more than 10,000 historical groups requires reviewed state maintenance. Limits fail explicitly instead of returning truncated feeds.
+Optional collections contains `{events,venues,organizers}`. Native timezone defaults belong to the schema. Only stored boolean true enables legacy public reads. Native collections stay authoritative; broken explicit bindings always error. Both MCP and admin `save-legacy-reads` invalidate the request memo.
 
-Tests exercise installed EmDash/D1 sandbox publication, locale inheritance, draft/schedule/unpublish/delete/restore, migration recovery, media and authorization. An independent ICS parser checks Unicode folding, escaping, inclusive all-day dates and zero-duration events. Actual LinguaDash translation, live D1 schema application and Apple/Google/Outlook subscription behavior remain site acceptance checks.
+Enable intended tools under the plugin's **Agent access** controls. Eventual tools require plugins:manage; native editing uses core content tools and content:edit_any. Read tools: listEvents, getEvent, listOccurrences, listVenues, listOrganizers. Legacy writes are blocked once native collections are active. [Tool schemas](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/src/mcp-schemas.ts) define exact inputs/routes.
+
+exportRecords follows cursors (default 5, maximum 10). Native native-content-v1 exports are inspection records, not full backups or legacy-import input. previewImport/importRecords accept legacy data only: at most 10 rows / 64 KiB, insert absent IDs, and import events as drafts. The [eventual/transfer interface](../transfer/index.d.mts) supplies legacy backup/copy/CSV/ICS helpers. CSV needs stable source IDs and explicit-offset timed dates; all-day ends are inclusive. ICS conversion accepts standalone UTC or VALUE=DATE events and rejects unsupported recurrence/timezone constructs. Media, settings, revisions and calendar-state recovery need the host's backup facilities.
+
+## Limits and checks
+
+The host's ten-bridge-call budget can constrain feeds, dependency checks and migration even with few displayed events. Smaller date windows or publicUrls=false help some JSON requests; complete-source scans still cost calls. Native exceptions/occurrence copy are bounded at 500 items; calendar group/state/output bounds also apply and fail explicitly. Background migration jobs and bulk APIs remain pending: [Eventual #5](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/5), [EmDash #4004](https://github.com/emdash-cms/emdash/issues/4004).
+
+Calendar UIDs, monotonic SEQUENCE and 366-day cancellation retention support reconciliation. Preserve migrated calendar_uid values. Publication shares schedule fields across languages; pending drafts stay separate. Stale-form checks are not an atomic write lock. Some settings copy remains English in the French admin; stock development-renderer diagnostics are recorded in acceptance.
+
+Runtime checks: npm run validate, typecheck, build, bundle, budget, and npm test. Tooling/package/editor/media changes have test:tooling, test:package, test:editor and registry:media checks. `node scripts/audit-documentation.mjs` checks local links and Registry section caps. Publishing uses the pinned CLI; immutable releases and current profile/release CIDs need separate approvals. [Release evidence](../audit/releases/0.14.0/README.md).

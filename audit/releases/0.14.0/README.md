@@ -41,7 +41,7 @@ Backend headroom: **52 bytes** below the 130,816-byte reserve and 308 bytes belo
 - Package blob CID: `bafkreidp3fofgy6zibovlqnjnkgihztlv33hak2xiuidgvuxw7vywfmp4i`.
 - Release URI: `at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.0`.
 - Release CID: `bafyreib557wyteme4yjlbzcxmgw3t5cvgqwbzffru4x34geddx47xcxp2y`; exact-CID `listing-passed` at `2026-10-13T23:06:15.647Z`.
-- Current profile CID: `bafyreibptjmn5jildzp4c2tv6rnpdzyen4lnbw67xgdbfofmi3oo4ivhcm`; exact-CID `listing-passed` at `2026-10-13T23:05:58.423Z`.
+- Profile CID at publication: `bafyreibptjmn5jildzp4c2tv6rnpdzyen4lnbw67xgdbfofmi3oo4ivhcm`; exact-CID `listing-passed` at `2026-10-13T23:05:58.423Z`.
 
 The installation/changelog profile update was previewed and applied once. Publication then stamped a new profile revision. At both transitions, the signed publisher and indexed records were compared; the site update waited for matching records and current approvals. Old-CID approvals were not reused. The final package downloaded from the publisher's DID-resolved PDS is byte-for-byte identical to the archive created by publication. `releaseOverwritten` is false. Provenance is absent and optional under this package's existing policy.
 
@@ -57,6 +57,6 @@ Detailed deployment, content-preservation and rollback evidence is in the site's
 
 ## Evidence and repository state
 
-Publication/verification logs are retained locally under `reports/release-0.14.0/`, including `publish.log`, `registry-records.json`, `registry-verification.json`, `registry-info.json`, `budget-published.log`, `registry-media-published.log`, `vitest-final.log`, `editor-host-final.log`, and `host-equivalence.json`. Public release evidence is copied under `docs/release-evidence-0.14.0/`.
+Publication/verification logs are retained locally under `reports/release-0.14.0/`, including `publish.log`, `registry-records.json`, `registry-verification.json`, `registry-info.json`, `budget-published.log`, `registry-media-published.log`, `vitest-final.log`, `editor-host-final.log`, and `host-equivalence.json`. Public release evidence is retained in this directory's `evidence/` folder. These are publication-time records; later documentation/profile updates do not rewrite their identities.
 
 The four 0.14.0 implementation/audit/acceptance commits through `16a832d` were pushed to main so Registry documentation links resolve. The existing modifications to `scripts/verify-editor-host.mjs` and `scripts/verify-packed-astro.mjs` were used for verification and left unmodified and uncommitted. Package checks and browser captures completed before publication; no version bump, overwrite, content migration or reseed was performed.
