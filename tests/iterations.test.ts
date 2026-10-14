@@ -87,6 +87,8 @@ it('previews without writes, reports bad rows, and deduplicates concurrent real 
   } finally { await h.dispose(); }
 }, 60000);
 
+// Two sequential workerd hosts need startup headroom on Windows CI; one host
+// took over 70s in run 38537036434. Keep this allowance local to the round trip.
 it('exports and restores related records and recurrence exceptions across fresh hosts', async () => {
   const routes = { exportRecords: 'mcp/transfer/export', previewImport: 'mcp/transfer/preview', importRecords: 'mcp/transfer/import' };
   const first = await createPluginRuntimeTestHost();
@@ -112,4 +114,4 @@ it('exports and restores related records and recurrence exceptions across fresh 
     expect(await second.inspect.storage.get('events', 'series')).toMatchObject({ venueId: 'v', organizerId: 'o', published: false, exceptions: [{ recurrenceId: '2026-10-11', status: 'cancelled' }] });
     expect((await restoreBackup(invoke, backup, { write: true })).events[0]?.status).toBe('skipped');
   } finally { await second.dispose(); }
-}, 20000);
+}, 120000);
