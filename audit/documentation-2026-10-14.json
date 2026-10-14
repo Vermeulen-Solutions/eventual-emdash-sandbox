@@ -13,7 +13,7 @@
     ],
     "readmeWords": {
       "before": 2531,
-      "after": 1
+      "after": 892
     },
     "preserved": "README banner, artwork, button layout and colors; GitHub/Registry badge labels corrected",
     "historySnapshot": "9bd38934de72c562639093e38a56fe6b3e3e2818"
@@ -70,4 +70,4 @@
     "sha256": "6fd95c5363d9405d55c1a96a8c83e66baef6702b574510335697b7eb8b158fe2"
   },
   "releaseArtifactPolicy": "Existing 0.14.0 archive retained; QA documentation bundle was not published"
-}\n
+}
