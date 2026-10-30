@@ -1,7 +1,7 @@
 {
   "release": "0.14.1",
   "date": "2026-10-30",
-  "published": false,
+  "published": true,
   "scope": "EmDash 1.2.0/1.4.0 compatibility; no runtime API, capability, schema, route or MCP-tool changes",
   "hosts": {
     "1.2.0": {
@@ -76,5 +76,45 @@
     "status": "passed",
     "published": false,
     "evidence": "release-preparation.json"
+  },
+  "artifactStage": "Preparation-time artifacts; final published gzip is recorded in publication.registryArtifact",
+  "publication": {
+    "version": "0.14.1",
+    "published": true,
+    "sourceCommit": "f0d5bc0",
+    "releaseOverwritten": false,
+    "releaseUri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+    "releaseCid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq",
+    "profileUri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+    "profileCid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q",
+    "profileApproved": true,
+    "releaseApproved": true,
+    "indexedMatches": true,
+    "installable": true,
+    "verifiedAt": "2026-10-30T16:27:41.147Z",
+    "registryArtifact": {
+      "bytes": 47391,
+      "sha256": "26e9b1beb65e456ec49c577493b84d9a24120f19c3eb892ead8139f9bb47a481",
+      "checksum": "bciqcn2nrx23f4rloysofo5etxbgzujasb4m4h24jf2wycopzxnd2jai",
+      "blobCid": "bafkreibg5gy35ns6ivxmjhcxosj3qtm2eqja6god5oes5lmbhh43wr5eqe",
+      "downloadMatchesLocal": true
+    },
+    "sourcePackage": {
+      "path": "dist/source/eventual-0.14.1.tgz",
+      "bytes": 131696,
+      "sha256": "a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8"
+    },
+    "media": {
+      "checked": 7,
+      "violations": 0,
+      "warnings": [
+        {
+          "label": "banner",
+          "bytes": 958008
+        }
+      ]
+    },
+    "tagCreated": false,
+    "siteDeploymentPerformed": false
   }
 }

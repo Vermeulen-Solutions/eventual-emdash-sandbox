@@ -1,0 +1,367 @@
+{
+  "checkedAt": "2026-10-30T16:27:41.147Z",
+  "pds": "https://chalciporus.us-west.host.bsky.network",
+  "publish": {
+    "identifier": "@vermeulen.solutions/eventual",
+    "profile": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+    "release": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+    "cid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq",
+    "checksum": "bciqcn2nrx23f4rloysofo5etxbgzujasb4m4h24jf2wycopzxnd2jai",
+    "hosting": "blob",
+    "profileCreated": false,
+    "releaseOverwritten": false,
+    "page": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual"
+  },
+  "signedProfile": {
+    "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+    "cid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q",
+    "value": {
+      "id": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+      "name": "Eventual",
+      "slug": "eventual",
+      "type": "emdash-plugin",
+      "$type": "com.emdashcms.experimental.package.profile",
+      "authors": [
+        {
+          "name": "Jaap Vermeulen",
+          "email": "jaap.vermeulen@gmail.com"
+        }
+      ],
+      "license": "MIT",
+      "keywords": [
+        "events",
+        "calendar",
+        "event management",
+        "iCalendar",
+        "venues"
+      ],
+      "sections": {
+        "changelog": "## 0.14.1\n\nCompatibility release: no runtime, capability, schema, route or MCP-tool changes. Tested on EmDash **1.2.0** and **1.4.0**; 1.4.0 is recommended for the nested-form and Cloudflare fixes. [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.14.1.md).\n\n## 0.14.0\n\nPublic reads use old plugin storage only when an administrator enables **Show old events saved inside the plugin** (MCP legacyReads). An unconfigured source reports a clear error; native collections stay authoritative. Disabled legacy images return 404. Settings saves invalidate the read memo. Acceptance restored French weekday labels and refreshed the settings screenshot.\n\n[Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.14.0.md).\n\n## Earlier releases\n\n- **0.13.4:** replace an oversized Registry screenshot; add media-budget checks.\n- **0.13.3:** publicUrls=false skips native canonical-URL lookups; JSON budget failures use the host error contract.\n- **0.13.2:** memoize request reads, commit one calendar snapshot, resolve images directly and contain RPC budget failures. Large sources and migration jobs remain limited.\n- **0.13.1:** serve featured images through the public plugin route.\n- **0.13.0:** breaking native-content change: Portable Text, locale rows, drafts, revisions, saved directories and shared schedules; EmDash >=1.2.0 <2.0.0.\n\n[Full changelog](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/CHANGELOG.md). Upgrades from 0.12.x or earlier still need the native-content migration.\n",
+        "installation": "# Eventual 0.14.1\n\nRequires EmDash **>=1.2.0 <2.0.0**; tested on **1.2.0** and **1.4.0**, with **1.4.0 recommended** for correct nested Block Kit forms and Cloudflare plugin mutations. In **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install it. Existing sites use the plugin's update action; review changed MCP tool consent.\n\nOpen **Eventual → Settings**, choose compatible event, venue and organizer collections, then **Save settings**. A collection is the place under **Content** where entries are edited. If none exists, ask your site builder to follow [setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md). Installation and selection do not create schemas or migrate data.\n\n**Old events:** keep **Show old events saved inside the plugin** off for native collections. Enable it and choose **Save switch** only to serve old plugin data when no native collection is connected. Native collections remain authoritative even while empty; a missing explicitly selected collection must be repaired. See [0.14.0 changes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.14.0.md).\n\n**Editing:** save the announcement, open **Dates, venue & repeat**, save the changed sections, reload, then publish in EmDash. [Editor guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/user-guide.md).\n\n**Earlier versions:** upgrading from 0.12.x or earlier needs a backup and [native-content migration](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md).\n\nYour site builder connects feeds to visitor pages; Astro examples/helpers are optional. Enable intended agent tools separately under **Agent access**.\n"
+      },
+      "security": [
+        {
+          "email": "jaap.vermeulen@gmail.com"
+        }
+      ],
+      "extensions": {
+        "com.emdashcms.experimental.package.profileExtension": {
+          "$type": "com.emdashcms.experimental.package.profileExtension",
+          "repository": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+          "releasePolicy": {
+            "$type": "com.emdashcms.experimental.package.profileExtension#releasePolicy",
+            "requireProvenance": false
+          }
+        }
+      },
+      "description": "Native EmDash events with rich text, localization, friendly recurrence, saved venues and multilingual calendar feeds.",
+      "lastUpdated": "2026-10-30T16:26:17.410Z"
+    }
+  },
+  "signedRelease": {
+    "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+    "cid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq",
+    "value": {
+      "repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+      "$type": "com.emdashcms.experimental.package.release",
+      "package": "eventual",
+      "version": "0.14.1",
+      "requires": {
+        "env:emdash": ">=1.2.0 <2.0.0"
+      },
+      "artifacts": {
+        "icon": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy"
+            },
+            "size": 849633,
+            "$type": "blob",
+            "mimeType": "image/png"
+          },
+          "width": 1254,
+          "height": 1254,
+          "checksum": "bciqaeli4z4zohc6t5kxzebsp4x3iqlxvnin4hd3kla6vwgllgd5lnlq",
+          "contentType": "image/png"
+        },
+        "banner": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a"
+            },
+            "size": 837691,
+            "$type": "blob",
+            "mimeType": "image/png"
+          },
+          "width": 2172,
+          "height": 724,
+          "checksum": "bciql4lsbmo7ldvyxtuaogjm5owjm2p4qa7o5p55kopakxibwadp4l2a",
+          "contentType": "image/png"
+        },
+        "package": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreibg5gy35ns6ivxmjhcxosj3qtm2eqja6god5oes5lmbhh43wr5eqe"
+            },
+            "size": 47391,
+            "$type": "blob",
+            "mimeType": "application/gzip"
+          },
+          "checksum": "bciqcn2nrx23f4rloysofo5etxbgzujasb4m4h24jf2wycopzxnd2jai",
+          "contentType": "application/gzip"
+        },
+        "screenshots": [
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreic4w4rhmqecl45tbtmxz3e5mdqoouguzo6aghfhdajkfwr4cla4ju"
+              },
+              "size": 106468,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1280,
+            "height": 900,
+            "checksum": "bciqfznzcozaiexz3gdgzptwj2yha45injs54amokogasulndyewbyti",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru"
+              },
+              "size": 70477,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1280,
+            "height": 900,
+            "checksum": "bciqljww2gop4juedqu5nf3m42mpldknep6vaxbrbi4vumgzvcakj3di",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreidku3qc4gybouwjgc5xlbpfbn6raekyfswzkt6monzaroaza4ztvu"
+              },
+              "size": 27781,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 390,
+            "height": 844,
+            "checksum": "bciqgvjxafynqc5jmsmf3owc6kc35caivqlfnsvh4y43sbc4bsbzthli",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva"
+              },
+              "size": 69421,
+              "$type": "blob",
+              "mimeType": "image/jpeg"
+            },
+            "width": 1019,
+            "height": 1122,
+            "checksum": "bciqhvw4gz2engtqq7uagdb3vcqx2faxah2bwkl2bbw36xewnmdhejka",
+            "contentType": "image/jpeg"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy"
+              },
+              "size": 348870,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1440,
+            "height": 1190,
+            "checksum": "bciqgxv4wzlwipjicgodisp44l2l237zi2md3h46migcpwng3mqkxvjq",
+            "contentType": "image/png"
+          }
+        ]
+      },
+      "extensions": {
+        "com.emdashcms.experimental.package.releaseExtension": {
+          "$type": "com.emdashcms.experimental.package.releaseExtension",
+          "declaredAccess": {
+            "media": {
+              "read": {},
+              "bytesRead": {}
+            },
+            "schema": {
+              "read": {}
+            },
+            "content": {
+              "read": {},
+              "write": {},
+              "policy": {},
+              "publish": {},
+              "revisionsRead": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "profileAssessment": {
+    "status": 200,
+    "src": "did:web:labels.emdashcms.com",
+    "subject": {
+      "kind": "profile",
+      "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+      "cid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q"
+    },
+    "assessment": {
+      "id": "assessment-v1-fe502ee0dfd1d5c738c95695a2102c49fc7a973d6d38666e52da76e12c7f998e",
+      "src": "did:web:labels.emdashcms.com",
+      "subject": {
+        "kind": "profile",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+        "cid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q"
+      },
+      "state": "passed",
+      "coverage": {
+        "text": "complete",
+        "links": "complete",
+        "media": "not-present"
+      },
+      "reasonCodes": [
+        "automatic-pass"
+      ],
+      "findings": [],
+      "summary": "The listing metadata is eligible under the current assessment policy.",
+      "assessmentSchemaVersion": 1,
+      "policyVersion": "listing-metadata-v2",
+      "parserVersion": "canonical-listing-input-v1",
+      "models": [
+        {
+          "purpose": "text",
+          "provider": "workers-ai",
+          "modelId": "@cf/cloudflare/clef",
+          "modelVersion": "provider-catalog-id",
+          "promptHash": "6bffa4fe3d04177aa59d7909f2bdb21a84784444a95fc6be6da7bbc3e86eb3db"
+        }
+      ],
+      "labels": [
+        {
+          "ver": 1,
+          "src": "did:web:labels.emdashcms.com",
+          "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+          "cid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q",
+          "val": "listing-passed",
+          "cts": "2026-10-30T16:26:28.225Z",
+          "sig": {
+            "$bytes": "BwI5GLcG0Ycnv6MKWqTwljcWgjab0ux/qUQ2X4t01SVJmQX+gAO734ZuH2croG6dsE+LzqJ6/dXxr+ToTOHbLw=="
+          }
+        }
+      ],
+      "createdAt": "2026-10-30T16:26:24.159Z",
+      "completedAt": "2026-10-30T16:26:28.225Z"
+    },
+    "activeLabels": [
+      {
+        "ver": 1,
+        "src": "did:web:labels.emdashcms.com",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+        "cid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q",
+        "val": "listing-passed",
+        "cts": "2026-10-30T16:26:28.225Z",
+        "sig": {
+          "$bytes": "ntaZawaHmExX+dha8qIZ4W6va7wkgQFKeWEIM5S8GG8Qie8auWl625ctS8/ZjV3FoPlmVbyc9g+bS9rz3qGvMg=="
+        }
+      }
+    ]
+  },
+  "releaseAssessment": {
+    "status": 200,
+    "src": "did:web:labels.emdashcms.com",
+    "subject": {
+      "kind": "release",
+      "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+      "cid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq"
+    },
+    "assessment": {
+      "id": "assessment-v1-3983de14542b35ed7237648bdd1ccf11f01e88e46074cf1b01a35ef3321a7e12",
+      "src": "did:web:labels.emdashcms.com",
+      "subject": {
+        "kind": "release",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+        "cid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq"
+      },
+      "state": "passed",
+      "coverage": {
+        "text": "complete",
+        "links": "complete",
+        "media": "complete"
+      },
+      "reasonCodes": [
+        "automatic-pass"
+      ],
+      "findings": [],
+      "summary": "The listing metadata is eligible under the current assessment policy.",
+      "assessmentSchemaVersion": 1,
+      "policyVersion": "listing-metadata-v2",
+      "parserVersion": "canonical-listing-input-v1",
+      "models": [
+        {
+          "purpose": "text",
+          "provider": "workers-ai",
+          "modelId": "@cf/cloudflare/clef",
+          "modelVersion": "provider-catalog-id",
+          "promptHash": "6bffa4fe3d04177aa59d7909f2bdb21a84784444a95fc6be6da7bbc3e86eb3db"
+        },
+        {
+          "purpose": "image",
+          "provider": "workers-ai",
+          "modelId": "@cf/cloudflare/clef",
+          "modelVersion": "provider-catalog-id",
+          "promptHash": "42367b4f9069e5392fe51a804e4c526ad38fc406cbe7542beb28557c923cb5b3"
+        }
+      ],
+      "labels": [
+        {
+          "ver": 1,
+          "src": "did:web:labels.emdashcms.com",
+          "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+          "cid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq",
+          "val": "listing-passed",
+          "cts": "2026-10-30T16:26:50.095Z",
+          "sig": {
+            "$bytes": "Qmjn6GDJ/mba52OVHJYELJvOJq+2mQYq3kkR9HuuvtAjxIoIMPMCYDH0mzq+UcYZK6m9lXV6P0sOQDCBvepdPQ=="
+          }
+        }
+      ],
+      "createdAt": "2026-10-30T16:26:26.362Z",
+      "completedAt": "2026-10-30T16:26:50.095Z"
+    },
+    "activeLabels": [
+      {
+        "ver": 1,
+        "src": "did:web:labels.emdashcms.com",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1",
+        "cid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq",
+        "val": "listing-passed",
+        "cts": "2026-10-30T16:26:50.095Z",
+        "sig": {
+          "$bytes": "PMbIoivQj3WutS0UX2wyjVQoFQvoY/1rbcO/nl5HR0ETb1O+JCMKV0d/Tlaej4wxTi9Ug3mqm7d1ECkUHCJZ8Q=="
+        }
+      }
+    ]
+  },
+  "indexedProfileCid": "bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q",
+  "indexedReleaseCid": "bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq",
+  "profileApproved": true,
+  "releaseApproved": true,
+  "indexedMatches": true,
+  "installable": true,
+  "artifact": {
+    "bytes": 47391,
+    "sha256": "26e9b1beb65e456ec49c577493b84d9a24120f19c3eb892ead8139f9bb47a481",
+    "checksum": "bciqcn2nrx23f4rloysofo5etxbgzujasb4m4h24jf2wycopzxnd2jai",
+    "blobCid": "bafkreibg5gy35ns6ivxmjhcxosj3qtm2eqja6god5oes5lmbhh43wr5eqe",
+    "downloadMatchesLocal": true
+  }
+}

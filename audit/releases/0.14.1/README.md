@@ -1,6 +1,7 @@
 # Eventual 0.14.1 acceptance record
 
-Status: local acceptance complete except publication. **Not published.**
+Status: **published and approved by the Registry**. Current signed profile and
+release CIDs match the approved Registry index; see the publication record below.
 Date: 2026-10-30. Machine-readable evidence is in
 [`evidence/summary.json`](evidence/summary.json) with the logs, editor report,
 release-preparation report and both native-site reports beside it.
@@ -13,7 +14,8 @@ recommended host.
 
 Source revision at preparation: sandbox `ce57e95` with the compatibility
 working tree; local test site `4e182c7` with the 1.4.0/native-gate working tree.
-Commit these trees before tagging.
+Accepted sandbox source was committed and pushed as `f0d5bc0`. The local test
+site retains its separate working tree. No release tag was created.
 
 ## Host matrix
 
@@ -68,7 +70,7 @@ captures under EmDash 1.4. They were reverted to keep this compatibility release
 scoped; `npm run registry:media` passes with the committed images. Refreshing
 those historical captures is a separate listing change.
 
-## Release artifacts
+## Prepared release artifacts
 
 `npm run release:prepare` passed with `published: false`:
 
@@ -82,5 +84,45 @@ The source package hash matches `reports/editor-installation.json` and
 `dist/SHA256SUMS` are the local evidence. Do not edit packaged files after
 `test:package`/`test:editor`; their hash is checked by release preparation.
 
-Publication is intentionally not performed. Fill publication CIDs and the
-tag/commit here after the release is approved.
+These are preparation-time hashes. Publication rebuilds the Registry gzip;
+the final published identity is recorded below. The accepted source package
+remains unchanged.
+
+## Registry publication — 30 October 2026
+
+Published once from accepted source `f0d5bc0`, using the pinned plugin CLI
+**0.13.5** and publisher `did:plc:g2hei4vcwndrdl3gdbb6np6c`.
+`releaseOverwritten` is **false**. No tag or site deployment was performed.
+
+- [Registry listing](https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual).
+- Release URI: `at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.14.1`.
+- Release CID: `bafyreiamjf6qbqltgrjdoun2qynu7e5ynuswchu6tz6arwvmbwstjwhhxq`.
+- Current profile CID: `bafyreiddvxfmh3kbganattryirzh53flamsceq5e6qrbc4bw7fwj5aan7q`.
+- Both current CIDs have exact-CID `listing-passed` labels. Both match the
+  publisher's signed records and the Registry index; 0.14.1 is installable.
+- Published Registry gzip: **47,391 bytes**, SHA-256
+  `26e9b1beb65e456ec49c577493b84d9a24120f19c3eb892ead8139f9bb47a481`.
+- Signed checksum: `bciqcn2nrx23f4rloysofo5etxbgzujasb4m4h24jf2wycopzxnd2jai`.
+- Package blob CID: `bafkreibg5gy35ns6ivxmjhcxosj3qtm2eqja6god5oes5lmbhh43wr5eqe`.
+- Accepted source package remains **131,696 bytes**, SHA-256
+  `a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8`.
+
+The installation/changelog profile update was previewed, applied once, and
+approved before publication. Publication stamped another profile revision;
+that final revision was independently checked for exact-CID approval.
+
+The package downloaded from the DID-resolved publisher PDS matches the local
+publication archive byte-for-byte. The runtime matches 0.14.0 and the accepted
+source package; the runtime manifest differs from 0.14.0 only in version.
+The Registry README also matches the accepted source package. Publication's
+rebuilt gzip has a different checksum from the preparation-time archive above.
+The payload remains three files / 184,910 bytes, with no budget errors.
+
+All seven actual published CDN image derivatives pass, with zero violations.
+The existing banner has a size warning at 958,008 bytes, below the 1 MiB cap.
+
+Public evidence: [`evidence/publication.json`](evidence/publication.json) and
+[`evidence/registry-verification.json`](evidence/registry-verification.json).
+Detailed command logs remain in `reports/release-0.14.1/`. The historical
+release-preparation report retains `published:false` to describe its original
+pre-publication run; it is superseded by this publication record.
