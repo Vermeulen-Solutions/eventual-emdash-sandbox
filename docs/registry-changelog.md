@@ -1,3 +1,7 @@
+## 0.14.1
+
+Compatibility release: no runtime, capability, schema, route or MCP-tool changes. Tested on EmDash **1.2.0** and **1.4.0**; 1.4.0 is recommended for the nested-form and Cloudflare fixes. [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.14.1.md).
+
 ## 0.14.0
 
 Public reads use old plugin storage only when an administrator enables **Show old events saved inside the plugin** (MCP legacyReads). An unconfigured source reports a clear error; native collections stay authoritative. Disabled legacy images return 404. Settings saves invalidate the read memo. Acceptance restored French weekday labels and refreshed the settings screenshot.

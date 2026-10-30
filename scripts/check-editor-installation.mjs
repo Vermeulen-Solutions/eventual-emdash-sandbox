@@ -12,7 +12,7 @@ export function checkInstallation(site) {
   for (const [name, expected] of Object.entries(testedVersions)) {
     try {
       const actual = installedVersion(name, resolver);
-      checks.push({ name, expected, actual, ok: actual === expected });
+      checks.push({ name, expected, actual, ok: expected.includes(actual) });
     } catch (error) { checks.push({ name, expected, ok: false, error: error.message }); }
   }
   try { checks.push({name:"editor-toolchain",actual:checkToolchainVersions(name=>installedVersion(name,resolver)),ok:true}); }

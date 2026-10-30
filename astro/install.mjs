@@ -7,8 +7,12 @@ import { eventualEditor } from "./descriptor.mjs";
 import { eventualEditorCompatibility } from "./editor-compat.mjs";
 
 const require = createRequire(import.meta.url);
-export const testedVersions = Object.freeze({ emdash: "1.0.1", "@emdash-cms/admin": "1.0.1", "@emdash-cms/blocks": "1.0.1" });
-export const testedToolchain = Object.freeze({astro:"7.3.x (>=7.3.2)",vite:"8.3.x",react:"19.x"});
+export const testedVersions = Object.freeze({
+  emdash: Object.freeze(["1.2.0", "1.4.0"]),
+  "@emdash-cms/admin": Object.freeze(["1.2.0", "1.4.0"]),
+  "@emdash-cms/blocks": Object.freeze(["1.2.0", "1.4.0"]),
+});
+export const testedToolchain = Object.freeze({astro:"7.3.x-7.4.x (>=7.3.2 <7.5.0)",vite:"8.3.x",react:"19.x"});
 export function installedVersion(name, resolver = require) {
   let directory = dirname(resolver.resolve(name));
   for (;;) {
@@ -24,7 +28,8 @@ export function installedVersion(name, resolver = require) {
 export function checkEditorVersions(resolveVersion = installedVersion) {
   const versions = Object.fromEntries(Object.keys(testedVersions).map(name => [name, resolveVersion(name)]));
   for (const [name, version] of Object.entries(versions)) {
-    if (version !== testedVersions[name]) throw new Error(`Eventual editor requires tested ${name} ${testedVersions[name]}; found ${version}. Use the documented compatibility matrix before upgrading.`);
+    const expected = testedVersions[name];
+    if (!expected.includes(version)) throw new Error(`Eventual editor requires tested ${name} ${expected.join(" or ")}; found ${version}. Use the documented compatibility matrix before upgrading.`);
   }
   return versions;
 }
@@ -32,7 +37,7 @@ export function checkToolchainVersions(resolveVersion = installedVersion) {
   const versions={};
   for (const [name, range] of Object.entries(testedToolchain)) {
     const version=resolveVersion(name);
-    if (!(name === "astro" ? /^7\.3\.\d+$/.test(version) && Number(version.split(".")[2]) >= 2 : name === "vite" ? /^8\.3\.\d+$/.test(version) : /^19\.\d+\.\d+$/.test(version))) throw new Error(`Eventual editor requires ${name} ${range}; found ${version}. See the editor compatibility matrix.`);
+    if (!(name === "astro" ? /^7\.[34]\.\d+$/.test(version) && (version.startsWith("7.4.") || Number(version.split(".")[2]) >= 2) : name === "vite" ? /^8\.3\.\d+$/.test(version) : /^19\.\d+\.\d+$/.test(version))) throw new Error(`Eventual editor requires ${name} ${range}; found ${version}. See the editor compatibility matrix.`);
     versions[name]=version;
   }
   return versions;

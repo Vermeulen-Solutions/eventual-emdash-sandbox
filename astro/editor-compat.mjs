@@ -1,8 +1,11 @@
 /**
- * EmDash blocks 1.0.1 embeds <form> inside the content editor's <form>.
- * This narrowly scoped Vite transform fixes nesting without changing permissions,
- * RPCs, draft receipts, or any installed dependency files.
- * Remove it after upgrading to a blocks release with an embedded-form fix.
+ * Legacy source-install transform for `eventual/install`. Registry installs
+ * never execute this file; the host renders plugin panels directly.
+ *
+ * Blocks 1.2-1.3 render a form block as <form> inside the content editor's
+ * <form>. Blocks 1.4+ render a div[role="group"] with its own Enter handling.
+ * This patches both shapes plus Eventual-specific form state and date-label
+ * behaviour that the host renderer does not provide.
  */
 import { fileURLToPath } from "node:url";
 const presentationModule = fileURLToPath(new URL("./editor-i18n.mjs",import.meta.url)).replaceAll("\\","/");
@@ -25,55 +28,107 @@ export function patchEmbeddedBlockForms(source) {
     initializer +
       "\n useEffect(() => setValues(getInitialValues(block.fields)), [block.fields]);",
   );
-  for (const needle of [
-    "e.preventDefault();",
-    'jsxs("form", {',
-    "onSubmit: handleSubmit,",
-    'type: "submit",',
-    '}, field.action_id);',
-  ]) {
-    if (!component.includes(needle))
-      throw new Error("Unsupported EmDash Block Kit form: " + needle);
-  }
+  const legacyForm =
+    component.includes('jsxs("form", {') &&
+    component.includes("onSubmit: handleSubmit,") &&
+    component.includes('type: "submit",') &&
+    component.includes("e.preventDefault();");
+  const modernForm =
+    !component.includes('jsxs("form", {') &&
+    component.includes('role: "group"') &&
+    component.includes('type: "button"') &&
+    component.includes("onClick: handleClick");
+  if (!legacyForm && !modernForm)
+    throw new Error("Unsupported EmDash Block Kit form renderer.");
+  const fieldKey = "}, field.action_id);";
+  if (!component.includes(fieldKey))
+    throw new Error("Unsupported EmDash Block Kit form field key.");
   component = component.replace(
-    "e.preventDefault();",
-    `e.preventDefault();
+    fieldKey,
+    '}, field.action_id + JSON.stringify(field.initial_value));',
+  );
+  if (legacyForm) {
+    for (const needle of [
+      "e.preventDefault();",
+      'jsxs("form", {',
+      "onSubmit: handleSubmit,",
+      'type: "submit",',
+    ]) {
+      if (!component.includes(needle))
+        throw new Error("Unsupported EmDash Block Kit form: " + needle);
+    }
+    component = component.replace(
+      "e.preventDefault();",
+      `e.preventDefault();
   e.stopPropagation();
   const root=e.currentTarget.closest('[data-eventual-block-form]');
   const invalid=root?.querySelector(':invalid');
   if (invalid) { invalid.reportValidity?.(); return; }`,
-  );
-  component = component
-    .replace('jsxs("form", {', 'jsxs("div", {')
-    .replace(
-      "onSubmit: handleSubmit,",
-      `role: "group",
+    );
+    component = component
+      .replace('jsxs("form", {', 'jsxs("div", {')
+      .replace(
+        "onSubmit: handleSubmit,",
+        `role: "group",
   "data-eventual-block-form": "",
   onKeyDown: (event) => {
    if (event.key === "Enter" && !event.defaultPrevented && !event.isComposing && event.target.tagName !== "TEXTAREA" && event.target.tagName !== "BUTTON" && event.target.getAttribute("role") !== "combobox") handleSubmit(event);
   },`,
-    )
-    .replace('type: "submit",', 'type: "button", onClick: handleSubmit,')
-    .replace('}, field.action_id);', '}, field.action_id + JSON.stringify(field.initial_value));');
-  // The tested renderer omits the option key, producing warnings on every
+      )
+      .replace('type: "submit",', 'type: "button", onClick: handleSubmit,');
+  }
+  let patched = source.slice(0, start) + component + source.slice(end);
+  // The 1.2/1.3 renderer omits the option key, producing warnings on every
   // venue choice. Use its stable value, including the empty "no venue" option.
-  let patched=(source.slice(0, start) + component + source.slice(end)).replace('children: item.label\n\t\t})', 'children: item.label\n\t\t}, item.value)');
-  const dateMarker='function DateInputElementComponent({ element, onAction, onChange }) {';
-  const dateStart=patched.indexOf(dateMarker), dateEnd=patched.indexOf('\n//#endregion',dateStart);
-  if(dateStart<0 || dateEnd<0) throw new Error("Unsupported Block Kit date input.");
-  const date=patched.slice(dateStart,dateEnd);
-  if(!date.includes('jsx("label", {') || !date.includes('type: "date",')) throw new Error("Unsupported Block Kit date label.");
-  patched=patched.slice(0,dateStart)+date.replace(dateMarker,dateMarker+'\n const eventualDateId=useId();').replace('jsx("label", {','jsx("label", { htmlFor:eventualDateId,').replace('type: "date",','type: "date", id:eventualDateId,')+patched.slice(dateEnd);
-  return patched.replace('import { useCallback, useEffect, useMemo, useState } from "react";', 'import { useCallback, useEffect, useMemo, useState, useId } from "react";');
+  const optionKey = "children: item.label\n\t\t})";
+  if (patched.includes(optionKey))
+    patched = patched.replace(
+      optionKey,
+      "children: item.label\n\t\t}, item.value)",
+    );
+  const dateMarker =
+    "function DateInputElementComponent({ element, onAction, onChange }) {";
+  const dateStart = patched.indexOf(dateMarker),
+    dateEnd = patched.indexOf("\n//#endregion", dateStart);
+  if (dateStart < 0 || dateEnd < 0)
+    throw new Error("Unsupported Block Kit date input.");
+  const date = patched.slice(dateStart, dateEnd);
+  if (!date.includes('jsx("label", {') || !date.includes('type: "date",'))
+    throw new Error("Unsupported Block Kit date label.");
+  patched =
+    patched.slice(0, dateStart) +
+    date
+      .replace(dateMarker, dateMarker + "\n const eventualDateId=useId();")
+      .replace('jsx("label", {', 'jsx("label", { htmlFor:eventualDateId,')
+      .replace('type: "date",', 'type: "date", id:eventualDateId,') +
+    patched.slice(dateEnd);
+  return addUseIdImport(patched);
+}
+
+function addUseIdImport(source) {
+  const reactImport = /import \{([^}]+)\} from "react";/;
+  const match = source.match(reactImport);
+  if (!match) throw new Error("Unsupported Block Kit React import.");
+  const names = match[1].split(",").map((name) => name.trim());
+  if (names.includes("useId")) return source;
+  names.push("useId");
+  return source.replace(
+    reactImport,
+    `import { ${names.join(", ")} } from "react";`,
+  );
 }
 export function eventualEditorCompatibility() {
+  let command = "serve";
   return {
     name: "eventual-embedded-block-forms-1.0.1",
     enforce: "pre",
-    config() {
+    config(_config, env = { command: "serve" }) {
+      command = env.command ?? "serve";
       // Keep core's admin prebundle (including its CommonJS dependencies) and
-      // apply presentation before optimization as well as in production builds.
+      // apply presentation before optimization in dev. Production builds use
+      // the regular transform below; applying both duplicates the admin module.
       return { optimizeDeps: { exclude: ["@emdash-cms/blocks"], rolldownOptions: {plugins:[{name:"eventual-admin-presentation-1.0.1", transform(source,id) {
+        if (command !== "serve") return null;
         if (id.replaceAll("\\", "/").endsWith("/@emdash-cms/admin/dist/index.js")) return {code:patchEventualPresentation(source),map:null};
         return null;
       }}]} } };
@@ -81,7 +136,9 @@ export function eventualEditorCompatibility() {
     transform(source, id) {
       const path = id.replaceAll("\\", "/").split("?")[0];
       if (path.endsWith("/@emdash-cms/admin/dist/index.js"))
-        return { code: patchEventualPresentation(source), map: null };
+        return command === "serve"
+          ? null
+          : { code: patchEventualPresentation(source), map: null };
       if (
         !id
           .replaceAll("\\", "/")
@@ -123,8 +180,16 @@ function BlockRenderer(props) {
   if(editorStart<0 || editorEnd<0) throw new Error("Unsupported content editor boundary.");
   const editor=patched.slice(editorStart,editorEnd).replaceAll('jsx(PublishActions, {','jsx(PublishActions, { eventualUi:Object.values(fields).some(field=>field.options?.eventualEditor===true),').replaceAll('jsx(SettingsActionBar, {','jsx(SettingsActionBar, { eventualUi:Object.values(fields).some(field=>field.options?.eventualEditor===true),');
   patched=patched.slice(0,editorStart)+editor+patched.slice(editorEnd);
-  patched=patched.replace('function SettingsActionBar({ collectionLabel,','function SettingsActionBar({ eventualUi=false, collectionLabel,');
-  const barStart=patched.indexOf('function SettingsActionBar({'), barEnd=patched.indexOf('\nfunction ',barStart+1);
-  patched=patched.slice(0,barStart)+patched.slice(barStart,barEnd).replace('jsx(PublishActions, {','jsx(PublishActions, { eventualUi,')+patched.slice(barEnd);
-  return patched.replace('function PublishActions({ collectionLabel,','function PublishActions({ eventualUi=false, collectionLabel,').replace('function PublishActions({ eventualUi=false, collectionLabel, isNew, isLive, hasPendingChanges, publishingState, isPending, disabled, onPublish, onUnpublish, onMenuOpenChange, size, fullWidth }) {\n\tconst { _: _t4 } = useLingui();','function PublishActions({ eventualUi=false, collectionLabel, isNew, isLive, hasPendingChanges, publishingState, isPending, disabled, onPublish, onUnpublish, onMenuOpenChange, size, fullWidth }) {\n const {locale: eventualPublishLocale}=useLocale(); const {_:eventualPublishT}=useLingui(); const _t4=eventualUi ? message=>eventualEditorText(eventualPublishT(message),eventualPublishLocale):eventualPublishT;');
+  // Admin 1.2/1.3 use SettingsActionBar; 1.4 removed it. Patch it only when present.
+  const barStart=patched.indexOf('function SettingsActionBar({');
+  if(barStart>=0){
+    const barEnd=patched.indexOf('\nfunction ',barStart+1);
+    if(barEnd<0) throw new Error("Unsupported settings action bar boundary.");
+    patched=patched.slice(0,barStart)+patched.slice(barStart,barEnd).replace('jsx(PublishActions, {','jsx(PublishActions, { eventualUi,')+patched.slice(barEnd);
+    patched=patched.replace('function SettingsActionBar({ collectionLabel,','function SettingsActionBar({ eventualUi=false, collectionLabel,');
+    if(!patched.includes('function SettingsActionBar({ eventualUi=false, collectionLabel,')) throw new Error("Unsupported settings action bar signature.");
+  }
+  const publishPattern=/function PublishActions\(\{ collectionLabel, (isNew, isLive, hasPendingChanges, publishingState, isPending, disabled, onPublish, onUnpublish, onMenuOpenChange, size, (?:fullWidth|compact)) \}\) \{\n\tconst \{ _: _t4 \} = useLingui\(\);/;
+  if(!publishPattern.test(patched)) throw new Error("Unsupported publish actions signature.");
+  return patched.replace(publishPattern, (_match, props) => `function PublishActions({ eventualUi=false, collectionLabel, ${props} }) {\n const {locale: eventualPublishLocale}=useLocale(); const {_:eventualPublishT}=useLingui(); const _t4=eventualUi ? message=>eventualEditorText(eventualPublishT(message),eventualPublishLocale):eventualPublishT;`);
 }

@@ -1,0 +1,4 @@
+
+> eventual@0.14.1 typecheck
+> tsc --noEmit
+

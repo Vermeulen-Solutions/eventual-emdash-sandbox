@@ -1,0 +1,147 @@
+{
+  "version": "0.14.1",
+  "preparedAt": "2026-10-30T15:58:31.760Z",
+  "published": false,
+  "selfContained": true,
+  "frontendCompanionRequired": false,
+  "registryPayload": {
+    "entries": [
+      {
+        "name": "backend.js",
+        "bytes": 130764
+      },
+      {
+        "name": "manifest.json",
+        "bytes": 46284
+      },
+      {
+        "name": "README.md",
+        "bytes": 7862
+      }
+    ],
+    "total": 184910,
+    "files": 3,
+    "budgets": {
+      "file": 130816,
+      "total": 225280,
+      "files": 16
+    },
+    "hardLimits": {
+      "file": 131072,
+      "total": 262144,
+      "files": 20
+    },
+    "errors": []
+  },
+  "artifacts": [
+    {
+      "path": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\dist\\eventual-0.14.1.tar.gz",
+      "bytes": 47393,
+      "sha256": "1e05fd48939a4173d8c9a4b83013a4d28e476f4858dbb782e4bf196b8459bcf0"
+    },
+    {
+      "path": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\dist\\source\\eventual-0.14.1.tgz",
+      "bytes": 131696,
+      "sha256": "a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8"
+    }
+  ],
+  "optionalSourcePackageFiles": [
+    "LICENSE",
+    "README.md",
+    "astro/admin.d.mts",
+    "astro/admin.mjs",
+    "astro/blueprint.d.mts",
+    "astro/blueprint.mjs",
+    "astro/descriptor.mjs",
+    "astro/editor-compat.mjs",
+    "astro/editor-i18n.d.mts",
+    "astro/editor-i18n.mjs",
+    "astro/event-details.ts",
+    "astro/event-list.ts",
+    "astro/EventList.astro",
+    "astro/feed.ts",
+    "astro/install.d.mts",
+    "astro/install.mjs",
+    "astro/schema.ts",
+    "dist/index.d.mts",
+    "dist/index.mjs",
+    "dist/plugin.d.mts",
+    "dist/plugin.mjs",
+    "docs/collection-setup.md",
+    "docs/history.md",
+    "docs/native-modernization.md",
+    "docs/registry-installation.md",
+    "docs/release-notes-0.14.0.md",
+    "docs/release-notes-0.14.1.md",
+    "docs/upgrade-0.13.0.md",
+    "docs/user-guide.md",
+    "emdash-plugin.jsonc",
+    "package.json",
+    "scripts/check-editor-installation.mjs",
+    "scripts/export-native-schema.mjs",
+    "scripts/upgrade-native-editor.mjs",
+    "src/domain/category.ts",
+    "src/domain/collections.ts",
+    "src/domain/date-time.ts",
+    "src/domain/description.ts",
+    "src/domain/event-data.ts",
+    "src/domain/event-expansion.ts",
+    "src/domain/event.ts",
+    "src/domain/icalendar.ts",
+    "src/domain/image.ts",
+    "src/domain/invocation-budget.ts",
+    "src/domain/messages.ts",
+    "src/domain/migration.ts",
+    "src/domain/native-calendar.ts",
+    "src/domain/native-references.ts",
+    "src/domain/native-source.ts",
+    "src/domain/native-validation.ts",
+    "src/domain/occurrences.ts",
+    "src/domain/portable-text.ts",
+    "src/domain/recurrence-rule.ts",
+    "src/domain/recurrence.ts",
+    "src/domain/request-memo.ts",
+    "src/domain/schedule-history.ts",
+    "src/domain/time-entry.ts",
+    "src/domain/venue-adapter.ts",
+    "src/domain/venue.ts",
+    "src/public-event.ts",
+    "src/schema/blueprint.ts",
+    "src/storage.ts",
+    "transfer/index.d.mts",
+    "transfer/index.mjs"
+  ],
+  "acceptanceEvidence": [
+    {
+      "path": "reports/native-full-tests.log",
+      "exists": true,
+      "modified": "2026-10-30T15:52:26.000Z"
+    },
+    {
+      "path": "reports/native-full-tests-new-york.log",
+      "exists": true,
+      "modified": "2026-10-30T15:55:11.064Z"
+    },
+    {
+      "path": "reports/native-tooling.log",
+      "exists": true,
+      "modified": "2026-10-30T15:55:14.188Z"
+    },
+    {
+      "path": "reports/native-typecheck.log",
+      "exists": true,
+      "modified": "2026-10-30T15:55:14.888Z"
+    },
+    {
+      "path": "reports/packed-astro.json",
+      "exists": true,
+      "modified": "2026-10-30T15:56:25.563Z"
+    },
+    {
+      "path": "reports/browser-acceptance.json",
+      "exists": true,
+      "modified": "2026-10-30T15:58:00.261Z"
+    }
+  ],
+  "note": "Native schemas are a one-time administrator setup; no frontend companion is required. The source package and schema exporter are optional for site developers. External subscriber and deployed D1 checks are not certified; see the handoff."
+}

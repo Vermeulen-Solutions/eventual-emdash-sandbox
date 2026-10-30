@@ -1,8 +1,10 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, join } from "node:path";
 import {createHash} from "node:crypto";
 const root = process.cwd();
+const hostEmdashVersion = process.env.EVENTUAL_HOST_EMDASH_VERSION || "1.4.0";
+const hostSandboxVersion = process.env.EVENTUAL_HOST_SANDBOX_VERSION || "0.9.6";
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error("Run through npm run test:package.");
 function run(script, args, cwd = root) {
@@ -21,6 +23,16 @@ function run(script, args, cwd = root) {
   return result.stdout;
 }
 run(npm, ["run", "build"]);
+const reportsDir = resolve(root, "reports");
+if (existsSync(reportsDir)) {
+  for (const entry of readdirSync(reportsDir)) {
+    if (entry.startsWith("packed-consumer-")) {
+      try {
+        rmSync(join(reportsDir, entry), { recursive: true, force: true });
+      } catch {}
+    }
+  }
+}
 const work = resolve(root, "reports", "packed-consumer-" + Date.now());
 mkdirSync(join(work, "src", "pages"), { recursive: true });
 const packed = JSON.parse(
@@ -32,7 +44,7 @@ writeFileSync(
     name: "eventual-package-check",
     private: true,
     type: "module",
-    dependencies: { react: "19.2.4", "react-dom": "19.2.4", emdash: "1.2.0", astro: "7.3.2", "@astrojs/node": "11.1.5", "@astrojs/react": "6.0.5", "@emdash-cms/sandbox-workerd": "0.9.3" },
+    dependencies: { react: "19.2.4", "react-dom": "19.2.4", emdash: hostEmdashVersion, astro: "7.3.2", "@astrojs/node": "11.1.5", "@astrojs/react": "6.0.5", "@emdash-cms/sandbox-workerd": hostSandboxVersion },
     overrides: { sharp: "0.35.5", "undici@7.29.0": "7.29.1" },
   }),
 );
@@ -48,6 +60,13 @@ run(
   ],
   work,
 );
+const installedHost = JSON.parse(
+  readFileSync(join(work, "node_modules", "emdash", "package.json"), "utf8"),
+).version;
+if (installedHost !== hostEmdashVersion)
+  throw new Error(
+    `Packed consumer installed EmDash ${installedHost}, expected ${hostEmdashVersion}.`,
+  );
 writeFileSync(
   join(work, "astro.config.mjs"),
   "import {defineConfig} from 'astro/config'; export default defineConfig({output:'static',site:'https://consumer.example'});\n",
@@ -113,7 +132,7 @@ if (
   throw new Error("Packed dates were not localized.");
 const packagePath=join(work,packed[0].filename);
 const digest=path=>createHash("sha256").update(readFileSync(path)).digest("hex");
-const report = { package: packed[0].filename, packagePath, sha256:digest(packagePath), consumer: work, pages: reports, installedFiles:packed[0].files.map(file=>({path:file.path,sha256:digest(join(work,"node_modules/eventual",file.path))})) };
+const report = { package: packed[0].filename, packagePath, sha256:digest(packagePath), hostEmdashVersion, consumer: work, pages: reports, installedFiles:packed[0].files.map(file=>({path:file.path,sha256:digest(join(work,"node_modules/eventual",file.path))})) };
 writeFileSync(
   resolve(root, "reports", "packed-astro.json"),
   JSON.stringify(report, null, 2),

@@ -1,6 +1,6 @@
-# Eventual 0.14.0
+# Eventual 0.14.1
 
-Requires EmDash **>=1.2.0 <2.0.0**. In **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install it. Existing sites use the plugin's update action; review changed MCP tool consent.
+Requires EmDash **>=1.2.0 <2.0.0**; tested on **1.2.0** and **1.4.0**, with **1.4.0 recommended** for correct nested Block Kit forms and Cloudflare plugin mutations. In **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install it. Existing sites use the plugin's update action; review changed MCP tool consent.
 
 Open **Eventual → Settings**, choose compatible event, venue and organizer collections, then **Save settings**. A collection is the place under **Content** where entries are edited. If none exists, ask your site builder to follow [setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md). Installation and selection do not create schemas or migrate data.
 

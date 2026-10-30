@@ -1,0 +1,36 @@
+
+> eventual@0.14.1 test:tooling
+> node --test scripts/*.test.mjs
+
+✔ counts uncompressed payload rather than compressed or padded archive bytes (2.3248ms)
+✔ each working budget is enforced independently and inclusively (1.4024ms)
+✔ preset targets fit inside the CDN boxes and upscale small sources (2.3994ms)
+✔ estimates classify with drift headroom against the 1 MiB cap (0.3815ms)
+✔ legacy form renderer keeps the nesting workaround (1.5412ms)
+✔ blocks 1.4 renderer is patched without the legacy form rewrite (1.5332ms)
+✔ the installed renderer is patched in either supported shape (2.1663ms)
+✔ unsupported dependency versions fail visibly instead of silently patching unrelated code (0.5197ms)
+✔ French presentation follows UI language and preserves editable data and row titles (3.832ms)
+✔ narrow panels present occurrence dates without a wide table or changed recurrence IDs (0.4665ms)
+✔ French catalog repairs preserve host translations and English messages (1.4701ms)
+✔ recurrence summaries explain weekdays and monthly missing-day behavior (23.629ms)
+✔ the tested admin adapter only changes presentation and rejects unknown builds (59.6812ms)
+✔ draft review shows names, civil dates and human recurrence without changing values (1.8492ms)
+✔ source editor accepts every tested core version (4.4981ms)
+✔ source installer accepts the tested host (4.6286ms)
+✔ schema export supports custom collections and reuses existing locations without host widgets (133.7343ms)
+✔ schema exporter rejects ambiguous names and never overwrites a file (389.6854ms)
+✔ prototype migration fields require an explicit compatibility export (97.4591ms)
+✔ CSV quoted multiline data, commas, BOM and strict headers (4.0409ms)
+✔ ICS folding, escaping and exclusive all-day end; no silent recurrence loss (2.3924ms)
+✔ backup follows cursors, retries page size and restores references first (0.9198ms)
+✔ transfer batches by count and byte size, defaults to preview (1.5931ms)
+✔ SQLite upgrade previews without writes and preserves live, pending and historical reference selections (371.2048ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2107.6274

@@ -18,7 +18,13 @@ npm pack
 npm install /path/to/eventual-0.14.0.tgz
 ```
 
-Source tooling needs Node 24+. Peer ranges are in [package.json](../package.json); release acceptance used EmDash/Admin/Block Kit 1.2.0, Astro 7.3.2 and React 19. Historical editor compatibility exports target 1.0.1.
+Source tooling needs Node 24+. Peer ranges are in [package.json](../package.json); release acceptance uses EmDash/Admin/Block Kit **1.2.0 and 1.4.0**, Astro 7.3.x/7.4.x and React 19. The source `eventual/install` lane accepts 1.2.0 and 1.4.0; Registry installs never execute that transform.
+
+| Host | Status | Notes |
+| --- | --- | --- |
+| 1.2.0 | supported, unit-tested | Panel Enter/validation is scoped to the outer content-editor form; Cloudflare cross-isolate plugin mutations can fail. |
+| 1.3.x | supported, untested | Same form/Cloudflare limitations; includes the plugin-storage cursor fix. |
+| 1.4.x | supported, full acceptance | Recommended. Fixes nested Block Kit forms and Cloudflare plugin mutations. |
 
 ## Public routes
 

@@ -1,0 +1,40 @@
+{
+  "built": true,
+  "origin": "http://127.0.0.1:4321",
+  "checks": [
+    {
+      "name": "sandbox plugin registration and MCP consent",
+      "passed": true,
+      "elapsedMs": 680
+    },
+    {
+      "name": "admin pages and widget return valid Block Kit",
+      "passed": true,
+      "elapsedMs": 693
+    },
+    {
+      "name": "published native events reach the public feed",
+      "passed": true,
+      "elapsedMs": 30
+    },
+    {
+      "name": "native event read tools and entry detail",
+      "passed": true,
+      "elapsedMs": 161
+    },
+    {
+      "name": "individual and subscription ICS include native events",
+      "passed": true,
+      "elapsedMs": 132
+    },
+    {
+      "name": "draft duplication uses native content creation",
+      "passed": true,
+      "elapsedMs": 154
+    }
+  ],
+  "knownLimitations": [
+    "Subscription calendar exceeded the host RPC budget with five native events: The sandbox RPC budget is exceeded."
+  ],
+  "passed": true
+}

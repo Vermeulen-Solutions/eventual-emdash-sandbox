@@ -1,0 +1,80 @@
+{
+  "release": "0.14.1",
+  "date": "2026-10-30",
+  "published": false,
+  "scope": "EmDash 1.2.0/1.4.0 compatibility; no runtime API, capability, schema, route or MCP-tool changes",
+  "hosts": {
+    "1.2.0": {
+      "status": "passed",
+      "tests": "26 files, 228 tests",
+      "tooling": "24 tests",
+      "bundle": "passed",
+      "budget": "passed",
+      "log": "compat-1.2.0.log"
+    },
+    "1.4.0": {
+      "status": "passed",
+      "testsUtc": "26 files, 228 tests",
+      "testsNewYork": "26 files, 228 tests",
+      "tooling": "24 tests",
+      "typecheck": "passed",
+      "bundle": "passed",
+      "budget": "passed",
+      "profile": "2 tests passed",
+      "logs": [
+        "native-full-tests.log",
+        "native-full-tests-new-york.log",
+        "native-tooling.log",
+        "native-typecheck.log"
+      ]
+    }
+  },
+  "packedConsumer": {
+    "status": "passed",
+    "hostEmdashVersion": "1.4.0",
+    "sourceSha256": "a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8"
+  },
+  "editorAcceptance": {
+    "status": "passed",
+    "tests": "3/3",
+    "emdashVersion": "1.4.0",
+    "sourceSha256": "a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8",
+    "unexpectedBrowserErrors": 0,
+    "evidence": "editor-installation.json"
+  },
+  "localTestSite": {
+    "eventual": "0.14.1",
+    "emdash": "1.4.0",
+    "sandboxWorkerd": "0.9.6",
+    "development": {
+      "status": "passed",
+      "groups": 6,
+      "evidence": "test-site-native-dev.json"
+    },
+    "production": {
+      "status": "passed",
+      "groups": 6,
+      "evidence": "test-site-native-production.json"
+    },
+    "knownLimitations": [
+      "Full-year subscription calendar returned HTTP 503 because the ten-bridge-call sandbox RPC budget was exceeded with five native events. JSON feed and per-event ICS passed."
+    ]
+  },
+  "artifacts": {
+    "registryTarball": {
+      "path": "dist/eventual-0.14.1.tar.gz",
+      "bytes": 47393,
+      "sha256": "1e05fd48939a4173d8c9a4b83013a4d28e476f4858dbb782e4bf196b8459bcf0"
+    },
+    "sourcePackage": {
+      "path": "dist/source/eventual-0.14.1.tgz",
+      "bytes": 131696,
+      "sha256": "a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8"
+    }
+  },
+  "releasePreparation": {
+    "status": "passed",
+    "published": false,
+    "evidence": "release-preparation.json"
+  }
+}

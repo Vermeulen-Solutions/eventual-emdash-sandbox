@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "architecture": "native-collections",
+  "collections": {
+    "events": "activities",
+    "venues": "locations",
+    "organizers": "hosts"
+  },
+  "emdashVersion": "1.4.0",
+  "package": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\reports\\packed-consumer-1793375728852\\eventual-0.14.1.tgz",
+  "sha256": "a8585d13bece54a3ae412d514f857a91912960deccfa1e4d3564a6461b3db6a8",
+  "installedFilesVerified": 64,
+  "fixtures": {
+    "firstDate": "2026-11-09",
+    "from": "2026-11-09",
+    "through": "2026-12-06"
+  },
+  "database": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\reports\\packed-consumer-1793375728852\\editor-data-1793375787081.db",
+  "selfContained": true,
+  "frontendCompanion": false,
+  "unexpectedBrowserErrors": 0,
+  "knownUpstreamDiagnostics": [
+    "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `ComboboxList`.  It was passed a child from Il."
+  ],
+  "frontendVisual": {
+    "pages": [
+      "/component-preview"
+    ],
+    "screenshots": [
+      "images/registry-0.13.0/native-public-component-fr-desktop.png",
+      "images/registry-0.13.0/native-public-component-fr-mobile.png"
+    ],
+    "scope": "Packed EventList component example; no site theme installed or changed."
+  }
+}

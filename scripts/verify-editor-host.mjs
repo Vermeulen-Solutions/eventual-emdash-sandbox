@@ -1,5 +1,5 @@
 /** Fresh stock host: real migrations and packed sandbox; no Eventual companion. */
-import { readFileSync, writeFileSync, mkdirSync, appendFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { spawn,spawnSync } from "node:child_process";
 import {createHash} from "node:crypto";
@@ -13,6 +13,8 @@ import { applySeed } from "emdash/seed";
 
 const root = process.cwd();
 const packed = JSON.parse(readFileSync("reports/packed-astro.json", "utf8"));
+const expectedHost = process.env.EVENTUAL_EXPECTED_EMDASH_VERSION || packed.hostEmdashVersion;
+if (!expectedHost) throw new Error("Packed consumer report is missing hostEmdashVersion.");
 const work = packed.consumer;
 for(const file of packed.installedFiles ?? []) {
   const actual=createHash("sha256").update(readFileSync(join(work,"node_modules/eventual",file.path))).digest("hex");
@@ -26,6 +28,10 @@ const firstDate=startDay.toISOString().slice(0,10), windowEnd=new Date(startDay)
 const through=windowEnd.toISOString().slice(0,10), from=firstDate;
 const executor = await createMigrationExecutor({ url: database }, { projectRoot: work, env: {} });
 const identity = await getCoreMigrationIdentity();
+if (identity.emdashVersion !== expectedHost || packed.hostEmdashVersion !== expectedHost)
+  throw new Error(
+    `Editor acceptance host mismatch: repo ${identity.emdashVersion}, packed ${packed.hostEmdashVersion}, expected ${expectedHost}.`,
+  );
 await executor.execute({ action: "apply", i18n: {defaultLocale: "fr", locales: ["fr", "en"]}, artifact: { emdashVersion: identity.emdashVersion, migrationSetFingerprint: identity.fingerprint } });
 const db = new Kysely({ dialect: createDialect({ url: "file:" + database }) });
 try {
@@ -68,8 +74,11 @@ try {
   if(code!==0) throw new Error("Browser acceptance failed.");
   const consoleEvidence=['french','english'].map(language=>JSON.parse(readFileSync(resolve('reports/browser-console-'+language+'.json'),'utf8')));
   if(consoleEvidence.some(evidence=>evidence.errors.length)) throw new Error('Unexpected browser errors.');
-  writeFileSync(resolve("reports/editor-installation.json"),JSON.stringify({passed:true,architecture:'native-collections',collections:{events:'activities',venues:'locations',organizers:'hosts'},emdashVersion:'1.2.0',package:packed.packagePath,sha256:packed.sha256,installedFilesVerified:packed.installedFiles?.length,fixtures:{...JSON.parse(readFileSync(join(work,"browser-fixtures.json"),"utf8"))},database,selfContained:true,frontendCompanion:false,unexpectedBrowserErrors:0,knownUpstreamDiagnostics:consoleEvidence.flatMap(evidence=>evidence.known),frontendVisual:{pages:['/component-preview'],screenshots:['images/registry-0.13.0/native-public-component-fr-desktop.png','images/registry-0.13.0/native-public-component-fr-mobile.png'],scope:'Packed EventList component example; no site theme installed or changed.'}},null,2)+"\n");
+  writeFileSync(resolve("reports/editor-installation.json"),JSON.stringify({passed:true,architecture:'native-collections',collections:{events:'activities',venues:'locations',organizers:'hosts'},emdashVersion:identity.emdashVersion,package:packed.packagePath,sha256:packed.sha256,installedFilesVerified:packed.installedFiles?.length,fixtures:{...JSON.parse(readFileSync(join(work,"browser-fixtures.json"),"utf8"))},database,selfContained:true,frontendCompanion:false,unexpectedBrowserErrors:0,knownUpstreamDiagnostics:consoleEvidence.flatMap(evidence=>evidence.known),frontendVisual:{pages:['/component-preview'],screenshots:['images/registry-0.13.0/native-public-component-fr-desktop.png','images/registry-0.13.0/native-public-component-fr-mobile.png'],scope:'Packed EventList component example; no site theme installed or changed.'}},null,2)+"\n");
 } finally {
   server.kill(); if(server.exitCode===null) await once(server,"exit");
   mkdirSync(resolve("reports"),{recursive:true});writeFileSync(resolve("reports/editor-host.log"),logs.join(""));
+  if (!process.env.KEEP_TEST_CONSUMER) {
+    try { rmSync(work, { recursive: true, force: true }); } catch {}
+  }
 }

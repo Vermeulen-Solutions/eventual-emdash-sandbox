@@ -10,7 +10,7 @@ const acceptance=JSON.parse(readFileSync("reports/editor-installation.json","utf
 if(acceptance.unexpectedBrowserErrors !== 0 || !Array.isArray(acceptance.knownUpstreamDiagnostics)) throw new Error('Complete browser console inspection with explicit upstream diagnostics.');
 const browser=JSON.parse(readFileSync("reports/browser-acceptance.json","utf8"));
 if(acceptance.frontendVisual?.screenshots?.length<2 || !acceptance.frontendVisual?.screenshots?.every(path=>existsSync(path))) throw new Error('Complete current packed frontend component screenshots first.');
-if(!acceptance.passed || acceptance.architecture !== 'native-collections' || acceptance.emdashVersion !== '1.2.0' || !acceptance.selfContained || acceptance.frontendCompanion !== false || browser.stats.unexpected || browser.stats.flaky || browser.stats.skipped || browser.stats.expected<2) throw new Error("Pass the native-collection browser workflows on EmDash 1.2 first.");
+if(!acceptance.passed || acceptance.architecture !== 'native-collections' || acceptance.emdashVersion !== '1.4.0' || !acceptance.selfContained || acceptance.frontendCompanion !== false || browser.stats.unexpected || browser.stats.flaky || browser.stats.skipped || browser.stats.expected<2) throw new Error("Pass the native-collection browser workflows on EmDash 1.4 first.");
 for(const path of ["reports/native-full-tests.log","reports/native-full-tests-new-york.log"]) {
   const log=readFileSync(path,"utf8");
   const count=Number(log.match(/Tests\s+(\d+) passed/)?.[1] ?? 0);

@@ -11,6 +11,11 @@ jobs:
         timezone: [UTC, America/New_York]
     env:
       TZ: ${{ matrix.timezone }}
+      EVENTUAL_HOST_EMDASH: "1.4.0"
+      EVENTUAL_HOST_ADMIN: "1.4.0"
+      EVENTUAL_HOST_BLOCKS: "1.4.0"
+      EVENTUAL_HOST_PLUGIN_TEST: "0.2.11"
+      EVENTUAL_HOST_PLUGIN_CLI: "0.13.5"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,6 +26,7 @@ jobs:
             package-lock.json
             examples/astro-events/package-lock.json
       - run: npm ci
+      - run: node scripts/assert-host-versions.mjs
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
@@ -50,3 +56,29 @@ jobs:
             reports/editor-host.log
             reports/browser-results
             reports/public-visual
+
+  plugin-host-1-2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: UTC
+      EVENTUAL_HOST_EMDASH: "1.2.0"
+      EVENTUAL_HOST_ADMIN: "1.2.0"
+      EVENTUAL_HOST_BLOCKS: "1.2.0"
+      EVENTUAL_HOST_PLUGIN_TEST: "0.2.8"
+      EVENTUAL_HOST_PLUGIN_CLI: "0.13.3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx -y npm@11.19.0 install --no-save --package-lock=false emdash@1.2.0 @emdash-cms/admin@1.2.0 @emdash-cms/blocks@1.2.0 @emdash-cms/plugin-test@0.2.8 @emdash-cms/plugin-cli@0.13.3
+      - run: node scripts/assert-host-versions.mjs
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:tooling
+      - run: npm run bundle
+      - run: npm run budget

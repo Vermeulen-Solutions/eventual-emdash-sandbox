@@ -2,6 +2,13 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.14.1 - 2026-10-30
+
+- Compatibility release with no runtime API, capability, schema, route or MCP-tool changes.
+- Tested against EmDash **1.2.0 and 1.4.0**. **1.4.0 is recommended**: it fixes nested Block Kit forms and Cloudflare plugin mutations. 1.2/1.3 remain supported with those host limitations.
+- The source `eventual/install` editor transform now handles both the 1.2/1.3 `<form>` renderer and the 1.4 `div[role="group"]` renderer, and its version gate accepts 1.2.0 and 1.4.0.
+- The local test site now runs the native-collection gate on EmDash 1.4.0 in development and production. See [release notes](docs/release-notes-0.14.1.md).
+
 ## 0.14.0 - 2026-10-14 (breaking)
 
 - **Public reads no longer fall back to private plugin storage by default.** When no event content type is configured or the selected one is missing, `publicEvents`, the calendar feed and the calendar-state reconciliation now fail with an actionable error instead of silently serving old plugin records — the failure mode that labelled French events `[EN]` and hid the events from editors. Administrators turn on **Show old events saved inside the plugin** in Eventual settings, or set `legacyReads` through MCP `updateSettings`, to keep serving that data.

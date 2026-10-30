@@ -1,0 +1,575 @@
+
+> eventual@0.14.1 test
+> emdash-plugin validate && vitest run
+
+[success] Manifest is valid: C:\dev\eventual-em\eventual-emdash-sandbox\emdash-plugin.jsonc
+[info] Default release hosting: publisher PDS blobs
+
+ RUN  v4.1.11 C:/dev/eventual-em/eventual-emdash-sandbox
+
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-1LRMkn\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 121ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-1LRMkn\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 3001ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-1LRMkn\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 77ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-zbQFUc\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 96ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-zbQFUc\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 14ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-zbQFUc\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 60ms
+uncaught exception; source = Uncaught (in promise); stack = Error: Eventual is not connected to a content type. Choose one under Eventual settings, or turn on "Show old events saved inside the plugin".
+    at i (sandbox-plugin.js:1:309)
+    at Dt (sandbox-plugin.js:9:21914)
+    at async Wt (sandbox-plugin.js:9:29628)
+    at async Ut (sandbox-plugin.js:9:28907)
+    at async handler (sandbox-plugin.js:10:47903)
+    at async PluginEntrypoint.invokeRoute (plugin.js:456:11)
+uncaught exception; exception = workerd/io/io-context.c++:1684: failed: jsg.Error: The Workers runtime canceled this request because it detected that your Worker's code had hung and would never generate a response. Refer to: https://developers.cloudflare.com/workers/observability/errors/
+stack: 7ff64f205700
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-3RFq39\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 85ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-3RFq39\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 17ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-3RFq39\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 54ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-XCcn5h\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 83ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-XCcn5h\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 18ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-XCcn5h\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 53ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-CUmylU\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 78ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-CUmylU\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 11ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-CUmylU\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 57ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-ZLkL5K\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 80ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-ZLkL5K\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 15ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-ZLkL5K\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 62ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-KISG5m\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 79ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-KISG5m\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 17ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-KISG5m\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 50ms
+uncaught exception; source = Uncaught (in promise); stack = SandboxBudgetError: The sandbox RPC budget is exceeded.
+    at handler (sandbox-plugin.js:10:47968)
+    at async PluginEntrypoint.invokeRoute (plugin.js:456:11)
+uncaught exception; exception = workerd/io/io-context.c++:1684: failed: jsg.Error: The Workers runtime canceled this request because it detected that your Worker's code had hung and would never generate a response. Refer to: https://developers.cloudflare.com/workers/observability/errors/
+stack: 7ff64f205700
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-gvBY3s\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 76ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-gvBY3s\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 12ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-gvBY3s\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 56ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-t3SDLu\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 74ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-t3SDLu\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 23ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-t3SDLu\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 54ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-Ks2fwr\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 76ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-Ks2fwr\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 10ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-Ks2fwr\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 53ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fMTQFT\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 70ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fMTQFT\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 9ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fMTQFT\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 58ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-iZ44Mh\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 69ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-iZ44Mh\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-iZ44Mh\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 61ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-8l4p8d\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 68ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-8l4p8d\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 9ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-8l4p8d\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 53ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fhlwTl\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 70ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fhlwTl\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fhlwTl\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 54ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fLLOC3\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 69ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fLLOC3\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fLLOC3\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 52ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-cj80wX\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 68ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-cj80wX\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 11ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-cj80wX\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 53ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-463A67\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 75ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-463A67\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-463A67\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 49ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-AzMt93\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 79ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-AzMt93\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 9ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-AzMt93\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 52ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-hhcS3p\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 72ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-hhcS3p\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-hhcS3p\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 50ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-ggxI1r\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 76ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-ggxI1r\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-ggxI1r\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 50ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-uekJ0J\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 67ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-uekJ0J\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-uekJ0J\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 52ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fVzXdP\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 72ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fVzXdP\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-fVzXdP\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 52ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-trWigP\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 67ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-trWigP\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-trWigP\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 56ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-4rasvp\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 69ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-4rasvp\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-4rasvp\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 54ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-Br2XM7\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 68ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-Br2XM7\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-Br2XM7\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 55ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-iHwREX\runtime\plugin.mjs  130.76 kB │ gzip: 39.93 kB
+ℹ 1 files, total: 130.76 kB
+✔ Build complete in 68ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-iHwREX\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 8ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-iHwREX\plugin-probe\plugin.mjs  226.96 kB │ gzip: 56.98 kB
+ℹ 1 files, total: 226.96 kB
+✔ Build complete in 54ms
+
+ Test Files  26 passed (26)
+      Tests  228 passed (228)
+   Start at  11:52:29
+   Duration  161.90s (transform 10.00s, setup 0ms, import 51.02s, tests 85.32s, environment 4ms)
+

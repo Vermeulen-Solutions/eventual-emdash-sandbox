@@ -1,6 +1,6 @@
 # Install and connect Eventual
 
-Eventual **0.14.0** requires EmDash **>=1.2.0 <2.0.0**. Editors can use the [event guide](user-guide.md) once an administrator completes this setup.
+Eventual **0.14.1** requires EmDash **>=1.2.0 <2.0.0**; it is tested on **1.2.0** and **1.4.0**, with 1.4.0 recommended for the form and Cloudflare fixes. Editors can use the [event guide](user-guide.md) once an administrator completes this setup.
 
 ## In the EmDash admin
 
