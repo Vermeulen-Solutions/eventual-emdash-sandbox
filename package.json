@@ -1,6 +1,6 @@
 {
   "name": "eventual",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "license": "MIT",
   "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
   "type": "module",
@@ -57,7 +57,9 @@
     "docs/user-guide.md",
     "docs/history.md",
     "docs/release-notes-0.14.0.md",
-    "docs/release-notes-0.14.1.md"
+    "docs/release-notes-0.14.1.md",
+    "docs/public-feed-caching.md",
+    "docs/release-notes-0.15.0.md"
   ],
   "scripts": {
     "validate": "emdash-plugin validate",
@@ -74,6 +76,7 @@
     "registry:media": "node scripts/check-registry-media.mjs",
     "test:tooling": "node --test scripts/*.test.mjs",
     "test:package": "node scripts/verify-packed-astro.mjs",
+    "test:cache": "node scripts/verify-public-cache.mjs",
     "test:editor": "node scripts/verify-editor-host.mjs",
     "profile": "vitest run --config vitest.profile.config.ts",
     "release:prepare": "node scripts/prepare-release.mjs"

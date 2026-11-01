@@ -2,6 +2,14 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.15.0 - 2026-11-01
+
+- Add optional typed cache dependency/expiry evidence to native public feeds, including empty lists and custom collection names, without extra dependency RPCs.
+- Add Astro parsing for direct public runtime dispatch, explicit host TTL/split-feed merging, timezone label/midnight boundaries, and a Registry `pluginId` option for HTTP consumers.
+- Caching remains host opt-in. Remaining lifetime is capped at 15 seconds, with no stale serving; cache integration requires EmDash >=1.4.0 <2.0.0. Existing >=1.2.0 rendering compatibility, identities, schemas, locale/recurrence behavior and permissions are preserved.
+- Document native/plugin invalidation differences, source freshness and authentication bypass limits, upstream requirements, and a BBHC adoption checklist. Verify real production-built parent HTML, privacy, time changes and failed purges on disposable hosts.
+- See [release notes](docs/release-notes-0.15.0.md) and the [integration guide](docs/public-feed-caching.md). Hosted Cloudflare acceptance remains a host-site responsibility.
+
 ## 0.14.1 - 2026-10-30
 
 - Compatibility release with no runtime API, capability, schema, route or MCP-tool changes.

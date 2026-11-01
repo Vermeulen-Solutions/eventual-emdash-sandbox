@@ -6,8 +6,10 @@ import { DiscoveryClient } from '@emdash-cms/registry-client/discovery';
 
 const did = 'did:plc:g2hei4vcwndrdl3gdbb6np6c';
 const slug = 'eventual';
-const version = '0.14.0';
-const directory = 'reports/release-0.14.0';
+const version = process.argv[2] ?? JSON.parse(await fs.readFile('package.json', 'utf8')).version;
+assert.match(version, /^\d+\.\d+\.\d+$/);
+const directory = 'reports/release-' + version;
+await fs.mkdir(directory, { recursive: true });
 const document = await fetch('https://plc.directory/' + did).then(response => response.json());
 const pds = document.service.find(service => service.id.endsWith('#atproto_pds')).serviceEndpoint;
 async function record(kind, rkey) {
@@ -39,7 +41,7 @@ const blob = artifact.blob.ref.$link;
 const response = await fetch(pds + '/xrpc/com.atproto.sync.getBlob?' + new URLSearchParams({ did, cid: blob }));
 assert.equal(response.ok, true);
 const remote = Buffer.from(await response.arrayBuffer());
-const local = await fs.readFile('dist/eventual-0.14.0.tar.gz');
+const local = await fs.readFile(`dist/eventual-${version}.tar.gz`);
 assert.deepEqual(remote, local, 'The uploaded artifact must equal the publish-produced local archive');
 const result = { identifier: `${did}/${slug}@${version}`, profileCid: profile.cid, releaseCid: release.cid, profileApproved: true, releaseApproved: true, checksum: artifact.checksum, blobCid: blob, bytes: remote.length, sha256: createHash('sha256').update(remote).digest('hex') };
 await fs.writeFile(directory + '/registry-verification.json', JSON.stringify(result, null, 2) + '\n');

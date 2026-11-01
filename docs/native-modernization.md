@@ -1,6 +1,9 @@
-# Developer guide — Eventual 0.14.0
+# Developer guide — Eventual 0.15.0
 
 EmDash collections own content, rich text, languages, drafts, revisions and publication. Eventual's sandbox supplies schedule validation, recurrence, saved-entry controls and feeds. See [setup](collection-setup.md) and [upgrading](upgrade-0.13.0.md).
+
+The [public feed caching guide](public-feed-caching.md) describes additive
+dependency/expiry metadata, direct runtime dispatch and the host's explicit opt-in.
 
 ## Installation and plugin ID
 
@@ -8,15 +11,16 @@ Registry installations use the host's sandbox runner and downloaded bundle. Conf
 
 **Use the installed plugin ID in URLs and MCP names.** Config-managed installs normally use `eventual`; Registry installs have generated IDs such as `r_hxn32uyal53iahxf`. Read it from the install result or authenticated `GET /_emdash/api/admin/plugins`. MCP names are `<pluginId>__<toolName>`.
 
-Astro/schema/transfer helpers use this repository's npm-format source package, not the Registry `.tar.gz`. As of 14 October 2026, GitHub's latest downloadable source archive is 0.13.1. For matching 0.14.0 helpers, use a checkout containing release commit `16a832d` whose package.json version is 0.14.0:
+Astro/schema/transfer helpers use the matching npm-format source archive from the
+[0.15.0 release](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/releases/tag/v0.15.0),
+not the Registry `.tar.gz`. Install the downloaded `eventual-0.15.0.tgz` locally:
 
 ```sh
-npm ci
-npm run build
-npm pack
-# In your site repository, install the resulting file:
-npm install /path/to/eventual-0.14.0.tgz
+npm install /path/to/eventual-0.15.0.tgz
 ```
+
+To build the same helpers from the release checkout, run `npm ci`, `npm run build`
+and `npm pack`. Keep helper and backend versions aligned.
 
 Source tooling needs Node 24+. Peer ranges are in [package.json](../package.json); release acceptance uses EmDash/Admin/Block Kit **1.2.0 and 1.4.0**, Astro 7.3.x/7.4.x and React 19. The source `eventual/install` lane accepts 1.2.0 and 1.4.0; Registry installs never execute that transform.
 

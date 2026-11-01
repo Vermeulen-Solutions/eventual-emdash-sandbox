@@ -9,3 +9,9 @@ it.each([undefined, true, false])('passes publicUrls=%s through the Astro helper
   const url = new URL(fetch.mock.calls[0]![0]);
   expect(url.searchParams.get('publicUrls')).toBe(publicUrls === undefined ? null : String(publicUrls));
 });
+it('addresses a Registry installation by its generated ID without changing the default', async () => {
+  const fetch = vi.fn(async (_input: URL) => Response.json({ success: true, data: { ok: true, from: '2026-01-01', through: '2026-12-31', events: [] } }));
+  vi.stubGlobal('fetch', fetch);
+  await fetchPublicFeed('https://club.example', '2026-01-01', '2026-12-31', '', { pluginId: 'r_example' });
+  expect(fetch.mock.calls[0]![0].pathname).toBe('/_emdash/api/plugins/r_example/publicEvents');
+});

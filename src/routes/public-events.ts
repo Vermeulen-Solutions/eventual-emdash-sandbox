@@ -1,22 +1,17 @@
 import { expandEventsInDateRange } from "../domain/recurrence";
-import { isDateOnly } from "../domain/date-time";
+import { isDateOnly, addCalendarDays as addDays } from "../domain/date-time";
 import { categoryKey } from "../domain/category";
 import { formatPublicEvent } from "../public-event";
 import { EventScanLimitError, listVenuesById, listOrganizersById, type EventualContext } from "../storage";
 import { readEventSource, resolveEventVenues, selectEventLocales, hydrateNativeAssets } from '../domain/native-source';
 import { eventRecordToPublicEvent } from '../domain/event-expansion';
 import { withInvocationBudget, SandboxBudgetError } from '../domain/invocation-budget';
+import { publicFeedCache } from '../domain/public-cache';
 
 const MAX_PUBLIC_EVENT_RANGE_DAYS = 366;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function addDays(date: string, count: number): string {
-	const result = new Date(`${date}T00:00:00Z`);
-	result.setUTCDate(result.getUTCDate() + count);
-	return result.toISOString().slice(0, 10);
 }
 
 export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
@@ -29,7 +24,8 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 		return invalidQuery;
 	}
 	try { if (input.locale) Intl.getCanonicalLocales(input.locale as string); } catch { return invalidQuery; }
-	const today = new Date().toISOString().slice(0, 10);
+	const now = Date.now();
+	const today = new Date(now).toISOString().slice(0, 10);
 	const from = (input.from as string | undefined) ?? today;
 	const through = (input.through as string | undefined) ?? addDays(from, 180);
 	if (!isDateOnly(from) || !isDateOnly(through) || from > through) {
@@ -58,7 +54,7 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	if (source!.native) {
 		const venues=await resolveEventVenues(ctx,visible,source!.schema);
 		const hydrated=await hydrateNativeAssets(ctx,visible,([undefined, true, 'true'] as unknown[]).includes(input.publicUrls));
-		return {ok:true,from,through,events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url,ctx.plugin.id))};
+		return {ok:true,from,through,cache:publicFeedCache(source!.schema!,now,input.from === undefined),events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url,ctx.plugin.id))};
 	}
 	const [venues, organizers] = await Promise.all([
 		listVenuesById(ctx, visible.flatMap(event => event.venueId ? [event.venueId] : [])),

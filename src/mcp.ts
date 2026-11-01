@@ -2,7 +2,7 @@ import { EXTERNAL_URL_ERROR } from './domain/messages';
 import { validateMcpInput, type McpEventInput } from "./mcp-schemas";
 
 import { normalizeCategories } from "./domain/category";
-import { isDateOnly, isValidTimeZone } from "./domain/date-time";
+import { isDateOnly, isValidTimeZone, addCalendarDays as addDays } from "./domain/date-time";
 import {
   normalizeEventStatus,
   eventToDraft,
@@ -53,27 +53,8 @@ import { normalizeVenueRecord, localizedVenue } from "./domain/venue-adapter";
 import { nativeEntryToEventRecord } from "./domain/event-expansion";
 import {withInvocationBudget} from './domain/invocation-budget';
 
-const validEventInput = (value: unknown) =>
-  validateMcpInput("createEvent", value);
-const validEventPatch = (value: unknown) =>
-  validateMcpInput("updateEvent", value);
-const validVenueInput = (value: unknown) =>
-  validateMcpInput("createVenue", value);
-const validVenuePatch = (value: unknown) =>
-  validateMcpInput("updateVenue", value);
-const validId = (value: unknown) => validateMcpInput("getEvent", value);
-const validEmpty = (value: unknown) => validateMcpInput("getSettings", value);
-const validListEvents = (value: unknown) =>
-  validateMcpInput("listEvents", value);
-const validExceptionSet = (value: unknown) =>
-  validateMcpInput("setOccurrenceException", value);
-const validExceptionRemove = (value: unknown) =>
-  validateMcpInput("removeOccurrenceException", value);
-const validSettingsUpdate = (value: unknown) =>
-  validateMcpInput("updateSettings", value);
-
 function route(
-  validate: (input: unknown) => boolean,
+  schema: Parameters<typeof validateMcpInput>[0],
   run: (input: any, ctx: EventualContext) => Promise<unknown>,
   nativeAllowed = false,
 ) {
@@ -81,7 +62,7 @@ function route(
     permission: "plugins:manage" as const,
     handler: async (routeCtx: { input: unknown }, ctx: EventualContext) => {
       if (nativeAllowed) ctx = withInvocationBudget(ctx);
-      if (!validate(routeCtx.input))
+      if (!validateMcpInput(schema, routeCtx.input))
         return { ok: false, error: "VALIDATION_ERROR" };
       if (!nativeAllowed && (await nativeSchema(ctx)))
         return {
@@ -226,15 +207,9 @@ function venueInput(fields: VenueFields, previous?: VenueRecord): VenueRecord {
   };
 }
 
-function addDays(value: string, count: number): string {
-  const result = new Date(`${value}T00:00:00.000Z`);
-  result.setUTCDate(result.getUTCDate() + count);
-  return result.toISOString().slice(0, 10);
-}
-
 export const mcpRoutes = {
   "mcp/organizers/list": route(
-    (input) => validateMcpInput("listOrganizers", input),
+    "listOrganizers",
     async (_input, ctx) => {
       const schema = await nativeSchema(ctx);
       if (schema) {
@@ -263,11 +238,11 @@ export const mcpRoutes = {
     true,
   ),
   "mcp/organizers/create": route(
-    (input) => validateMcpInput("createOrganizer", input),
+    "createOrganizer",
     async (input, ctx) => saveOrganizer(ctx, input),
   ),
   "mcp/organizers/update": route(
-    (input) => validateMcpInput("updateOrganizer", input),
+    "updateOrganizer",
     async (input, ctx) => {
       const previous = await organizerCollection(ctx).get(input.id);
       if (!previous) return { ok: false, error: "NOT_FOUND" };
@@ -280,7 +255,7 @@ export const mcpRoutes = {
     },
   ),
   "mcp/events/list": route(
-    validListEvents,
+    "listEvents",
     async (input, ctx) => {
       const today = new Date().toISOString().slice(0, 10);
       const from = input.from ?? today;
@@ -344,7 +319,7 @@ export const mcpRoutes = {
     true,
   ),
   "mcp/events/get": route(
-    validId,
+    "getEvent",
     async ({ id }, ctx) => {
       const eventCollection = await nativeSchema(ctx);
       if (eventCollection) {
@@ -371,7 +346,7 @@ export const mcpRoutes = {
     true,
   ),
   "mcp/events/occurrences": route(
-    (input) => validateMcpInput("listOccurrences", input),
+    "listOccurrences",
     async (input, ctx) => {
       const from = input.from ?? new Date().toISOString().slice(0, 10);
       const through = input.through ?? addDays(from, 89);
@@ -404,10 +379,10 @@ export const mcpRoutes = {
     true,
   ),
   "mcp/events/create": route(
-    (input) => validEventInput(input),
+    "createEvent",
     async (input, ctx) => saveEvent(ctx, input),
   ),
-  "mcp/events/update": route(validEventPatch, async ({ id, patch }, ctx) => {
+  "mcp/events/update": route("updateEvent", async ({ id, patch }, ctx) => {
     if (!Object.keys(patch).length) return { ok: false, error: "EMPTY_PATCH" };
     const previous = await getEvent(ctx, id);
     if (!previous) return { ok: false, error: "NOT_FOUND" };
@@ -436,7 +411,7 @@ export const mcpRoutes = {
     };
     return saveEvent(ctx, fields, previous);
   }),
-  "mcp/events/publish": route(validId, async ({ id }, ctx) => {
+  "mcp/events/publish": route("getEvent", async ({ id }, ctx) => {
     const event = await getEvent(ctx, id);
     if (!event) return { ok: false, error: "NOT_FOUND" };
     const updated = {
@@ -448,7 +423,7 @@ export const mcpRoutes = {
     await putEvent(ctx, updated);
     return { ok: true, event: updated };
   }),
-  "mcp/events/unpublish": route(validId, async ({ id }, ctx) => {
+  "mcp/events/unpublish": route("getEvent", async ({ id }, ctx) => {
     const event = await getEvent(ctx, id);
     if (!event) return { ok: false, error: "NOT_FOUND" };
     const updated = {
@@ -460,11 +435,11 @@ export const mcpRoutes = {
     await putEvent(ctx, updated);
     return { ok: true, event: updated };
   }),
-  "mcp/events/delete": route(validId, async ({ id }, ctx) => ({
+  "mcp/events/delete": route("getEvent", async ({ id }, ctx) => ({
     ok: true,
     deleted: await deleteEvent(ctx, id),
   })),
-  "mcp/events/exception/set": route(validExceptionSet, async (input, ctx) => {
+  "mcp/events/exception/set": route("setOccurrenceException", async (input, ctx) => {
     const event = await getEvent(ctx, input.eventId);
     if (!event) return { ok: false, error: "NOT_FOUND" };
     if (!event.recurrence) return { ok: false, error: "NOT_RECURRING" };
@@ -561,7 +536,7 @@ export const mcpRoutes = {
     return { ok: true, event: updated };
   }),
   "mcp/events/exception/remove": route(
-    validExceptionRemove,
+    "removeOccurrenceException",
     async ({ eventId, recurrenceId }, ctx) => {
       const event = await getEvent(ctx, eventId);
       if (!event) return { ok: false, error: "NOT_FOUND" };
@@ -580,7 +555,7 @@ export const mcpRoutes = {
     },
   ),
   "mcp/venues/list": route(
-    validEmpty,
+    "getSettings",
     async (_input, ctx) => {
       const schema = await nativeSchema(ctx);
       if (schema) {
@@ -593,14 +568,14 @@ export const mcpRoutes = {
     true,
   ),
   "mcp/venues/create": route(
-    (input) => validVenueInput(input),
+    "createVenue",
     async (input, ctx) => {
       const venue = venueInput(input);
       await putVenue(ctx, venue);
       return { ok: true, venue };
     },
   ),
-  "mcp/venues/update": route(validVenuePatch, async ({ id, patch }, ctx) => {
+  "mcp/venues/update": route("updateVenue", async ({ id, patch }, ctx) => {
     if (!Object.keys(patch).length) return { ok: false, error: "EMPTY_PATCH" };
     const previous = await getVenue(ctx, id);
     if (!previous) return { ok: false, error: "NOT_FOUND" };
@@ -608,14 +583,14 @@ export const mcpRoutes = {
     await putVenue(ctx, venue);
     return { ok: true, venue };
   }),
-  "mcp/venues/delete": route(validId, async ({ id }, ctx) => {
+  "mcp/venues/delete": route("getEvent", async ({ id }, ctx) => {
     if (!(await getVenue(ctx, id))) return { ok: false, error: "NOT_FOUND" };
     if (await listEventsByVenueId(ctx, id))
       return { ok: false, error: "VENUE_IN_USE" };
     return { ok: true, deleted: await deleteVenue(ctx, id) };
   }),
   "mcp/settings/get": route(
-    validEmpty,
+    "getSettings",
     async (_input, ctx) => ({
       ok: true,
       defaultTimezone:
@@ -626,7 +601,7 @@ export const mcpRoutes = {
     true,
   ),
   "mcp/settings/update": route(
-    validSettingsUpdate,
+    "updateSettings",
     async ({ defaultTimezone, collections, legacyReads }, ctx) => {
       if (!isValidTimeZone(defaultTimezone))
         return { ok: false, error: "INVALID_TIMEZONE" };

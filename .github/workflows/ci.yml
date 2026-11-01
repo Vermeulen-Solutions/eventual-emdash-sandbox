@@ -36,6 +36,7 @@ jobs:
       - run: npm run budget
       - run: npm run registry:media
       - run: npm run test:package
+      - run: npm run test:cache
       - run: npx playwright install --with-deps chromium
       - run: npm run test:editor
       - run: npm ci
@@ -56,6 +57,8 @@ jobs:
             reports/editor-host.log
             reports/browser-results
             reports/public-visual
+            reports/public-cache-host.json
+            reports/public-cache-host.log
 
   plugin-host-1-2:
     runs-on: ubuntu-latest

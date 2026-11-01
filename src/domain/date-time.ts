@@ -102,6 +102,13 @@ export function isDateOnly(value: string): boolean {
   return parseDate(value) !== null;
 }
 
+/** Date-only arithmetic shared by public and administrative feed windows. */
+export function addCalendarDays(value: string, count: number): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + count);
+  return date.toISOString().slice(0, 10);
+}
+
 export function isValidTimeZone(timezone: string): boolean {
   if (!timezone.trim()) return false;
   try {

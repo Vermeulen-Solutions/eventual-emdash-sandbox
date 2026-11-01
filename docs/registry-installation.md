@@ -1,13 +1,13 @@
-# Eventual 0.14.1
+# Eventual 0.15.0
 
-Requires EmDash **>=1.2.0 <2.0.0**; tested on **1.2.0** and **1.4.0**, with **1.4.0 recommended** for correct nested Block Kit forms and Cloudflare plugin mutations. In **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install it. Existing sites use the plugin's update action; review changed MCP tool consent.
+Requires EmDash **>=1.2.0 <2.0.0** for event management. **1.4.0 is recommended** for nested forms and Cloudflare plugin mutations, and required for the optional cache integration.
 
-Open **Eventual → Settings**, choose compatible event, venue and organizer collections, then **Save settings**. A collection is the place under **Content** where entries are edited. If none exists, ask your site builder to follow [setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md). Installation and selection do not create schemas or migrate data.
+In **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install or update. Version 0.15.0 adds no capabilities or MCP tools. Enable intended tools separately under **Agent access**.
 
-**Old events:** keep **Show old events saved inside the plugin** off for native collections. Enable it and choose **Save switch** only to serve old plugin data when no native collection is connected. Native collections remain authoritative even while empty; a missing explicitly selected collection must be repaired. See [0.14.0 changes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.14.0.md).
+Open **Eventual → Settings**, select compatible event, venue and organizer collections, then **Save settings**. Installation does not create schemas or migrate content. Site builders: [collection setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md).
 
-**Editing:** save the announcement, open **Dates, venue & repeat**, save the changed sections, reload, then publish in EmDash. [Editor guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/user-guide.md).
+Save an announcement, open **Dates, venue & repeat**, save changed sections, reload, then publish in EmDash. [Editor guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/user-guide.md).
 
-**Earlier versions:** upgrading from 0.12.x or earlier needs a backup and [native-content migration](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md).
+Keep **Show old events saved inside the plugin** off for native collections. Enable it only to serve legacy plugin data without a connected collection. Upgrades from 0.12.x or earlier need a backup and [native migration](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md).
 
-Your site builder connects feeds to visitor pages; Astro examples/helpers are optional. Enable intended agent tools separately under **Agent access**.
+Your site builder connects visitor pages. **Caching stays opt-in**: 0.15.0 supplies dependencies and a maximum 15-second expiry, not site-wide cache rules. Use matching source helpers, explicit eligibility and no stale serving. Read the [integration guide and host limitations](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/public-feed-caching.md) before enabling it.

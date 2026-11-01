@@ -1,4 +1,6 @@
 import { safeWebUrl } from "./event-details";
+import { parsePublicFeedCache, type PublicFeedCache } from './cache';
+export { parsePublicFeedCache, publicFeedCacheOptions, publicEventTimeBoundary, publicCalendarDateBoundary, type PublicFeedCache } from './cache';
 export interface PublicVenue {
 	id: string;
 	name: string;
@@ -42,6 +44,7 @@ export interface PublicFeed {
 	from: string;
 	through: string;
 	events: PublicEvent[];
+	cache?: PublicFeedCache;
 }
 
 export class FeedError extends Error {
@@ -56,11 +59,11 @@ export async function fetchPublicFeed(
 	from: string,
 	through: string,
 	category = "",
-	options: {locale?:string;strict?:boolean;publicUrls?:boolean} = {},
+	options: {locale?:string;strict?:boolean;publicUrls?:boolean;pluginId?:string} = {},
 ): Promise<PublicFeed> {
 	let url: URL;
 	try {
-		url = new URL("/_emdash/api/plugins/eventual/publicEvents", apiOrigin);
+		url = new URL(`/_emdash/api/plugins/${encodeURIComponent(options.pluginId ?? 'eventual')}/publicEvents`, apiOrigin);
 	} catch {
 		throw new FeedError("Set EVENTUAL_API_ORIGIN to a reachable HTTP(S) EmDash site.", 502);
 	}
@@ -88,6 +91,11 @@ export async function fetchPublicFeed(
 	} catch {
 		throw new FeedError("The Eventual API returned invalid JSON.", 502);
 	}
+	return parsePublicFeed(envelope);
+}
+
+/** Shared validation for HTTP envelopes and handlePublicPluginApiRoute() results. */
+export function parsePublicFeed(envelope: unknown): PublicFeed {
 	if (!isRecord(envelope) || envelope.success !== true || !isRecord(envelope.data)) {
 		throw new FeedError("The Eventual API returned an unsuccessful response.", 502);
 	}
@@ -101,11 +109,13 @@ export async function fetchPublicFeed(
 	if (typeof envelope.data.from !== "string" || typeof envelope.data.through !== "string") {
 		throw new FeedError("The Eventual API returned an invalid date range.", 502);
 	}
+	const cache = parsePublicFeedCache(envelope.data.cache);
 	return {
 		ok: true,
 		from: envelope.data.from,
 		through: envelope.data.through,
 		events: envelope.data.events,
+		...(cache ? { cache } : {}),
 	};
 }
 
