@@ -1,0 +1,11 @@
+{
+  "identifier": "did:plc:g2hei4vcwndrdl3gdbb6np6c/eventual@0.15.0",
+  "profileCid": "bafyreibe6tcbedio46np2qwt6ulkvferpouju6hqqts64gzi2iss4b5ydm",
+  "releaseCid": "bafyreiaoq2ymqc3gvprqy22yw65bca7cjoxmgvcgipqhcvvocct5grq75q",
+  "profileApproved": true,
+  "releaseApproved": true,
+  "checksum": "bciqfl42bulrvlmpxzonnoh6yro72zoxom5g46u5ijh644ynd7aqxooy",
+  "blobCid": "bafkreicv6na2fy2vwh34xgwxd7mixp5mxlxgotopkouet7oomgr7qilxhm",
+  "bytes": 47500,
+  "sha256": "55f341a2e355b1f7cb9ad71fd88bbfacbaee674dcf53a849fdce61a3f821773b"
+}

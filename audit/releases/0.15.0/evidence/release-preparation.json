@@ -1,0 +1,156 @@
+{
+  "version": "0.15.0",
+  "preparedAt": "2026-11-01T19:54:43.155Z",
+  "published": false,
+  "selfContained": true,
+  "frontendCompanionRequired": false,
+  "registryPayload": {
+    "entries": [
+      {
+        "name": "backend.js",
+        "bytes": 130800
+      },
+      {
+        "name": "manifest.json",
+        "bytes": 46284
+      },
+      {
+        "name": "README.md",
+        "bytes": 8087
+      }
+    ],
+    "total": 185171,
+    "files": 3,
+    "budgets": {
+      "file": 130816,
+      "total": 225280,
+      "files": 16
+    },
+    "hardLimits": {
+      "file": 131072,
+      "total": 262144,
+      "files": 20
+    },
+    "errors": []
+  },
+  "artifacts": [
+    {
+      "path": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\dist\\eventual-0.15.0.tar.gz",
+      "bytes": 47504,
+      "sha256": "a6b0b5b039bacca01998757ddf69a1b5daadab59ce435c2cc69d7c0e03116e65"
+    },
+    {
+      "path": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\dist\\source\\eventual-0.15.0.tgz",
+      "bytes": 140637,
+      "sha256": "069de899f64f1c5e2e80f252be0c9ed41260a97519095f78b11f17fd606409f1"
+    }
+  ],
+  "optionalSourcePackageFiles": [
+    "LICENSE",
+    "README.md",
+    "astro/admin.d.mts",
+    "astro/admin.mjs",
+    "astro/blueprint.d.mts",
+    "astro/blueprint.mjs",
+    "astro/cache.ts",
+    "astro/descriptor.mjs",
+    "astro/editor-compat.mjs",
+    "astro/editor-i18n.d.mts",
+    "astro/editor-i18n.mjs",
+    "astro/event-details.ts",
+    "astro/event-list.ts",
+    "astro/EventList.astro",
+    "astro/feed.ts",
+    "astro/install.d.mts",
+    "astro/install.mjs",
+    "astro/schema.ts",
+    "dist/index.d.mts",
+    "dist/index.mjs",
+    "dist/plugin.d.mts",
+    "dist/plugin.mjs",
+    "docs/collection-setup.md",
+    "docs/history.md",
+    "docs/native-modernization.md",
+    "docs/public-feed-caching.md",
+    "docs/registry-installation.md",
+    "docs/release-notes-0.14.0.md",
+    "docs/release-notes-0.14.1.md",
+    "docs/release-notes-0.15.0.md",
+    "docs/upgrade-0.13.0.md",
+    "docs/user-guide.md",
+    "emdash-plugin.jsonc",
+    "package.json",
+    "scripts/check-editor-installation.mjs",
+    "scripts/export-native-schema.mjs",
+    "scripts/upgrade-native-editor.mjs",
+    "src/domain/category.ts",
+    "src/domain/collections.ts",
+    "src/domain/date-time.ts",
+    "src/domain/description.ts",
+    "src/domain/event-data.ts",
+    "src/domain/event-expansion.ts",
+    "src/domain/event.ts",
+    "src/domain/icalendar.ts",
+    "src/domain/image.ts",
+    "src/domain/invocation-budget.ts",
+    "src/domain/messages.ts",
+    "src/domain/migration.ts",
+    "src/domain/native-calendar.ts",
+    "src/domain/native-references.ts",
+    "src/domain/native-source.ts",
+    "src/domain/native-validation.ts",
+    "src/domain/occurrences.ts",
+    "src/domain/portable-text.ts",
+    "src/domain/public-cache.ts",
+    "src/domain/recurrence-rule.ts",
+    "src/domain/recurrence.ts",
+    "src/domain/request-memo.ts",
+    "src/domain/schedule-history.ts",
+    "src/domain/time-entry.ts",
+    "src/domain/venue-adapter.ts",
+    "src/domain/venue.ts",
+    "src/public-event.ts",
+    "src/schema/blueprint.ts",
+    "src/storage.ts",
+    "transfer/index.d.mts",
+    "transfer/index.mjs"
+  ],
+  "acceptanceEvidence": [
+    {
+      "path": "reports/native-full-tests.log",
+      "exists": true,
+      "modified": "2026-11-01T16:25:32.011Z"
+    },
+    {
+      "path": "reports/native-full-tests-new-york.log",
+      "exists": true,
+      "modified": "2026-11-01T16:28:19.407Z"
+    },
+    {
+      "path": "reports/native-tooling.log",
+      "exists": true,
+      "modified": "2026-11-01T16:29:26.295Z"
+    },
+    {
+      "path": "reports/native-typecheck.log",
+      "exists": true,
+      "modified": "2026-11-01T16:21:28.900Z"
+    },
+    {
+      "path": "reports/packed-astro.json",
+      "exists": true,
+      "modified": "2026-11-01T16:30:54.997Z"
+    },
+    {
+      "path": "reports/browser-acceptance.json",
+      "exists": true,
+      "modified": "2026-11-01T16:33:28.073Z"
+    },
+    {
+      "path": "reports/public-cache-host.json",
+      "exists": true,
+      "modified": "2026-11-01T16:32:01.460Z"
+    }
+  ],
+  "note": "Native schemas are a one-time administrator setup; no frontend companion is required. The source package and schema exporter are optional for site developers. External subscriber and deployed D1 checks are not certified; see the handoff."
+}

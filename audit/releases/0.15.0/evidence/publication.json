@@ -1,0 +1,26 @@
+
+> eventual@0.15.0 publish
+> emdash-plugin publish --json
+
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-skMQwz\runtime\plugin.mjs  130.80 kB │ gzip: 39.96 kB
+ℹ 1 files, total: 130.80 kB
+✔ Build complete in 196ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-skMQwz\runtime\plugin.d.mts  0.16 kB │ gzip: 0.13 kB
+ℹ 1 files, total: 0.16 kB
+✔ Build complete in 4449ms
+ℹ entry: src\plugin.ts
+ℹ target: node24.0.0
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ ..\..\..\Users\Jaap\AppData\Local\Temp\emdash-build-skMQwz\plugin-probe\plugin.mjs  226.63 kB │ gzip: 57.09 kB
+ℹ 1 files, total: 226.63 kB
+✔ Build complete in 108ms
+{"identifier":"@vermeulen.solutions/eventual","profile":"at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual","release":"at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.15.0","cid":"bafyreiaoq2ymqc3gvprqy22yw65bca7cjoxmgvcgipqhcvvocct5grq75q","checksum":"bciqfl42bulrvlmpxzonnoh6yro72zoxom5g46u5ijh644ynd7aqxooy","hosting":"blob","profileCreated":false,"releaseOverwritten":false,"page":"https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual"}

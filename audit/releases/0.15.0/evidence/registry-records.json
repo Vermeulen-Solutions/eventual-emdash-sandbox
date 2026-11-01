@@ -1,0 +1,446 @@
+{
+  "checkedAt": "2026-11-01T20:10:42.560Z",
+  "pds": "https://chalciporus.us-west.host.bsky.network",
+  "signedProfile": {
+    "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+    "cid": "bafyreibe6tcbedio46np2qwt6ulkvferpouju6hqqts64gzi2iss4b5ydm",
+    "value": {
+      "id": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+      "name": "Eventual",
+      "slug": "eventual",
+      "type": "emdash-plugin",
+      "$type": "com.emdashcms.experimental.package.profile",
+      "authors": [
+        {
+          "name": "Jaap Vermeulen",
+          "email": "jaap.vermeulen@gmail.com"
+        }
+      ],
+      "license": "MIT",
+      "keywords": [
+        "events",
+        "calendar",
+        "event management",
+        "iCalendar",
+        "venues"
+      ],
+      "sections": {
+        "changelog": "## 0.15.0\r\n\r\nOpt-in public feed cache evidence: actual collection dependencies, empty-list invalidation and absolute expiry. Astro helpers validate metadata, merge split feeds and constrain host TTL by event/timezone boundaries. HTTP consumers can supply the Registry plugin ID. Existing feed fields and recurrence/locale behavior are preserved; no new capabilities or MCP tools.\r\n\r\nCaching integration requires EmDash **>=1.4.0 <2.0.0**, an explicit host policy, a maximum 15-second remaining lifetime and no stale serving. Event management retains **>=1.2.0 <2.0.0** compatibility. Generic plugin/settings writes and Node scheduling have invalidation gaps; hosted Cloudflare acceptance is separate. [Guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/public-feed-caching.md) · [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.15.0.md).\r\n\r\n## Earlier releases\r\n\r\n- **0.14.1:** EmDash 1.4 editor compatibility; no runtime or permission changes.\r\n- **0.14.0:** public legacy storage reads require explicit opt-in; native collections stay authoritative. Clear configuration errors, gated legacy images and refreshed settings UI.\r\n- **0.13.4:** repair an oversized Registry image and check media budgets.\r\n- **0.13.3:** publicUrls=false avoids canonical URL RPCs; JSON budget failures use host errors.\r\n- **0.13.2:** memoized reads and atomic calendar snapshots within the bridge budget.\r\n- **0.13.1:** public native featured-image route.\r\n- **0.13.0:** native rich content, translations, drafts, directories and publication. Earlier upgrades require migration.\r\n\r\n[Full changelog](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/CHANGELOG.md).\r\n",
+        "installation": "# Eventual 0.15.0\r\n\r\nRequires EmDash **>=1.2.0 <2.0.0** for event management. **1.4.0 is recommended** for nested forms and Cloudflare plugin mutations, and required for the optional cache integration.\r\n\r\nIn **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install or update. Version 0.15.0 adds no capabilities or MCP tools. Enable intended tools separately under **Agent access**.\r\n\r\nOpen **Eventual → Settings**, select compatible event, venue and organizer collections, then **Save settings**. Installation does not create schemas or migrate content. Site builders: [collection setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md).\r\n\r\nSave an announcement, open **Dates, venue & repeat**, save changed sections, reload, then publish in EmDash. [Editor guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/user-guide.md).\r\n\r\nKeep **Show old events saved inside the plugin** off for native collections. Enable it only to serve legacy plugin data without a connected collection. Upgrades from 0.12.x or earlier need a backup and [native migration](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md).\r\n\r\nYour site builder connects visitor pages. **Caching stays opt-in**: 0.15.0 supplies dependencies and a maximum 15-second expiry, not site-wide cache rules. Use matching source helpers, explicit eligibility and no stale serving. Read the [integration guide and host limitations](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/public-feed-caching.md) before enabling it.\r\n"
+      },
+      "security": [
+        {
+          "email": "jaap.vermeulen@gmail.com"
+        }
+      ],
+      "extensions": {
+        "com.emdashcms.experimental.package.profileExtension": {
+          "$type": "com.emdashcms.experimental.package.profileExtension",
+          "repository": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+          "releasePolicy": {
+            "$type": "com.emdashcms.experimental.package.profileExtension#releasePolicy",
+            "requireProvenance": false
+          }
+        }
+      },
+      "description": "Native EmDash events with rich text, localization, friendly recurrence, saved venues and multilingual calendar feeds.",
+      "lastUpdated": "2026-11-01T20:09:46.807Z"
+    }
+  },
+  "signedRelease": {
+    "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.15.0",
+    "cid": "bafyreiaoq2ymqc3gvprqy22yw65bca7cjoxmgvcgipqhcvvocct5grq75q",
+    "value": {
+      "repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+      "$type": "com.emdashcms.experimental.package.release",
+      "package": "eventual",
+      "version": "0.15.0",
+      "requires": {
+        "env:emdash": ">=1.2.0 <2.0.0"
+      },
+      "artifacts": {
+        "icon": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy"
+            },
+            "size": 849633,
+            "$type": "blob",
+            "mimeType": "image/png"
+          },
+          "width": 1254,
+          "height": 1254,
+          "checksum": "bciqaeli4z4zohc6t5kxzebsp4x3iqlxvnin4hd3kla6vwgllgd5lnlq",
+          "contentType": "image/png"
+        },
+        "banner": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a"
+            },
+            "size": 837691,
+            "$type": "blob",
+            "mimeType": "image/png"
+          },
+          "width": 2172,
+          "height": 724,
+          "checksum": "bciql4lsbmo7ldvyxtuaogjm5owjm2p4qa7o5p55kopakxibwadp4l2a",
+          "contentType": "image/png"
+        },
+        "package": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreicv6na2fy2vwh34xgwxd7mixp5mxlxgotopkouet7oomgr7qilxhm"
+            },
+            "size": 47500,
+            "$type": "blob",
+            "mimeType": "application/gzip"
+          },
+          "checksum": "bciqfl42bulrvlmpxzonnoh6yro72zoxom5g46u5ijh644ynd7aqxooy",
+          "contentType": "application/gzip"
+        },
+        "screenshots": [
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreic4w4rhmqecl45tbtmxz3e5mdqoouguzo6aghfhdajkfwr4cla4ju"
+              },
+              "size": 106468,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1280,
+            "height": 900,
+            "checksum": "bciqfznzcozaiexz3gdgzptwj2yha45injs54amokogasulndyewbyti",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru"
+              },
+              "size": 70477,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1280,
+            "height": 900,
+            "checksum": "bciqljww2gop4juedqu5nf3m42mpldknep6vaxbrbi4vumgzvcakj3di",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreidku3qc4gybouwjgc5xlbpfbn6raekyfswzkt6monzaroaza4ztvu"
+              },
+              "size": 27781,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 390,
+            "height": 844,
+            "checksum": "bciqgvjxafynqc5jmsmf3owc6kc35caivqlfnsvh4y43sbc4bsbzthli",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva"
+              },
+              "size": 69421,
+              "$type": "blob",
+              "mimeType": "image/jpeg"
+            },
+            "width": 1019,
+            "height": 1122,
+            "checksum": "bciqhvw4gz2engtqq7uagdb3vcqx2faxah2bwkl2bbw36xewnmdhejka",
+            "contentType": "image/jpeg"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy"
+              },
+              "size": 348870,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1440,
+            "height": 1190,
+            "checksum": "bciqgxv4wzlwipjicgodisp44l2l237zi2md3h46migcpwng3mqkxvjq",
+            "contentType": "image/png"
+          }
+        ]
+      },
+      "extensions": {
+        "com.emdashcms.experimental.package.releaseExtension": {
+          "$type": "com.emdashcms.experimental.package.releaseExtension",
+          "declaredAccess": {
+            "media": {
+              "read": {},
+              "bytesRead": {}
+            },
+            "schema": {
+              "read": {}
+            },
+            "content": {
+              "read": {},
+              "write": {},
+              "policy": {},
+              "publish": {},
+              "revisionsRead": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "profile": {
+    "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+    "cid": "bafyreibe6tcbedio46np2qwt6ulkvferpouju6hqqts64gzi2iss4b5ydm",
+    "did": "did:plc:g2hei4vcwndrdl3gdbb6np6c",
+    "slug": "eventual",
+    "profile": {
+      "$type": "com.emdashcms.experimental.package.profile",
+      "id": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+      "type": "emdash-plugin",
+      "license": "MIT",
+      "authors": [
+        {
+          "name": "Jaap Vermeulen",
+          "email": "jaap.vermeulen@gmail.com"
+        }
+      ],
+      "security": [
+        {
+          "email": "jaap.vermeulen@gmail.com"
+        }
+      ],
+      "name": "Eventual",
+      "description": "Native EmDash events with rich text, localization, friendly recurrence, saved venues and multilingual calendar feeds.",
+      "keywords": [
+        "events",
+        "calendar",
+        "event management",
+        "iCalendar",
+        "venues"
+      ],
+      "sections": {
+        "changelog": "## 0.15.0\r\n\r\nOpt-in public feed cache evidence: actual collection dependencies, empty-list invalidation and absolute expiry. Astro helpers validate metadata, merge split feeds and constrain host TTL by event/timezone boundaries. HTTP consumers can supply the Registry plugin ID. Existing feed fields and recurrence/locale behavior are preserved; no new capabilities or MCP tools.\r\n\r\nCaching integration requires EmDash **>=1.4.0 <2.0.0**, an explicit host policy, a maximum 15-second remaining lifetime and no stale serving. Event management retains **>=1.2.0 <2.0.0** compatibility. Generic plugin/settings writes and Node scheduling have invalidation gaps; hosted Cloudflare acceptance is separate. [Guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/public-feed-caching.md) · [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.15.0.md).\r\n\r\n## Earlier releases\r\n\r\n- **0.14.1:** EmDash 1.4 editor compatibility; no runtime or permission changes.\r\n- **0.14.0:** public legacy storage reads require explicit opt-in; native collections stay authoritative. Clear configuration errors, gated legacy images and refreshed settings UI.\r\n- **0.13.4:** repair an oversized Registry image and check media budgets.\r\n- **0.13.3:** publicUrls=false avoids canonical URL RPCs; JSON budget failures use host errors.\r\n- **0.13.2:** memoized reads and atomic calendar snapshots within the bridge budget.\r\n- **0.13.1:** public native featured-image route.\r\n- **0.13.0:** native rich content, translations, drafts, directories and publication. Earlier upgrades require migration.\r\n\r\n[Full changelog](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/CHANGELOG.md).\r\n",
+        "installation": "# Eventual 0.15.0\r\n\r\nRequires EmDash **>=1.2.0 <2.0.0** for event management. **1.4.0 is recommended** for nested forms and Cloudflare plugin mutations, and required for the optional cache integration.\r\n\r\nIn **Plugins → Registry**, find Eventual by **vermeulen.solutions**, review permissions and install or update. Version 0.15.0 adds no capabilities or MCP tools. Enable intended tools separately under **Agent access**.\r\n\r\nOpen **Eventual → Settings**, select compatible event, venue and organizer collections, then **Save settings**. Installation does not create schemas or migrate content. Site builders: [collection setup](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/collection-setup.md).\r\n\r\nSave an announcement, open **Dates, venue & repeat**, save changed sections, reload, then publish in EmDash. [Editor guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/user-guide.md).\r\n\r\nKeep **Show old events saved inside the plugin** off for native collections. Enable it only to serve legacy plugin data without a connected collection. Upgrades from 0.12.x or earlier need a backup and [native migration](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/upgrade-0.13.0.md).\r\n\r\nYour site builder connects visitor pages. **Caching stays opt-in**: 0.15.0 supplies dependencies and a maximum 15-second expiry, not site-wide cache rules. Use matching source helpers, explicit eligibility and no stale serving. Read the [integration guide and host limitations](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/public-feed-caching.md) before enabling it.\r\n"
+      },
+      "extensions": {
+        "com.emdashcms.experimental.package.profileExtension": {
+          "$type": "com.emdashcms.experimental.package.profileExtension",
+          "repository": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+          "releasePolicy": {
+            "$type": "com.emdashcms.experimental.package.profileExtension#releasePolicy",
+            "requireProvenance": false
+          }
+        }
+      },
+      "lastUpdated": "2026-11-01T20:09:46.807Z",
+      "slug": "eventual"
+    },
+    "indexedAt": "2026-11-01T20:09:53.744Z",
+    "labels": [
+      {
+        "ver": 1,
+        "src": "did:web:labels.emdashcms.com",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+        "val": "listing-overridden",
+        "cts": "2026-09-27T13:21:57.101Z",
+        "cid": "bafyreiemauxipdfgvpq2pa3zuhzitb5guull2x5czjaqwavcw5dxgdwsu4"
+      },
+      {
+        "ver": 1,
+        "src": "did:web:labels.emdashcms.com",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+        "val": "listing-review",
+        "cts": "2026-09-27T13:21:57.101Z",
+        "cid": "bafyreiemauxipdfgvpq2pa3zuhzitb5guull2x5czjaqwavcw5dxgdwsu4",
+        "neg": true
+      },
+      {
+        "ver": 1,
+        "src": "did:web:labels.emdashcms.com",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.profile/eventual",
+        "val": "listing-passed",
+        "cts": "2026-11-01T20:10:00.236Z",
+        "cid": "bafyreibe6tcbedio46np2qwt6ulkvferpouju6hqqts64gzi2iss4b5ydm"
+      }
+    ],
+    "handle": "vermeulen.solutions",
+    "latestVersion": "0.15.0",
+    "historicalReleaseCount": 18,
+    "releaseHistoryComplete": true
+  },
+  "release": {
+    "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.15.0",
+    "cid": "bafyreiaoq2ymqc3gvprqy22yw65bca7cjoxmgvcgipqhcvvocct5grq75q",
+    "did": "did:plc:g2hei4vcwndrdl3gdbb6np6c",
+    "package": "eventual",
+    "version": "0.15.0",
+    "release": {
+      "$type": "com.emdashcms.experimental.package.release",
+      "package": "eventual",
+      "version": "0.15.0",
+      "artifacts": {
+        "icon": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy"
+            },
+            "size": 849633,
+            "$type": "blob",
+            "mimeType": "image/png"
+          },
+          "width": 1254,
+          "height": 1254,
+          "checksum": "bciqaeli4z4zohc6t5kxzebsp4x3iqlxvnin4hd3kla6vwgllgd5lnlq",
+          "contentType": "image/png"
+        },
+        "banner": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a"
+            },
+            "size": 837691,
+            "$type": "blob",
+            "mimeType": "image/png"
+          },
+          "width": 2172,
+          "height": 724,
+          "checksum": "bciql4lsbmo7ldvyxtuaogjm5owjm2p4qa7o5p55kopakxibwadp4l2a",
+          "contentType": "image/png"
+        },
+        "package": {
+          "blob": {
+            "ref": {
+              "$link": "bafkreicv6na2fy2vwh34xgwxd7mixp5mxlxgotopkouet7oomgr7qilxhm"
+            },
+            "size": 47500,
+            "$type": "blob",
+            "mimeType": "application/gzip"
+          },
+          "checksum": "bciqfl42bulrvlmpxzonnoh6yro72zoxom5g46u5ijh644ynd7aqxooy",
+          "contentType": "application/gzip"
+        },
+        "screenshots": [
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreic4w4rhmqecl45tbtmxz3e5mdqoouguzo6aghfhdajkfwr4cla4ju"
+              },
+              "size": 106468,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1280,
+            "height": 900,
+            "checksum": "bciqfznzcozaiexz3gdgzptwj2yha45injs54amokogasulndyewbyti",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru"
+              },
+              "size": 70477,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1280,
+            "height": 900,
+            "checksum": "bciqljww2gop4juedqu5nf3m42mpldknep6vaxbrbi4vumgzvcakj3di",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreidku3qc4gybouwjgc5xlbpfbn6raekyfswzkt6monzaroaza4ztvu"
+              },
+              "size": 27781,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 390,
+            "height": 844,
+            "checksum": "bciqgvjxafynqc5jmsmf3owc6kc35caivqlfnsvh4y43sbc4bsbzthli",
+            "contentType": "image/png"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva"
+              },
+              "size": 69421,
+              "$type": "blob",
+              "mimeType": "image/jpeg"
+            },
+            "width": 1019,
+            "height": 1122,
+            "checksum": "bciqhvw4gz2engtqq7uagdb3vcqx2faxah2bwkl2bbw36xewnmdhejka",
+            "contentType": "image/jpeg"
+          },
+          {
+            "blob": {
+              "ref": {
+                "$link": "bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy"
+              },
+              "size": 348870,
+              "$type": "blob",
+              "mimeType": "image/png"
+            },
+            "width": 1440,
+            "height": 1190,
+            "checksum": "bciqgxv4wzlwipjicgodisp44l2l237zi2md3h46migcpwng3mqkxvjq",
+            "contentType": "image/png"
+          }
+        ]
+      },
+      "requires": {
+        "env:emdash": ">=1.2.0 <2.0.0"
+      },
+      "repo": "https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox",
+      "extensions": {
+        "com.emdashcms.experimental.package.releaseExtension": {
+          "$type": "com.emdashcms.experimental.package.releaseExtension",
+          "declaredAccess": {
+            "media": {
+              "read": {},
+              "bytesRead": {}
+            },
+            "schema": {
+              "read": {}
+            },
+            "content": {
+              "read": {},
+              "write": {},
+              "policy": {},
+              "publish": {},
+              "revisionsRead": {}
+            }
+          }
+        }
+      }
+    },
+    "artifactCaches": [
+      {
+        "$type": "com.emdashcms.experimental.aggregator.defs#recordScopedBlobCache",
+        "serviceEndpoint": "https://cdn.em-da.sh"
+      }
+    ],
+    "indexedAt": "2026-11-01T20:09:54.755Z",
+    "labels": [
+      {
+        "ver": 1,
+        "src": "did:web:labels.emdashcms.com",
+        "uri": "at://did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.15.0",
+        "val": "listing-passed",
+        "cts": "2026-11-01T20:10:21.111Z",
+        "cid": "bafyreiaoq2ymqc3gvprqy22yw65bca7cjoxmgvcgipqhcvvocct5grq75q"
+      }
+    ]
+  }
+}

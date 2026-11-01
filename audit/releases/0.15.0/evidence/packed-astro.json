@@ -1,0 +1,323 @@
+{
+  "package": "eventual-0.15.0.tgz",
+  "packagePath": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\reports\\packed-consumer-1793550596071\\eventual-0.15.0.tgz",
+  "sha256": "069de899f64f1c5e2e80f252be0c9ed41260a97519095f78b11f17fd606409f1",
+  "hostEmdashVersion": "1.4.0",
+  "consumer": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\reports\\packed-consumer-1793550596071",
+  "pages": [
+    {
+      "locale": "en",
+      "display": "November 15, 2026",
+      "machineDates": [
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-15",
+        "2026-11-15"
+      ]
+    },
+    {
+      "locale": "fr",
+      "display": "15 novembre 2026",
+      "machineDates": [
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-15",
+        "2026-11-15"
+      ]
+    },
+    {
+      "locale": "ar",
+      "display": "15 نوفمبر 2026",
+      "machineDates": [
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-15",
+        "2026-11-15"
+      ]
+    },
+    {
+      "locale": "th",
+      "display": "15 พฤศจิกายน 2569",
+      "machineDates": [
+        "2026-11-15",
+        "2026-11-16",
+        "2026-11-15",
+        "2026-11-15"
+      ]
+    }
+  ],
+  "installedFiles": [
+    {
+      "path": "LICENSE",
+      "sha256": "03969f1c8113bebccba3f256962112b0f0ea3f729f4cda3d10c62d03ad66f07d"
+    },
+    {
+      "path": "README.md",
+      "sha256": "8042cbe229324498fc39adc84bce486a8b71c11fc3c03731e9ce9973852a6e11"
+    },
+    {
+      "path": "astro/admin.d.mts",
+      "sha256": "89f2fcdbf79c38b748fdd37105f5193ccc7b0d4b88eda4ceb58bc28322b551f3"
+    },
+    {
+      "path": "astro/admin.mjs",
+      "sha256": "94b1709f6a5be2f4fdd2d951e42bb0a21ffa84b79e1501872534b195a3e7bc36"
+    },
+    {
+      "path": "astro/blueprint.d.mts",
+      "sha256": "88e29258279d6ed01ce3db3d8ff5acd05c7b76794a17b4c121185640bb2f403c"
+    },
+    {
+      "path": "astro/blueprint.mjs",
+      "sha256": "93bc2bd9d213919aa83ac1f2a3b3df74081775790f5b28f4f593b2843be836f1"
+    },
+    {
+      "path": "astro/cache.ts",
+      "sha256": "c5c9bdacef9fe4082b7b00a15068935c4c3e98fb5170f024bd3ecf54ac212c30"
+    },
+    {
+      "path": "astro/descriptor.mjs",
+      "sha256": "46c7bb2813bcbef63eb64cc9bbb6128a970072809f582b3c32dd7e708da7aa92"
+    },
+    {
+      "path": "astro/editor-compat.mjs",
+      "sha256": "931c2d5d763da78a9a1c583e1a99d1a318a2c08c9370fb72d153743f6bd77d4e"
+    },
+    {
+      "path": "astro/editor-i18n.d.mts",
+      "sha256": "7eaba49a7bd3e79b5c1ffb13be344459d08fbadd65bba6745c27c23d55169948"
+    },
+    {
+      "path": "astro/editor-i18n.mjs",
+      "sha256": "6b572e6de685f67918ba57978777b3a8fc0f5ce9706e97e338fdc1c91b658ce0"
+    },
+    {
+      "path": "astro/event-details.ts",
+      "sha256": "67fde9e412d434b1c4d23fa0ee77ef2d494485646392b40da354c0908af937f3"
+    },
+    {
+      "path": "astro/event-list.ts",
+      "sha256": "0c2ba5aa1105835130782493a554be567e168cf82002de20c9c07fd1c18dbbb4"
+    },
+    {
+      "path": "astro/EventList.astro",
+      "sha256": "7e35364178dc366e2274419fb3193a97ceb3dbb8411a834ddcebcbafebca0a69"
+    },
+    {
+      "path": "astro/feed.ts",
+      "sha256": "5d40c2f7cd89410e2e54fc631727150c2c9296b503c1b1df947f693600b4266f"
+    },
+    {
+      "path": "astro/install.d.mts",
+      "sha256": "c285df166266406295dbd198db3edd00869d145abc357e5fb8c62649610f4a22"
+    },
+    {
+      "path": "astro/install.mjs",
+      "sha256": "d918241b93987f33cb5030089204a4f425b2c30ccac31f30b7961399b0cb0c47"
+    },
+    {
+      "path": "astro/schema.ts",
+      "sha256": "76da691529278aa7456e5bf729d3107ca63ed66c1bb35c87b13095d8dc8b5301"
+    },
+    {
+      "path": "dist/index.d.mts",
+      "sha256": "3ce373f029c4861d5a1a7b7ab2ad475bf30f7341ee76c6336384d545be3c5c58"
+    },
+    {
+      "path": "dist/index.mjs",
+      "sha256": "e7a8b0147cf5e7d8635a22038fed57c19329643b5cdd0a48bcbd2ae2528f0829"
+    },
+    {
+      "path": "dist/plugin.d.mts",
+      "sha256": "bdf1751347de6865dc6b9d4a0065b2a7b10dd0dd64136e8e8e806bfbed030769"
+    },
+    {
+      "path": "dist/plugin.mjs",
+      "sha256": "1fa6ed031240469fb9b41027bcbc299db4ab127a93674d7d5ef15be2d02c1226"
+    },
+    {
+      "path": "docs/collection-setup.md",
+      "sha256": "4874a2761ee667639e7e385eb7cc22d3fee3deb7654024806e6f7cf00f702131"
+    },
+    {
+      "path": "docs/history.md",
+      "sha256": "4984551a36e8ed81dd22a9e0db994674f5df02a897d38cff1387ffab2da3e9ca"
+    },
+    {
+      "path": "docs/native-modernization.md",
+      "sha256": "546e406c6b697d1578c0f55c31b8ea983fa288b21889bb7d53da114d2a7ff47f"
+    },
+    {
+      "path": "docs/public-feed-caching.md",
+      "sha256": "2a2d53d0b476996160b2a55b47116ca762b6b0d7fdf40d8535e3f5fac5c300cf"
+    },
+    {
+      "path": "docs/registry-installation.md",
+      "sha256": "3f2e26f3c7deb82bc5a7b9aca509a05fc0245e5df9ba47c599a3270d6296d0df"
+    },
+    {
+      "path": "docs/release-notes-0.14.0.md",
+      "sha256": "655a6cf196236c1d7d46d9b5b3c2a54ab6bce06ff7da4bb74f7b5bc7a6fcab57"
+    },
+    {
+      "path": "docs/release-notes-0.14.1.md",
+      "sha256": "13116afc753e01ae165fab6894dd8ef6c1e08377f14a9c84a49abf3d32e02661"
+    },
+    {
+      "path": "docs/release-notes-0.15.0.md",
+      "sha256": "921edf6c96bdba085e7ee23dcc239a21d3d80b36d72016a240fb0b646eb9fb17"
+    },
+    {
+      "path": "docs/upgrade-0.13.0.md",
+      "sha256": "6578ff515366e1d535df8d89aba8e6a8709985ea233ec08833816206bf665d87"
+    },
+    {
+      "path": "docs/user-guide.md",
+      "sha256": "2d57993a3a8b840c427e9de2d3b9cb934f04b33b451339c56c9228b79a5713e9"
+    },
+    {
+      "path": "emdash-plugin.jsonc",
+      "sha256": "455093c7ec206b84fc6970bff9ed3d1caa36b58b5a15f60e6a6bee1f4f55bc81"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e486e6b8041aa88a96d7a10a3f599f2068c7d71fac28b702b94e39f596411f3b"
+    },
+    {
+      "path": "scripts/check-editor-installation.mjs",
+      "sha256": "773ff13b96b18b206e385f88a9308dd53657c3057f6f835daebfdd570b2f09c4"
+    },
+    {
+      "path": "scripts/export-native-schema.mjs",
+      "sha256": "b3de68fcf5a5cb722eec7e239f223d74cdb3c2f33c2b2875cdd51bf2a6589da5"
+    },
+    {
+      "path": "scripts/upgrade-native-editor.mjs",
+      "sha256": "e8ee395085eac388941a602e7d1289e310078f36af4dc04e6b1579ab03448320"
+    },
+    {
+      "path": "src/domain/category.ts",
+      "sha256": "bc8805fcc87fbd1cac73a5ed5c3f9dbbc16ddd662c70b4191de010618f241957"
+    },
+    {
+      "path": "src/domain/collections.ts",
+      "sha256": "420e9d6dd83371b9efe24cd309c88c6fd20b6346b0918ca8163bcedeebc14bfa"
+    },
+    {
+      "path": "src/domain/date-time.ts",
+      "sha256": "950e6c501ca76293b6f58d9522b36147e47a372e0060ff698e3d828321fec23c"
+    },
+    {
+      "path": "src/domain/description.ts",
+      "sha256": "100e5be5f67c9e28ab31927a8283b5541ce01e2f45d0b56544035be72bf876c8"
+    },
+    {
+      "path": "src/domain/event-data.ts",
+      "sha256": "238b6405728e03317e9b956e893844e148cbef1a4270333c46e97937c987441a"
+    },
+    {
+      "path": "src/domain/event-expansion.ts",
+      "sha256": "690ed4a5203b9d8cd8f8a0f89bc5825afecf2db2edb58c775ec1457cfe090bd5"
+    },
+    {
+      "path": "src/domain/event.ts",
+      "sha256": "ced32c7baae34b090b900c66d99f6bcc7e4a075aa82070816f3a8790fad7872e"
+    },
+    {
+      "path": "src/domain/icalendar.ts",
+      "sha256": "9690a70a51dcef21d518a4c9cc8cb17a4e248487ddf56a85111cbc204838aeb7"
+    },
+    {
+      "path": "src/domain/image.ts",
+      "sha256": "928ea105a407355c7bfc28d2a30b198904c2284beb8978ea92970240f112568e"
+    },
+    {
+      "path": "src/domain/invocation-budget.ts",
+      "sha256": "f85d1818f986aaf5eb5090be5a311f6559facb01eb1a39aba160cd017248d1ad"
+    },
+    {
+      "path": "src/domain/messages.ts",
+      "sha256": "2dc24a3e9838600b235c8d764522af3d8d477ce72b04c68a9d480b19fcb3808f"
+    },
+    {
+      "path": "src/domain/migration.ts",
+      "sha256": "84e83d941ff22dc1c94a9fdefd0d9b1d54f9c2e1ce9d96a881e13cbf5e5faf39"
+    },
+    {
+      "path": "src/domain/native-calendar.ts",
+      "sha256": "6f0704b2e11fb23ba4240dbefddef8b56c55b858828a3909721dc5f566009ee3"
+    },
+    {
+      "path": "src/domain/native-references.ts",
+      "sha256": "4ffcb20f601255188642f4319044cf45e123cfcab47a28c2a1d0ea1c9775c936"
+    },
+    {
+      "path": "src/domain/native-source.ts",
+      "sha256": "120b0675d4d56dafa280b1ff7bd689c6ebdfdc984be2aa411e653f019a795d2e"
+    },
+    {
+      "path": "src/domain/native-validation.ts",
+      "sha256": "f918b07384e0b9665aaa9d18a53250670f3f0774ae73ea52ab20d3180ee5d128"
+    },
+    {
+      "path": "src/domain/occurrences.ts",
+      "sha256": "fa9bb18cd62d964a8764a7815776606878011ef8bbbf306bbff00181aa60c5ac"
+    },
+    {
+      "path": "src/domain/portable-text.ts",
+      "sha256": "88b07d6042a5de525b40badd100f31c9c10c1404b0a5ebc372a940a85d044886"
+    },
+    {
+      "path": "src/domain/public-cache.ts",
+      "sha256": "ff92c90e3f264e5c3d5a8017cf1e4de433fb4b9c18c1dcf2aaab8d74593c0e72"
+    },
+    {
+      "path": "src/domain/recurrence-rule.ts",
+      "sha256": "2bf3fd00a178d68301af1b0984c6202b34c2802aa3f171f9da42ae5a83f01887"
+    },
+    {
+      "path": "src/domain/recurrence.ts",
+      "sha256": "5c7a3bab9424631ae4b206ad673fa5a633c0ac27b54a345330460af91e38cf69"
+    },
+    {
+      "path": "src/domain/request-memo.ts",
+      "sha256": "c7a90ff9fa7bd5abaf09a5ff2fe13c9d3713aca42ee681e06cc75ca385c7a994"
+    },
+    {
+      "path": "src/domain/schedule-history.ts",
+      "sha256": "ad2abf3ad6145a3707f2b113f61059a80ba4e0da90b9a1841a454f6af53fb21b"
+    },
+    {
+      "path": "src/domain/time-entry.ts",
+      "sha256": "423449d475963fd68877d65ac74b521f676e94c073948b06678ad062e4de29e0"
+    },
+    {
+      "path": "src/domain/venue-adapter.ts",
+      "sha256": "b99c3636208a98a725976a6c6e8a921c7eaf99477f3ee77138ad02c1244ecb78"
+    },
+    {
+      "path": "src/domain/venue.ts",
+      "sha256": "f9f04dea544bfd4d95edffc16d610ed8a55672b10f62f1bd6ce2fc23e56bb5c8"
+    },
+    {
+      "path": "src/public-event.ts",
+      "sha256": "c1f769efc739c4f9235d9a13d978d6b206c1661ed8aa82738bf51f952ac052e6"
+    },
+    {
+      "path": "src/schema/blueprint.ts",
+      "sha256": "9d73aca882203f01e2245b652cda39ad838a4df5acaf92e8abae5ffefb04c264"
+    },
+    {
+      "path": "src/storage.ts",
+      "sha256": "5137cdfd43e29622b2f2b6b95a36f5f4fc9e5d7752c0b1b97f407aa3a2f37550"
+    },
+    {
+      "path": "transfer/index.d.mts",
+      "sha256": "1ef434260217468ec133928e6e570cea9ade85c8b611af8703545c24a3ed8b9a"
+    },
+    {
+      "path": "transfer/index.mjs",
+      "sha256": "d5f9cbe3afff5119250b1e5029b0a22eef49f46f61a72631a7bce17af5830fe5"
+    }
+  ]
+}
