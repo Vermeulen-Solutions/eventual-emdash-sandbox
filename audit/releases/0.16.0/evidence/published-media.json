@@ -1,0 +1,83 @@
+{
+  "mode": "published",
+  "version": "0.16.0",
+  "limitBytes": 1048576,
+  "cdn": "https://cdn.em-da.sh",
+  "checked": [
+    {
+      "kind": "icon",
+      "label": "icon",
+      "blob": "bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy",
+      "preset": "avatar",
+      "url": "https://cdn.em-da.sh/img/avatar/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreiacfuom6mxdrpj6vl4sazh6l5uif32wug6dr5vfqpk3dfvtb6vwvy",
+      "bytes": 450996,
+      "status": "ok"
+    },
+    {
+      "kind": "banner",
+      "label": "banner",
+      "blob": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "preset": "banner",
+      "url": "https://cdn.em-da.sh/img/banner/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "bytes": 958008,
+      "status": "warn"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[0]",
+      "blob": "bafkreihbgr55uhr4m7inwlp6law3buqjt7eiktlctn4q27ovevkslilife",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreihbgr55uhr4m7inwlp6law3buqjt7eiktlctn4q27ovevkslilife",
+      "bytes": 310894,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[1]",
+      "blob": "bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreifu3lndhh6e2cbykows5wonghvrvgsh7kqlqyquok2gdm2rafe5ru",
+      "bytes": 192518,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[2]",
+      "blob": "bafkreiep2d7vfzrndghmd6sfrxnahaft7thx6l3tuyi3aog2npz3wk6624",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreiep2d7vfzrndghmd6sfrxnahaft7thx6l3tuyi3aog2npz3wk6624",
+      "bytes": 232632,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[3]",
+      "blob": "bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreid23odm5cgtjyip2adbq52ril5cqlqd5a3ff5aq3n7lslgwbtseva",
+      "bytes": 516112,
+      "status": "ok"
+    },
+    {
+      "kind": "screenshot",
+      "label": "screenshot[4]",
+      "blob": "bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy",
+      "preset": "feed_thumbnail",
+      "url": "https://cdn.em-da.sh/img/feed_thumbnail/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreidl26lmv3ehuubdhbujh6of5f5n74ungb5t6pgedbh3gtnwifl2uy",
+      "bytes": 500710,
+      "status": "ok"
+    }
+  ],
+  "violations": [],
+  "warnings": [
+    {
+      "kind": "banner",
+      "label": "banner",
+      "blob": "bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "preset": "banner",
+      "url": "https://cdn.em-da.sh/img/banner/r/did:plc:g2hei4vcwndrdl3gdbb6np6c/com.emdashcms.experimental.package.release/eventual:0.16.0/bafyreigyrch4yvirx4tu2ald4e6r64uzddl4qjj52cc7zuz6vhrqxpadgm/bafkreif6fzawhpvr24lz2ahdewoxlewnh6iapxox66vhhqflua3abx6f5a",
+      "bytes": 958008,
+      "status": "warn"
+    }
+  ]
+}

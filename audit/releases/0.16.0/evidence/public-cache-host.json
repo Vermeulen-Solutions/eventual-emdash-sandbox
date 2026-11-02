@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "emdash": "1.4.0",
+  "astro": "7.3.2",
+  "runner": "@emdash-cms/sandbox-workerd@0.9.6",
+  "packageSha256": "1c8d815895f125d1fcb89c2c0195186046ebc39c43e5e69b741cb05ff18d08d4",
+  "work": "C:\\dev\\eventual-em\\eventual-emdash-sandbox\\reports\\packed-consumer-1793607263048\\cache-host-1793607325665",
+  "checks": [
+    "production HTML hits cache; draft save remains private; publish purges parent",
+    "venue/organizer live edits and native site settings refresh real parent HTML",
+    "unpublication, republication, trash and restore invalidate parent",
+    "cached empty category gains its first newly published event",
+    "authenticated, preview/edit and unsupported/absent metadata cannot fill a cache",
+    "event start changes ongoing HTML after bounded expiry with no write",
+    "failed native purge is bounded by the feed expiry",
+    "plugin collection settings refresh within the ceiling; source failures never fill parent cache"
+  ],
+  "hostedCloudflare": "unverified"
+}
