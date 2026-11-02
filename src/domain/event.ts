@@ -50,6 +50,7 @@ export interface EventFields {
   imageUrl: string;
   imageMediaId?: string;
   featuredMediaId?: string;
+  imageMedia?: { src: string; width?: number; height?: number; alt?: string };
   categories: string[];
   venueId?: string;
   published: boolean;
@@ -74,6 +75,7 @@ export type EventOverride = Partial<
     | "imageUrl"
     | "imageMediaId"
     | "featuredMediaId"
+    | "imageMedia"
     | "categories"
     | "locale"
   >

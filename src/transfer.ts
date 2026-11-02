@@ -124,7 +124,7 @@ async function prepare(
   }
   // Media bytes are outside the export. An ID is useful only on its original site.
   if (event.imageMediaId)
-    reject("Remove imageMediaId or replace it with an external image URL; media is not restored by this tool.");
+    reject("Media is not restored by this tool.");
   for (const exception of imported.exceptions) {
     const original = scheduledOccurrence(imported, exception.recurrenceId);
     if (!original) reject("Invalid exception recurrenceId.");
@@ -191,7 +191,7 @@ export async function importRecords(
       preview: !write,
       error: "NATIVE_COLLECTIONS_ACTIVE",
       details:
-        "Import into native collections using EmDash content tools. Legacy storage imports are disabled when native collections are active.",
+        "Legacy imports are disabled when native collections are active.",
       rows: [],
     };
   }
@@ -316,8 +316,7 @@ export const transferRoutes = {
           return {
             ok: false,
             error: "EXPORT_PAGE_TOO_LARGE",
-            details:
-              "Retry with limit 1; oversized individual records require an EmDash site export.",
+            details: "Retry with limit 1.",
           };
         return {
           ok: true,
@@ -341,8 +340,7 @@ export const transferRoutes = {
         return {
           ok: false,
           error: "EXPORT_PAGE_TOO_LARGE",
-          details:
-            "Retry with limit 1; oversized individual records require a host storage export.",
+          details: "Retry with limit 1.",
         };
       return {
         ok: true,

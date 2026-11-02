@@ -129,7 +129,7 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
         : published
           ? "published"
           : "draft")) as EventRecord["status"];
-    const image = data.featured_image as Record<string, unknown> | undefined;
+    const image = (typeof data.featured_image === "string" ? parseJson(data.featured_image) : data.featured_image) as Record<string, unknown> | undefined;
     const venue = Object.hasOwn(data, "venue_id")
       ? data.venue_id
       : (data.venue ?? data.venueId);
@@ -141,6 +141,10 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
           : "";
     const categories = readCategories(data.categories);
     const mediaId = text(image?.id ?? data.featuredMediaId ?? data.featured_media_id ?? data.imageMediaId);
+    const metaKey = (image?.meta as Record<string, unknown> | undefined)?.storageKey;
+    const mediaSrc = text(image?.src || image?.url) || (metaKey ? "/_emdash/api/media/file/" + encodeURIComponent(String(metaKey)) : "");
+    const posNum = (v: unknown) => typeof v === "number" && v > 0 ? v : undefined;
+    const imageMedia = mediaSrc ? { src: mediaSrc, width: posNum(image?.width), height: posNum(image?.height), alt: text(image?.alt) || undefined } : undefined;
     return {
       id,
       title: text(data.title).trim(),
@@ -180,6 +184,7 @@ export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
       imageUrl: mediaId ? "" : text(data.image_url ?? data.imageUrl ?? image?.src ?? image?.url),
       imageMediaId: mediaId,
       featuredMediaId: mediaId || undefined,
+      imageMedia,
       categories,
       createdAt:
         timestamp(outer.createdAt ?? data.created_at ?? data.createdAt) ||
@@ -243,6 +248,8 @@ export function eventRecordToPublicEvent(
       imageUrl = "";
     }
   }
+  const m = record.imageMedia;
+  const imageMedia = m ? { ...m, src: siteUrl && m.src.startsWith("/") ? new URL(m.src, siteUrl).href : m.src } : undefined;
   return {
     ...formatted,
     description: portableTextToPlainText(record.description),
@@ -250,6 +257,7 @@ export function eventRecordToPublicEvent(
       ? { descriptionBlocks: record.descriptionBlocks }
       : {}),
     imageUrl,
+    ...(imageMedia ? { imageMedia } : {}),
     organizerDetails: record.organizerDetails,
     previousStartDate: record.previousStartDate,
     locale: record.locale,

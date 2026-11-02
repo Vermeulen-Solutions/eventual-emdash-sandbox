@@ -68,8 +68,7 @@ function route(
         return {
           ok: false,
           error: "NATIVE_COLLECTIONS_ACTIVE",
-          details:
-            "Use the EmDash content tools for events and venues. Legacy storage is retained for export.",
+          details: "Use EmDash content tools.",
         };
       return run(routeCtx.input, ctx);
     },

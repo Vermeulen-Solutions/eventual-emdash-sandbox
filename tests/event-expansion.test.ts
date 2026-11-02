@@ -185,6 +185,49 @@ describe("expandEventOccurrences", () => {
 		expect(relativeEvent.imageUrl).toBe(
 			"/_emdash/api/plugins/eventual/publicEventImage?eventId=evt-with-image",
 		);
+		expect(relativeEvent.imageMedia).toBeUndefined();
+	});
+
+	it("extracts direct imageMedia metadata when storageKey or dimensions are present", () => {
+		const entry = {
+			id: "evt-with-rich-media",
+			data: {
+				id: "evt-with-rich-media",
+				title: "Event With Storage Poster",
+				start: "2026-10-15T10:00:00.000Z",
+				end: "2026-10-15T12:00:00.000Z",
+				all_day: false,
+				timezone: "UTC",
+				status: "published",
+				featured_image: JSON.stringify({
+					id: "media_poster_456",
+					width: 2560,
+					height: 1614,
+					alt: "Match poster",
+					meta: { storageKey: "01M3QRDG9ZW2CQK3FPG52E92TQ.jpg" },
+				}),
+			},
+		};
+		const record = nativeEntryToEventRecord(entry);
+		expect(record).not.toBeNull();
+		expect(record?.featuredMediaId).toBe("media_poster_456");
+		expect(record?.imageMedia).toEqual({
+			src: "/_emdash/api/media/file/01M3QRDG9ZW2CQK3FPG52E92TQ.jpg",
+			width: 2560,
+			height: 1614,
+			alt: "Match poster",
+		});
+
+		const publicEvent = eventRecordToPublicEvent(record!, undefined, "https://example.com");
+		expect(publicEvent.imageUrl).toBe(
+			"https://example.com/_emdash/api/plugins/eventual/publicEventImage?eventId=evt-with-rich-media",
+		);
+		expect(publicEvent.imageMedia).toEqual({
+			src: "https://example.com/_emdash/api/media/file/01M3QRDG9ZW2CQK3FPG52E92TQ.jpg",
+			width: 2560,
+			height: 1614,
+			alt: "Match poster",
+		});
 	});
 });
 

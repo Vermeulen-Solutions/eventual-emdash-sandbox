@@ -29,6 +29,7 @@ export interface PublicEvent {
 	previousStartDate?: string;
 	externalUrl: string;
 	imageUrl: string;
+	imageMedia?: { src: string; width?: number; height?: number; alt?: string };
 	categories: string[];
 	venue: PublicVenue | null;
 	directionsUrl: string;
@@ -148,6 +149,7 @@ function isPublicEvent(value: unknown): value is PublicEvent {
 	if (value.previousStartDate !== undefined && !isDateOnly(value.previousStartDate) && !isInstant(value.previousStartDate)) return false;
 	if (isRecord(value.venue) && value.venue.addressParts !== undefined && (!isRecord(value.venue.addressParts) || !Object.values(value.venue.addressParts).every(part => typeof part === 'string'))) return false;
 	if (value.organizerDetails !== undefined && (!isRecord(value.organizerDetails) || !['id', 'name', 'website', 'contactUrl'].every(key => typeof (value.organizerDetails as Record<string, unknown>)[key] === 'string') || ['website', 'contactUrl'].some(key => (value.organizerDetails as Record<string, string>)[key] && !safeWebUrl((value.organizerDetails as Record<string, string>)[key]!)))) return false;
+	if (value.imageMedia !== undefined && (!isRecord(value.imageMedia) || typeof value.imageMedia.src !== 'string' || !value.imageMedia.src || (value.imageMedia.width !== undefined && (!Number.isFinite(value.imageMedia.width) || (value.imageMedia.width as number) <= 0)) || (value.imageMedia.height !== undefined && (!Number.isFinite(value.imageMedia.height) || (value.imageMedia.height as number) <= 0)) || (value.imageMedia.alt !== undefined && typeof value.imageMedia.alt !== 'string'))) return false;
 	if (value.allDay) {
 		if (!isDateOnly(value.start) || !isDateOnly(value.end) || value.end < value.start) return false;
 	} else {

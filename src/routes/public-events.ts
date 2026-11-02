@@ -52,8 +52,7 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 		: expanded;
 	if (visible.length>10000) return {ok:false,error:'OCCURRENCE_LIMIT_EXCEEDED'};
 	if (source!.native) {
-		const venues=await resolveEventVenues(ctx,visible,source!.schema);
-		const hydrated=await hydrateNativeAssets(ctx,visible,([undefined, true, 'true'] as unknown[]).includes(input.publicUrls));
+		const [venues, hydrated] = await Promise.all([resolveEventVenues(ctx, visible, source!.schema), hydrateNativeAssets(ctx, visible, ([undefined, true, 'true'] as unknown[]).includes(input.publicUrls))]);
 		return {ok:true,from,through,cache:publicFeedCache(source!.schema!,now,input.from === undefined),events:hydrated.map(event=>eventRecordToPublicEvent(event,venues,ctx.site.url,ctx.plugin.id))};
 	}
 	const [venues, organizers] = await Promise.all([

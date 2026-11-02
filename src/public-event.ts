@@ -23,6 +23,7 @@ export interface PublicEvent {
 	previousStartDate?: string;
 	externalUrl: string;
 	imageUrl: string;
+	imageMedia?: { src: string; width?: number; height?: number; alt?: string };
 	categories: string[];
 	venue: { id: string; name: string; address: string; addressParts?: Omit<VenueRecord, "id" | "name" | "createdAt" | "updatedAt"> } | null;
 	directionsUrl: string;
@@ -64,6 +65,7 @@ export function formatPublicEvent(
 		imageUrl: (event.featuredMediaId || event.imageMediaId)
 			? (event.imageUrl?.includes("publicEventImage") ? event.imageUrl : publicEventImageUrl(pluginId, event.id))
 			: (event.imageUrl || ""),
+		...(event.imageMedia ? { imageMedia: event.imageMedia } : {}),
 		categories: normalizeCategories(event.categories),
 		venue: venue ? { id: venue.id, name: venue.name, address: formatVenueAddress(venue), addressParts: { street: venue.street, street2: venue.street2, locality: venue.locality, region: venue.region, postalCode: venue.postalCode, country: venue.country } } : null,
 		directionsUrl: directionsUrl(location),

@@ -65,7 +65,10 @@ export async function handlePublicEventImage(
       return notFound();
     return pluginResponse({
       status: 200,
-      headers: { "content-type": file.mimeType },
+      headers: {
+        "content-type": file.mimeType,
+        "cache-control": "public, max-age=3600, must-revalidate",
+      },
       body: { kind: "bytes", value: file.bytes },
     });
   } catch {

@@ -1,11 +1,10 @@
-## 0.15.0
+## 0.16.0
 
-Opt-in public feed cache evidence: actual collection dependencies, empty-list invalidation and absolute expiry. Astro helpers validate metadata, merge split feeds and constrain host TTL by event/timezone boundaries. HTTP consumers can supply the Registry plugin ID. Existing feed fields and recurrence/locale behavior are preserved; no new capabilities or MCP tools.
-
-Caching integration requires EmDash **>=1.4.0 <2.0.0**, an explicit host policy, a maximum 15-second remaining lifetime and no stale serving. Event management retains **>=1.2.0 <2.0.0** compatibility. Generic plugin/settings writes and Node scheduling have invalidation gaps; hosted Cloudflare acceptance is separate. [Guide](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/public-feed-caching.md) · [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.15.0.md).
+Parallelized public feed resolution and direct imageMedia metadata: `getPublicUrl` lookups, collection bindings, and venue/asset branches resolve concurrently across the Worker Loader boundary. `publicEventImage` route adds `Cache-Control: public, max-age=3600, must-revalidate`. `PublicEvent` carries optional `imageMedia` with direct file URLs and native dimensions for Astro `<Image>` and responsive WebP transforms. Full backwards compatibility; existing `imageUrl` behavior and EmDash **>=1.2.0 <2.0.0** compatibility preserved. [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.16.0.md).
 
 ## Earlier releases
 
+- **0.15.0:** opt-in public feed cache evidence: actual collection dependencies, empty-list invalidation and absolute expiry.
 - **0.14.1:** EmDash 1.4 editor compatibility; no runtime or permission changes.
 - **0.14.0:** public legacy storage reads require explicit opt-in; native collections stay authoritative. Clear configuration errors, gated legacy images and refreshed settings UI.
 - **0.13.4:** repair an oversized Registry image and check media budgets.

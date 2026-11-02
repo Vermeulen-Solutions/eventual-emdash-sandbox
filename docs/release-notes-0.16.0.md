@@ -1,0 +1,7 @@
+# Eventual 0.16.0 — parallel feed resolution and direct imageMedia metadata
+
+- **Parallelized feed resolution**: `hydrateNativeAssets` now resolves `getPublicUrl` across all events concurrently using `Promise.all`. `loadCollectionBindings` parallelizes reading `eventsCollection`, `venuesCollection`, and `organizersCollection` storage keys. In `readPublicEvents`, venue and asset hydration branches run concurrently.
+- **Cache headers for public media**: The `publicEventImage` route handler (`/_emdash/api/plugins/eventual/publicEventImage?eventId=...`) now returns `Cache-Control: public, max-age=3600, must-revalidate` on successful image responses.
+- **Optional direct `imageMedia` metadata**: `PublicEvent` now carries an optional `imageMedia?: { src: string; width?: number; height?: number; alt?: string }` property when native `featured_image` data contains a `storageKey` or direct URL. Frontends using Astro `<Image>` or `getImage()` can use this direct path (`/_emdash/api/media/file/<storageKey>`) and native dimensions to generate responsive WebP variants without an extra host-side CMS collection round-trip.
+- **Backwards compatibility**: `imageUrl` continues to supply the `publicEventImage` URL as before; all existing feed consumers and recurrence/locale behavior remain fully compatible.
+- **No capability or schema changes**: EmDash `>=1.2.0 <2.0.0` compatibility is preserved. No new capabilities, MCP tools, or schema fields are added.

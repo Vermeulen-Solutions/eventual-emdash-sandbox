@@ -121,7 +121,7 @@ export async function migrateToNative(
       !ctx.content.publish ||
       !ctx.content.getVersioned
     )
-      reject("Native schema, content write and publication APIs are required.");
+      reject("Native schema, write and publish APIs are required.");
     const schemas = await collectionSchemas(ctx);
     const eventsSchema = await eventSchema(ctx);
     if (!eventsSchema)
@@ -146,15 +146,13 @@ export async function migrateToNative(
     for (const schema of [eventsSchema, venuesSchema]) {
       const legacy = schema.fields.find((field) => field.slug === "legacy_id");
       if (!legacy?.unique || !legacy.indexed)
-        reject(schema.slug +
-            " requires a unique indexed legacy_id field for resumable migration.");
+        reject(schema.slug + " requires unique indexed legacy_id field.");
       if (
         !schema.fields.some(
           (field) => field.slug === "legacy_metadata" && field.type === "json",
         )
       )
-        reject(schema.slug +
-            " requires legacy_metadata JSON for recovery and traceability.");
+        reject(schema.slug + " requires legacy_metadata JSON.");
     }
     const required = [
       "start_date",

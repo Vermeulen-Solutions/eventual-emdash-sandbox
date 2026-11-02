@@ -25,7 +25,7 @@ export async function nativeSchema(
   if (!ctx.schema || !ctx.content) return undefined;
   const schema = await eventSchema(ctx);
   if (schema && !schema.fields?.some((field) => field.slug === "start"))
-    reject("The events collection is not an Eventual schema.");
+    reject("Not an Eventual schema.");
   return schema;
 }
 export async function listNative(
@@ -47,7 +47,7 @@ export async function listNative(
       throw new EventScanLimitError(MAX_EVENT_SCAN);
     if (!page.hasMore) break;
     if (!page.cursor || seen.has(page.cursor))
-      reject("Invalid content cursor.");
+      reject("Invalid cursor.");
     seen.add(page.cursor);
     cursor = page.cursor;
   } while (true);
@@ -58,7 +58,7 @@ export async function readEventSource(ctx: EventualContext, through?: string) {
   if (!schema) {
     // Private plugin storage is pre-0.13 data: public reads use it only on explicit opt-in.
     if (!(await legacyReadsEnabled(ctx)))
-      reject('Eventual is not connected to a content type. Choose one under Eventual settings, or turn on "Show old events saved inside the plugin".');
+      reject('Eventual is not connected to a content type. Turn on "Show old events saved inside the plugin".');
     return {
       native: false,
       events: (await listEvents(ctx, {
@@ -72,7 +72,7 @@ export async function readEventSource(ctx: EventualContext, through?: string) {
   const events: EventRecord[] = [];
   for (const entry of entries) {
     const event = nativeEntryToEventRecord(entry);
-    if (!event) reject("Invalid native event " + entry.id);
+    if (!event) reject("Invalid event: " + entry.id);
     if (event.published) events.push(event);
   }
   return { native: true, events, schema };
@@ -226,23 +226,23 @@ export async function hydrateNativeAssets(
   }
 
   const pId = ctx.plugin?.id ?? "eventual";
-  const hydrated: EventRecord[] = [];
-  for (const e of events) {
-    const org = organizers.get((e.organizerId ?? "") + "|" + (e.locale ?? "").toLowerCase()) ?? organizers.get(e.organizerId ?? "");
-    let publicUrl = e.publicUrl;
-    if (publicUrls && schema && e.published && e.slug && ctx.content?.getPublicUrl) {
-      const id = e.id.split('#')[0]!;
-      publicUrl = await requestMemo(ctx, 'url:'+schema.slug+':'+id, () => ctx.content!.getPublicUrl!(schema.slug, id)) ?? e.publicUrl;
-    }
-    hydrated.push({
-      ...e,
-      organizer: e.organizer || org?.name || e.organizerDetails?.name || "",
-      organizerDetails: org ?? e.organizerDetails,
-      publicUrl,
-      imageUrl: (e.featuredMediaId || e.imageMediaId)
-        ? publicEventImageUrl(pId, e.id)
-        : (e.imageUrl || ""),
-    });
-  }
-  return hydrated;
+  return Promise.all(
+    events.map(async (e) => {
+      const org = organizers.get((e.organizerId ?? "") + "|" + (e.locale ?? "").toLowerCase()) ?? organizers.get(e.organizerId ?? "");
+      let publicUrl = e.publicUrl;
+      if (publicUrls && schema && e.published && e.slug && ctx.content?.getPublicUrl) {
+        const id = e.id.split('#')[0]!;
+        publicUrl = await requestMemo(ctx, 'url:'+schema.slug+':'+id, () => ctx.content!.getPublicUrl!(schema.slug, id)) ?? e.publicUrl;
+      }
+      return {
+        ...e,
+        organizer: e.organizer || org?.name || e.organizerDetails?.name || "",
+        organizerDetails: org ?? e.organizerDetails,
+        publicUrl,
+        imageUrl: (e.featuredMediaId || e.imageMediaId)
+          ? publicEventImageUrl(pId, e.id)
+          : (e.imageUrl || ""),
+      };
+    }),
+  );
 }

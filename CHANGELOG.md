@@ -2,6 +2,14 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.16.0 - 2026-11-02
+
+- Parallelize public feed hydration and storage resolution: `getPublicUrl` calls across events, collection binding lookups, and venue/asset resolution branches run concurrently via `Promise.all`, substantially reducing Worker Loader RPC round-trips.
+- Add `Cache-Control: public, max-age=3600, must-revalidate` header to `publicEventImage` route responses so browsers and edge caches can cache and revalidate plugin-streamed event images.
+- Add optional `imageMedia?: { src: string; width?: number; height?: number; alt?: string }` metadata to `PublicEvent`, extracting direct media file paths (`/_emdash/api/media/file/<storageKey>`) and native dimensions from `featured_image` data. Astro and other modern frontends can pass images directly to image optimization services (`/_image`) and reuse decoded bitmap memory across route transitions.
+- Full backwards compatibility: `imageUrl` remains unchanged and continues to resolve to `publicEventImage?eventId=...` as before. No schema changes, no new capabilities or MCP tools required.
+- See [release notes](docs/release-notes-0.16.0.md).
+
 ## 0.15.0 - 2026-11-01
 
 - Add optional typed cache dependency/expiry evidence to native public feeds, including empty lists and custom collection names, without extra dependency RPCs.

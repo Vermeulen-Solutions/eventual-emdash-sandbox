@@ -44,8 +44,10 @@ export function collectionBindings(ctx: EventualContext): Promise<LoadedCollecti
 
 /** Explicit selections fail closed. Removing a collection never revives legacy writes. */
 async function loadCollectionBindings(ctx: EventualContext): Promise<LoadedCollectionBindings> {
-  const selected = await collectionSettings(ctx);
-  const schemas = await collectionSchemas(ctx);
+  const [selected, schemas] = await Promise.all([
+    collectionSettings(ctx),
+    collectionSchemas(ctx),
+  ]);
   if (selected && (!selected.events || Object.values(selected).some(value => typeof value !== 'string' || (value !== '' && !slug.test(value)))))
     reject('Invalid collections. Choose them again in Eventual settings.');
   const events = selected?.events ?? 'events';

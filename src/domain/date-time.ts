@@ -196,7 +196,7 @@ export function normalizeEventDates(input: {
     if (!isDateOnly(input.start)) errors.start = "Choose a valid start date.";
     if (!isDateOnly(input.end)) errors.end = "Choose a valid end date.";
     if (!errors.start && !errors.end && input.end < input.start) {
-      errors.end = "The end date must be the same as or after the start date.";
+      errors.end = "The end must be on or after the start.";
     }
     return Object.keys(errors).length
       ? { errors }
@@ -212,7 +212,7 @@ export function normalizeEventDates(input: {
   if (!start.value) errors.start = start.error;
   if (!end.value) errors.end = end.error;
   if (start.value && end.value && Date.parse(end.value) < Date.parse(start.value)) {
-    errors.end = "The end must be the same as or after the start.";
+    errors.end = "The end must be on or after the start.";
   }
   return Object.keys(errors).length
     ? { errors }

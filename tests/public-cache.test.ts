@@ -42,6 +42,21 @@ describe('Public feed cache evidence', () => {
     expect(() => parsePublicFeed({ success: true, data: { ok: false, error: 'INVALID_QUERY' } })).toThrow('INVALID_QUERY');
   });
 
+  it('validates imageMedia on public events when present', () => {
+    const validEvent = {
+      id: 'event-1', title: 'Title', description: '', start: '2026-03-01T10:00:00Z',
+      end: '2026-03-01T11:00:00Z', allDay: false, timezone: 'UTC', location: '',
+      organizer: '', externalUrl: '', imageUrl: 'https://example.org/image.png',
+      imageMedia: { src: 'https://example.org/file.jpg', width: 800, height: 600, alt: 'Alt' },
+      categories: [], venue: null, directionsUrl: '',
+    };
+    const parsed = parsePublicFeed({ success: true, data: { ok: true, from: '2026-03-01', through: '2026-03-31', events: [validEvent] } });
+    expect(parsed.events[0]?.imageMedia).toEqual(validEvent.imageMedia);
+
+    expect(() => parsePublicFeed({ success: true, data: { ok: true, from: '2026-03-01', through: '2026-03-31', events: [{ ...validEvent, imageMedia: { src: '' } }] } })).toThrow();
+    expect(() => parsePublicFeed({ success: true, data: { ok: true, from: '2026-03-01', through: '2026-03-31', events: [{ ...validEvent, imageMedia: { src: 'http://example.org', width: -10 } }] } })).toThrow();
+  });
+
   it('does not claim native invalidation for legacy storage or failed queries', async () => {
     const query = vi.fn(async () => ({ items: [], hasMore: false }));
     const ctx = { site: { url: 'https://example.org' }, plugin: { id: 'eventual' },
