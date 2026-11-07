@@ -3,6 +3,7 @@ import type { EventRecord, VenueRecord, OrganizerRecord } from "./domain/event";
 import { normalizeCategories } from "./domain/category";
 import { publicEventImageUrl } from "./domain/image";
 import { directionsUrl, eventLocation, formatVenueAddress, safeHttpUrl } from "./domain/venue";
+import { buildCalendarLinks, type CalendarLinks } from "./domain/calendar-links";
 
 export interface PublicEvent {
 	id: string;
@@ -31,6 +32,7 @@ export interface PublicEvent {
 	translationGroup?: string;
 	slug?: string;
 	publicUrl?: string;
+	calendarLinks?: CalendarLinks;
 }
 
 export function formatPublicEvent(
@@ -69,6 +71,18 @@ export function formatPublicEvent(
 		categories: normalizeCategories(event.categories),
 		venue: venue ? { id: venue.id, name: venue.name, address: formatVenueAddress(venue), addressParts: { street: venue.street, street2: venue.street2, locality: venue.locality, region: venue.region, postalCode: venue.postalCode, country: venue.country } } : null,
 		directionsUrl: directionsUrl(location),
+		calendarLinks: buildCalendarLinks({
+			id: event.id,
+			title: event.title,
+			description: event.description,
+			start: event.start,
+			end: event.end,
+			allDay: event.allDay,
+			timezone: event.timezone,
+			location,
+			locationType: event.locationType,
+			virtualUrl: event.virtualUrl,
+		}),
 	};
 	return result;
 }

@@ -1,4 +1,4 @@
-import { safeWebUrl } from "./event-details";
+import { safeWebUrl, type CalendarLinks } from "./event-details";
 import { parsePublicFeedCache, type PublicFeedCache } from './cache';
 export { parsePublicFeedCache, publicFeedCacheOptions, publicEventTimeBoundary, publicCalendarDateBoundary, type PublicFeedCache } from './cache';
 export interface PublicVenue {
@@ -35,10 +35,11 @@ export interface PublicEvent {
 	directionsUrl: string;
 	locale?: string;
 	translationGroup?: string;
+	calendarLinks?: CalendarLinks;
 }
 
 export { eventToJsonLd, serializeJsonLd, type EventJsonLdOptions } from "./schema";
-export { calendarLocation, calendarStatus, calendarEventUrl } from './event-details';
+export { calendarLocation, calendarStatus, calendarEventUrl, buildCalendarLinks, type CalendarLinks } from './event-details';
 
 export interface PublicFeed {
 	ok: true;

@@ -1,6 +1,7 @@
 ---
 import type { PublicEvent } from "./feed";
 import { eventPageUrl, displayEventDate } from './event-list';
+import { buildCalendarLinks } from './event-details';
 
 interface Props {
   events: PublicEvent[];
@@ -8,24 +9,43 @@ interface Props {
   heading?: string;
   locale?: string;
   emptyMessage?: string;
+  showCalendarLinks?: boolean;
 }
 
-const { events, basePath = "/events", heading, locale = Astro.currentLocale, emptyMessage = 'No events found.' } = Astro.props;
+const {
+  events,
+  basePath = "/events",
+  heading,
+  locale = Astro.currentLocale,
+  emptyMessage = 'No events found.',
+  showCalendarLinks = false,
+} = Astro.props;
 
 function eventUrl(event: PublicEvent): string {
-  return eventPageUrl(event,basePath);
+  return eventPageUrl(event, basePath);
 }
 ---
 
 {heading && <h2>{heading}</h2>}
 {events.length === 0 ? <p>{emptyMessage}</p> : (
-  <ul>
-    {events.map((event) => (
-      <li>
-        <a href={eventUrl(event)}>{event.title}</a>
-        <time datetime={event.start}>{displayEventDate(event,locale ?? event.locale ?? 'en-GB')}</time>
-        {(event.venue?.name || event.location) && <span>{event.venue?.name || event.location}</span>}
-      </li>
-    ))}
+  <ul class="eventual-list">
+    {events.map((event) => {
+      const links = showCalendarLinks ? (event.calendarLinks ?? buildCalendarLinks(event)) : null;
+      return (
+        <li class="eventual-item">
+          <a href={eventUrl(event)} class="eventual-title">{event.title}</a>
+          <time datetime={event.start} class="eventual-time">{displayEventDate(event, locale ?? event.locale ?? 'en-GB')}</time>
+          {(event.venue?.name || event.location) && <span class="eventual-location">{event.venue?.name || event.location}</span>}
+          {links && (
+            <div class="eventual-calendar-links" role="group" aria-label="Add to calendar">
+              <a href={links.google} target="_blank" rel="noopener noreferrer" aria-label="Add to Google Calendar" class="eventual-cal-btn eventual-cal-google">Google</a>
+              <a href={links.outlook} target="_blank" rel="noopener noreferrer" aria-label="Add to Outlook Calendar" class="eventual-cal-btn eventual-cal-outlook">Outlook</a>
+              <a href={links.office365} target="_blank" rel="noopener noreferrer" aria-label="Add to Office 365" class="eventual-cal-btn eventual-cal-office">Office 365</a>
+              <a href={links.ics} download aria-label="Download iCal file" class="eventual-cal-btn eventual-cal-ics">.ics</a>
+            </div>
+          )}
+        </li>
+      );
+    })}
   </ul>
 )}

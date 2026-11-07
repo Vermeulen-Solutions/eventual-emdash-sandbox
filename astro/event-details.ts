@@ -25,3 +25,5 @@ export function calendarEventUrl(event: Pick<EventDetails, "locationType" | "vir
 export function calendarStatus(event: Pick<EventDetails, "status">): string {
 	return event.status === "cancelled" ? "CANCELLED" : event.status === "postponed" ? "TENTATIVE" : "CONFIRMED";
 }
+
+export { buildCalendarLinks, type CalendarLinks, type CalendarEventInput } from "../src/domain/calendar-links";
