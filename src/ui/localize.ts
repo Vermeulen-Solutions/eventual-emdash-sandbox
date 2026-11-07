@@ -1,9 +1,11 @@
 import type { BlockResponse } from '@emdash-cms/blocks';
 import { editorText } from './i18n';
+import { dictionaries, resolveLanguage } from './native-messages';
 
 /** Translate presentation, never IDs, form values, user copy or mutation payloads. */
 export function localizeResponse(response: BlockResponse, locale = 'en'): BlockResponse {
-  if(!locale.toLowerCase().startsWith('fr')) return response;
+  const lang = resolveLanguage(locale);
+  if (lang === 'en' || !dictionaries[lang]) return response;
   const keys=new Set(['label','text','title','description','placeholder','empty_text','confirm','deny','message']);
   const verbatimOptions=new Set(['venueId','organizerId','venue','organizer_ref','imageMediaId','timezone','eventIds','events','venues','organizers']);
   const walk=(value: unknown, parent?: Record<string, unknown>): unknown => {

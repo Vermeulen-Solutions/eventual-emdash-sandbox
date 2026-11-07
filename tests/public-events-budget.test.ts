@@ -79,6 +79,15 @@ describe('publicEvents canonical URL budget', () => {
     expect(await handlePublicEvents({ ...range, publicUrls }, ctx)).toEqual({ ok: false, error: 'INVALID_QUERY' });
     expect(calls).toEqual([]);
   });
+
+  it('filters candidate events to a single eventId and avoids excess hydration', async () => {
+    const { ctx, calls } = tracedContext(8);
+    const result = await handlePublicEvents({ ...range, eventId: 'event-3', publicUrls: false }, ctx);
+    expect(result.ok).toBe(true);
+    expect(result.events).toHaveLength(1);
+    expect(result.events?.[0]?.slug).toBe('event-3');
+    expect(calls).toEqual(['settings.get', 'schema.listCollections', 'content.list', 'content.list']);
+  });
 });
 
 let host: PluginRuntimeTestHost | undefined;

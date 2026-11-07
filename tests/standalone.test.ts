@@ -52,4 +52,30 @@ describe('Sandbox native onboarding',{timeout:60_000},()=>{
  it('localizes controls while preserving collection labels and initial values',()=>{ const result:any=localizeResponse({blocks:[{type:'header',text:'Events'},{type:'section',block_id:'eventual-verbatim:2026-10-19T08:00:00Z',text:'Daily'},{type:'form',block_id:'unchanged',fields:[{type:'text_input',action_id:'title',label:'Title',initial_value:'Daily'},{type:'select',action_id:'venues',label:'Venue collection',initial_value:'hall',options:[{label:'Daily',value:'hall'}]}],submit:{action_id:'save-settings',label:'Save settings'}}]},'fr-CH');
  expect(result.blocks[0].text).toBe('Événements');expect(result.blocks[1].text).toBe('Daily');expect(result.blocks[2].fields[0].initial_value).toBe('Daily');expect(result.blocks[2].fields[1].options).toEqual([{label:'Daily',value:'hall'}]);expect(validateBlockResponse(result,{}).valid).toBe(true);
  });
+ it('localizes controls into German and Dutch while preserving collection labels and initial values', () => {
+   const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+   const germanResult: any = localizeResponse({
+     blocks: [
+       { type: 'header', text: 'Events' },
+       { type: 'form', block_id: 'unchanged', fields: [
+         { type: 'checkbox', action_id: 'weekdays', label: 'Days of the week', options: weekdays.map(label => ({ label, value: label.toLowerCase() })), initial_value: ['monday'] }
+       ], submit: { action_id: 'save-repeat', label: 'Save repeat settings' } }
+     ]
+   }, 'de-CH');
+   expect(germanResult.blocks[0].text).toBe('Events');
+   expect(germanResult.blocks[1].fields[0].options.map((o: any) => o.label)).toEqual(['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']);
+   expect(germanResult.blocks[1].submit.label).toBe('Wiederholungseinstellungen speichern');
+
+   const dutchResult: any = localizeResponse({
+     blocks: [
+       { type: 'header', text: 'Events' },
+       { type: 'form', block_id: 'unchanged', fields: [
+         { type: 'checkbox', action_id: 'weekdays', label: 'Days of the week', options: weekdays.map(label => ({ label, value: label.toLowerCase() })), initial_value: ['monday'] }
+       ], submit: { action_id: 'save-repeat', label: 'Save repeat settings' } }
+     ]
+   }, 'nl-NL');
+   expect(dutchResult.blocks[0].text).toBe('Evenementen');
+   expect(dutchResult.blocks[1].fields[0].options.map((o: any) => o.label)).toEqual(['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']);
+   expect(dutchResult.blocks[1].submit.label).toBe('Herhalingsinstellingen opslaan');
+ });
 });

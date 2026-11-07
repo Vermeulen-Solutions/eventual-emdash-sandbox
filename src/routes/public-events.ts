@@ -20,10 +20,11 @@ export async function handlePublicEvents(input: unknown, ctx: EventualContext) {
 }
 async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	const invalidQuery = { ok: false as const, error: "INVALID_QUERY" };
-	if (!isRecord(input) || ["from", "through", "category", "locale"].some((key) => input[key] !== undefined && typeof input[key] !== "string") || [input.strict, input.publicUrls].some((value) => !([undefined, true, false, 'true', 'false'] as unknown[]).includes(value))) {
+	if (!isRecord(input) || ["from", "through", "category", "locale", "eventId"].some((key) => input[key] !== undefined && typeof input[key] !== "string") || [input.strict, input.publicUrls].some((value) => !([undefined, true, false, 'true', 'false'] as unknown[]).includes(value))) {
 		return invalidQuery;
 	}
 	try { if (input.locale) Intl.getCanonicalLocales(input.locale as string); } catch { return invalidQuery; }
+	const eventId = typeof input.eventId === 'string' && input.eventId.trim() ? input.eventId.trim() : undefined;
 	const now = Date.now();
 	const today = new Date(now).toISOString().slice(0, 10);
 	const from = (input.from as string | undefined) ?? today;
@@ -41,6 +42,9 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	try {
 		source = await readEventSource(ctx,through);
 		storedEvents = selectEventLocales(source.events,input.locale as string|undefined,([true, 'true'] as unknown[]).includes(input.strict));
+		if (eventId) {
+			storedEvents = storedEvents.filter((event) => event.id === eventId);
+		}
 	} catch (error) {
 		if (error instanceof EventScanLimitError) return { ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: error.limit };
 		throw error;

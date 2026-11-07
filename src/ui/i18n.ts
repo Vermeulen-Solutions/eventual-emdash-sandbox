@@ -1,5 +1,5 @@
 import { TIMEZONE_ERROR, TIMEZONE_UNAVAILABLE, DST_ERROR } from '../domain/messages';
-import {nativeEditorText} from './native-messages';
+import { nativeEditorText, resolveLanguage } from './native-messages';
 // Shared English constants prevent duplicate UI strings in the sandbox bundle.
 export const VENUES = "Venues";
 export const ORGANIZERS = "Organizers";
@@ -152,20 +152,118 @@ export const INVALID_ADMIN_REQUEST = "Invalid admin request";
 export const DIFFERENT_TITLE = "Different announcement title";
 export const DIFFERENT_DESCRIPTION = "Different announcement description";
 // The two arrays have matching positions. Keep all additions paired.
-const french = new Map<string,string>([
-['Events','Événements'],['Venues','Lieux'],['Organizers','Organisations'],['Settings','Paramètres'],['Event collection','Collection des événements'],['Venue collection','Collection des lieux'],['Organizer collection','Collection des organisations'],['Choose a collection','Choisir une collection'],['No collection','Aucune collection'],['Save settings','Enregistrer les paramètres'],['Settings not saved','Paramètres non enregistrés'],
-['Connect Eventual to content types','Connecter Eventual aux types de contenu'],
-['Create and edit these entries in the EmDash content editor.','Créez et modifiez ces éléments dans l’éditeur de contenu EmDash.'],
-['Save announcement edits first. This panel updates the saved draft. Publish in core. Dates and venue are shared across languages.','Enregistrez d’abord l’annonce. Ce panneau modifie le brouillon enregistré. Publiez dans EmDash. Les dates et le lieu sont communs aux langues.'],
-['Schedule saved as an EmDash draft. Publish in the content editor when ready.','Les dates sont enregistrées dans un brouillon EmDash. Publiez depuis l’éditeur de contenu lorsque vous êtes prêt.'],['Schedule draft saved.','Brouillon des dates enregistré.'],
-['This event changed. Close and reopen the panel before trying again.','Cet événement a changé. Fermez puis rouvrez le panneau avant de réessayer.'],
-['Review collection settings','Vérifier les collections'],
-['No collection selected. Ask an administrator to configure it in Eventual settings.','Aucune collection sélectionnée. Demandez à un administrateur de la configurer.'],
-['An administrator must manage Eventual collection settings.','Un administrateur doit gérer les collections Eventual.']
+const french = new Map<string, string>([
+  ['Events', 'Événements'],
+  ['Venues', 'Lieux'],
+  ['Organizers', 'Organisations'],
+  ['Settings', 'Paramètres'],
+  ['Event collection', 'Collection des événements'],
+  ['Venue collection', 'Collection des lieux'],
+  ['Organizer collection', 'Collection des organisations'],
+  ['Choose a collection', 'Choisir une collection'],
+  ['No collection', 'Aucune collection'],
+  ['Save settings', 'Enregistrer les paramètres'],
+  ['Settings not saved', 'Paramètres non enregistrés'],
+  ['Connect Eventual to content types', 'Connecter Eventual aux types de contenu'],
+  ['Create and edit these entries in the EmDash content editor.', 'Créez et modifiez ces éléments dans l’éditeur de contenu EmDash.'],
+  ['Save announcement edits first. This panel updates the saved draft. Publish in core. Dates and venue are shared across languages.', 'Enregistrez d’abord l’annonce. Ce panneau modifie le brouillon enregistré. Publiez dans EmDash. Les dates et le lieu sont communs aux langues.'],
+  ['Schedule saved as an EmDash draft. Publish in the content editor when ready.', 'Les dates sont enregistrées dans un brouillon EmDash. Publiez depuis l’éditeur de contenu lorsque vous êtes prêt.'],
+  ['Schedule draft saved.', 'Brouillon des dates enregistré.'],
+  ['This event changed. Close and reopen the panel before trying again.', 'Cet événement a changé. Fermez puis rouvrez le panneau avant de réessayer.'],
+  ['Review collection settings', 'Vérifier les collections'],
+  ['No collection selected. Ask an administrator to configure it in Eventual settings.', 'Aucune collection sélectionnée. Demandez à un administrateur de la configurer.'],
+  ['An administrator must manage Eventual collection settings.', 'Un administrateur doit gérer les collections Eventual.']
 ]);
-export const ANNOUNCEMENT_LANGUAGE='Announcement language';
-export function editorText(value:string,locale='en'):string {
- if(!locale.toLowerCase().startsWith('fr')) return value;
- if(value.startsWith('Use a different ')) {const name=value.slice(16);return 'Autre '+nativeEditorText(name[0]!.toUpperCase()+name.slice(1),locale).toLowerCase();}
- return french.get(value) ?? nativeEditorText(value,locale);
+
+const german = new Map<string, string>([
+  ['Events', 'Events'],
+  ['Venues', 'Veranstaltungsorte'],
+  ['Organizers', 'Veranstalter'],
+  ['Settings', 'Einstellungen'],
+  ['Event collection', 'Event-Collection'],
+  ['Venue collection', 'Orte-Collection'],
+  ['Organizer collection', 'Veranstalter-Collection'],
+  ['Choose a collection', 'Collection auswählen'],
+  ['No collection', 'Keine Collection'],
+  ['Save settings', 'Einstellungen speichern'],
+  ['Settings not saved', 'Einstellungen nicht gespeichert'],
+  ['Connect Eventual to content types', 'Eventual mit Inhaltstypen verknüpfen'],
+  ['Create and edit these entries in the EmDash content editor.', 'Erstellen und bearbeiten Sie diese Einträge im EmDash-Inhaltseditor.'],
+  ['Save announcement edits first. This panel updates the saved draft. Publish in core. Dates and venue are shared across languages.', 'Zuerst die Ankündigung speichern. Dieses Panel aktualisiert den Entwurf. In EmDash veröffentlichen. Termine und Ort werden geteilt.'],
+  ['Schedule saved as an EmDash draft. Publish in the content editor when ready.', 'Termine als Entwurf gespeichert. Bei Bedarf im Inhaltseditor veröffentlichen.'],
+  ['Schedule draft saved.', 'Terminentwurf gespeichert.'],
+  ['This event changed. Close and reopen the panel before trying again.', 'Dieses Event wurde geändert. Schließen und erneut öffnen.'],
+  ['Review collection settings', 'Collection-Einstellungen überprüfen'],
+  ['No collection selected. Ask an administrator to configure it in Eventual settings.', 'Keine Collection ausgewählt. Ein Administrator muss sie in den Eventual-Einstellungen konfigurieren.'],
+  ['An administrator must manage Eventual collection settings.', 'Ein Administrator muss die Eventual-Collection-Einstellungen verwalten.']
+]);
+
+const dutch = new Map<string, string>([
+  ['Events', 'Evenementen'],
+  ['Venues', 'Locaties'],
+  ['Organizers', 'Organisatoren'],
+  ['Settings', 'Instellingen'],
+  ['Event collection', 'Evenementencollectie'],
+  ['Venue collection', 'Locatiecollectie'],
+  ['Organizer collection', 'Organisatorencollectie'],
+  ['Choose a collection', 'Kies een collectie'],
+  ['No collection', 'Geen collectie'],
+  ['Save settings', 'Instellingen opslaan'],
+  ['Settings not saved', 'Instellingen niet opgeslagen'],
+  ['Connect Eventual to content types', 'Eventual verbinden met contenttypes'],
+  ['Create and edit these entries in the EmDash content editor.', 'Maak en bewerk deze items in de EmDash-contenteditor.'],
+  ['Save announcement edits first. This panel updates the saved draft. Publish in core. Dates and venue are shared across languages.', 'Sla eerst de aankondiging op. Dit paneel werkt het concept bij. Publiceer in EmDash. Datums en locatie worden gedeeld over talen.'],
+  ['Schedule saved as an EmDash draft. Publish in the content editor when ready.', 'Rooster opgeslagen als concept. Publiceer in de contenteditor wanneer klaar.'],
+  ['Schedule draft saved.', 'Conceptrooster opgeslagen.'],
+  ['This event changed. Close and reopen the panel before trying again.', 'Dit evenement is gewijzigd. Sluit en heropen het paneel voordat u het opnieuw probeert.'],
+  ['Review collection settings', 'Collectie-instellingen controleren'],
+  ['No collection selected. Ask an administrator to configure it in Eventual settings.', 'Geen collectie geselecteerd. Vraag een beheerder dit in Eventual-instellingen te configureren.'],
+  ['An administrator must manage Eventual collection settings.', 'Een beheerder moet de Eventual-collectie-instellingen beheren.']
+]);
+
+const spanish = new Map<string, string>([
+  ['Events', 'Eventos'],
+  ['Venues', 'Lugares'],
+  ['Organizers', 'Organizadores'],
+  ['Settings', 'Ajustes'],
+  ['Event collection', 'Colección de eventos'],
+  ['Venue collection', 'Colección de lugares'],
+  ['Organizer collection', 'Colección de organizadores'],
+  ['Choose a collection', 'Elegir una colección'],
+  ['No collection', 'Ninguna colección'],
+  ['Save settings', 'Guardar ajustes'],
+  ['Settings not saved', 'Ajustes no guardados'],
+  ['Connect Eventual to content types', 'Conectar Eventual con los tipos de contenido'],
+  ['Create and edit these entries in the EmDash content editor.', 'Cree y edite estas entradas en el editor de contenido de EmDash.'],
+  ['Save announcement edits first. This panel updates the saved draft. Publish in core. Dates and venue are shared across languages.', 'Guarde primero el anuncio. Este panel actualiza el borrador. Publique en EmDash. Las fechas y el lugar se comparten entre idiomas.'],
+  ['Schedule saved as an EmDash draft. Publish in the content editor when ready.', 'Fechas guardadas como borrador. Publique en el editor cuando esté listo.'],
+  ['Schedule draft saved.', 'Borrador de fechas guardado.'],
+  ['This event changed. Close and reopen the panel before trying again.', 'Este evento ha cambiado. Cierre y vuelva a abrir el panel antes de reintentarlo.'],
+  ['Review collection settings', 'Revisar ajustes de colección'],
+  ['No collection selected. Ask an administrator to configure it in Eventual settings.', 'Ninguna colección seleccionada. Pida a un administrador que la configure.'],
+  ['An administrator must manage Eventual collection settings.', 'Un administrador debe gestionar los ajustes de colección de Eventual.']
+]);
+
+const i18nMaps: Record<string, Map<string, string>> = {
+  fr: french,
+  de: german,
+  nl: dutch,
+  es: spanish,
+};
+
+export const ANNOUNCEMENT_LANGUAGE = 'Announcement language';
+
+export function editorText(value: string, locale = 'en'): string {
+  const lang = resolveLanguage(locale);
+  if (lang === 'en') return value;
+  if (value.startsWith('Use a different ')) {
+    const name = value.slice(16);
+    const translatedName = nativeEditorText(name[0]!.toUpperCase() + name.slice(1), locale);
+    if (lang === 'fr') return 'Autre ' + translatedName.toLowerCase();
+    if (lang === 'de') return 'Anderen ' + translatedName.toLowerCase() + ' wählen';
+    if (lang === 'nl') return 'Andere ' + translatedName.toLowerCase() + ' kiezen';
+    if (lang === 'es') return 'Otro ' + translatedName.toLowerCase();
+  }
+  const map = i18nMaps[lang];
+  return map?.get(value) ?? nativeEditorText(value, locale);
 }
