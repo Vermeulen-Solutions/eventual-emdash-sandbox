@@ -43,7 +43,8 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 		source = await readEventSource(ctx,through);
 		storedEvents = selectEventLocales(source.events,input.locale as string|undefined,([true, 'true'] as unknown[]).includes(input.strict));
 		if (eventId) {
-			storedEvents = storedEvents.filter((event) => event.id === eventId);
+			const baseEventId = eventId.split("#")[0]!;
+			storedEvents = storedEvents.filter((event) => event.id === baseEventId);
 		}
 	} catch (error) {
 		if (error instanceof EventScanLimitError) return { ok: false, error: "EVENT_LIMIT_EXCEEDED", maxEvents: error.limit };
@@ -51,9 +52,12 @@ async function readPublicEvents(input: unknown, ctx: EventualContext) {
 	}
 	const expanded = expandEventsInDateRange(storedEvents, from, through);
 	const category = input.category ? categoryKey(input.category as string) : "";
-	const visible = category
+	let visible = category
 		? expanded.filter((event) => event.categories.some((item) => categoryKey(item) === category))
 		: expanded;
+	if (eventId && eventId.includes("#")) {
+		visible = visible.filter((event) => event.id === eventId);
+	}
 	if (visible.length>10000) return {ok:false,error:'OCCURRENCE_LIMIT_EXCEEDED'};
 	if (source!.native) {
 		const [venues, hydrated] = await Promise.all([resolveEventVenues(ctx, visible, source!.schema), hydrateNativeAssets(ctx, visible, ([undefined, true, 'true'] as unknown[]).includes(input.publicUrls))]);
