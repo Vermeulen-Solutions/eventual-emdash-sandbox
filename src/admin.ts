@@ -21,10 +21,10 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
   const choose=(key:keyof CollectionBindings,label:string):FormField=>({type:'select',action_id:key,label,
     options:[{value:'',label:key==='events'?'Choose a collection':'No collection'},...schemas.map(item=>({value:item.slug,label:(item.label || item.slug)+' ('+item.slug+')'}))],
     initial_value:selected?.[key] ?? (key==='events' ? defaultEvents?.slug ?? '' : schemas.some(item=>item.slug===target(key==='venues'?'venue':'organizer_ref',key))?target(key==='venues'?'venue':'organizer_ref',key):'')});
-  return {blocks:[nav(),{type:'header',text:'Settings'},context('Choose content types; no content is moved or deleted.'),
+  return {blocks:[nav(),{type:'header',text:'Settings'},context('Choose content types.'),
     ...(error ? [{type:'banner' as const,title:'Settings not saved',description:error,variant:'error' as const}] : []),
     {type:'form',block_id:'collection-settings:'+Object.values(selected ?? {}).join(':'),fields:[choose('events','Event collection'),choose('venues','Venue collection'),choose('organizers','Organizer collection')],submit:{action_id:'save-settings',label:'Save settings'}},
-    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Enable only to serve old plugin events without a content type.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
+    {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Enable to serve old plugin events.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
     {type:'actions',elements:[{type:'link',label:'Setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox'}}]}]};
 }
 
@@ -59,7 +59,7 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
     const bindings=await collectionBindings(ctx);
     if(!bindings.schema) {
       const legacyReads=await legacyReadsEnabled(ctx);
-      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose the content type for events. Old events in plugin storage cannot be edited here.'),context(legacyReads?'While unresolved, public calendars show the old events saved inside the plugin.':'Until a content type is chosen, public feeds stop with an error. Turn on “Show old events saved inside the plugin” if events still live in the plugin.'),context('You can copy the old events into a content type; originals stay untouched. See the setup guide.')]};
+      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose an event content type.'),context(legacyReads?'Public calendars show old plugin events.':'Turn on "Show old events saved inside the plugin" in settings if needed.'),context('You can copy the old events into a content type. See the setup guide.')]};
     }
     if(page==='/venues' || page==='/organizers') {
       const slug=page==='/venues'?bindings.venues:bindings.organizers;

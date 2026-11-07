@@ -1,0 +1,7 @@
+# Eventual 0.17.0 — multi-locale UI dictionaries, universal calendar links, and single-event query hydration
+
+- **Expanded UI localizations**: Added complete native interface message dictionaries for German (`de`), Dutch (`nl`), and Spanish (`es`) alongside the existing French (`fr`) and English dictionaries. Locale resolution now normalizes regional language codes (e.g. `de-CH`, `fr-CH`, `nl-BE`, `es-ES`) to their primary dictionary with graceful fallback to English.
+- **Universal 1-click "Add to Calendar" links**: Added `buildCalendarLinks` generator and attached `calendarLinks` to all `PublicEvent` payloads and the `<EventList showCalendarLinks={true} />` Astro component. Emits standard, accessible 1-click URLs for Google Calendar, Outlook Web (Live), Office 365, and direct Apple/desktop iCal (`.ics`) downloads with RFC 5545-compliant UTC date formatting and all-day exclusive end boundaries.
+- **Single-event query hydration**: The `publicEvents` route (`/_emdash/api/plugins/eventual/publicEvents?eventId=...`) now accepts an optional `eventId` query parameter, enabling frontends and headless consumers to fetch single event details and specific occurrences without scanning the entire date range.
+- **Backwards compatibility**: All existing public feed consumers, MCP tools, and storage schemas remain 100% backwards compatible. No new capabilities or permissions required.
+- **Compatibility**: EmDash `>=1.2.0 <2.0.0` (tested on EmDash 1.4.0).

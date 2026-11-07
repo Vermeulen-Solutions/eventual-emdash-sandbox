@@ -2,6 +2,14 @@
 
 All notable changes to Eventual are documented here.
 
+## 0.17.0 - 2026-11-07
+
+- Add complete native UI localization dictionaries for German (`de`), Dutch (`nl`), and Spanish (`es`) alongside French (`fr`) with normalized language-code fallback (`resolveLanguage`).
+- Add universal 1-click "Add to Calendar" links (`buildCalendarLinks`) for Google Calendar, Outlook Web, Office 365, and direct Apple/desktop iCal (`.ics`) downloads, exposed on all `PublicEvent` payloads and the `<EventList showCalendarLinks={true} />` Astro component.
+- Add single-event hydration query support (`eventId` parameter on `publicEvents`) handling both parent IDs and specific occurrence IDs.
+- Full backwards compatibility: zero new permissions, schemas or MCP tools. EmDash `>=1.2.0 <2.0.0` compatible.
+- See [release notes](docs/release-notes-0.17.0.md).
+
 ## 0.16.0 - 2026-11-02
 
 - Parallelize public feed hydration and storage resolution: `getPublicUrl` calls across events, collection binding lookups, and venue/asset resolution branches run concurrently via `Promise.all`, substantially reducing Worker Loader RPC round-trips.

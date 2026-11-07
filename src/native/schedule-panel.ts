@@ -188,17 +188,10 @@ export function scheduleFields(
         ...new Set([
           values.timezone,
           "UTC",
-          "Europe/Paris",
           "Europe/Zurich",
+          "Europe/Paris",
           "Europe/London",
-          "Europe/Berlin",
-          "Europe/Brussels",
-          "Europe/Amsterdam",
           "America/New_York",
-          "America/Los_Angeles",
-          "America/Toronto",
-          "Asia/Tokyo",
-          "Australia/Sydney",
         ]),
       ]
         .map((zone) => ({ value: zone, label: zone.replaceAll("_", " ") }))
@@ -249,7 +242,7 @@ function compileSchedule(values: Record<string, unknown>, prefix = "") {
   if (!start.value || !end.value)
     reject(start.error ||
         end.error ||
-        "Enter times as HH:MM in the selected time zone.");
+        "Enter times as HH:MM.");
   return { all_day: false, timezone, start: start.value, end: end.value };
 }
 
@@ -298,7 +291,7 @@ export async function computeSchedulePanel(
           variant: "error",
           title: "Stored event data needs repair",
           description:
-            "The recurrence or date overrides could not be read. Ask an administrator to review this event.",
+            "The recurrence or date overrides could not be read.",
         },
       ],
     };
@@ -351,12 +344,10 @@ export async function computeSchedulePanel(
             (item) => item.slug === referenceField(schema, field),
           )
         )
-          reject("An administrator must upgrade the event reference schema before selecting a venue or organizer.");
+          reject("Upgrade event reference schema first.");
         const id = text(values[field]);
         if (id && !(await ctx.content?.get(referenceTarget(schema, field), id)))
-          reject("The selected " +
-              (field === "venue" ? "venue" : "organizer") +
-              " no longer exists. Choose another.");
+          reject("Selected entry no longer exists.");
       }
       effect = patch([
         ...(["venue", "organizer_ref"] as const).filter(key=>Object.hasOwn(values,key)).map((key) =>
@@ -395,7 +386,7 @@ export async function computeSchedulePanel(
       } as EventRecord;
       const original = scheduledOccurrence(series, selectedId);
       if (!original)
-        reject("This date no longer belongs to the repeat schedule. Reload the dates.");
+        reject("Date no longer belongs to repeat schedule.");
       windowStart = local(
         original.start,
         original.allDay,
@@ -702,7 +693,7 @@ async function renderPanel(
     form("search-directories", "Find saved venues & organizers", [
       input(
         "directory_search",
-        "Find by name or address (up to 80 matches per list)",
+        "Find by name or address",
         state.search,
       ),
     ]),
@@ -731,13 +722,13 @@ async function renderPanel(
     if (!directory.configured) continue;
     if (directory.current) blocks.push({ type: "fields", fields: [{ label: field === "venue" ? "Saved venue" : "Saved organizer", value: [directory.current.name, directory.current.address].filter(Boolean).join(" — ") }] });
     if (directory.current && !directory.current.published) blocks.push({ type: "banner", variant: "alert", title: "Publish this selection before publishing the event." });
-    const path = "/_emdash/admin/content/" + encodeURIComponent(directory.target);
+    const path = state.origin + "/_emdash/admin/content/" + encodeURIComponent(directory.target);
     blocks.push({ type: "actions", elements: [
-      { type: "link", label: field === "venue" ? "Create venue" : "Manage organizers", target: { kind: "external", url: new URL(path + (field === "venue" ? "/new" : ""), state.origin).href } },
-      ...(directory.current ? [{ type: "link" as const, label: field === "venue" ? "Edit selected venue" : "Edit selected organizer", target: { kind: "external" as const, url: new URL(path + "/" + encodeURIComponent(directory.current.editId), state.origin).href } }] : []),
+      { type: "link", label: field === "venue" ? "Create venue" : "Manage organizers", target: { kind: "external", url: path + (field === "venue" ? "/new" : "") } },
+      ...(directory.current ? [{ type: "link" as const, label: field === "venue" ? "Edit selected venue" : "Edit selected organizer", target: { kind: "external" as const, url: path + "/" + encodeURIComponent(directory.current.editId) } }] : []),
     ] });
   }
-  if (state.search && !venues.matches && !organizers.matches) blocks.push({ type: "context", text: "No results. Try another name or address, or create a venue." });
+  if (state.search && !venues.matches && !organizers.matches) blocks.push({ type: "context", text: "No results." });
   blocks.push({ type: "actions", elements: [{ type: "button", action_id: "search-directories", label: "Refresh directories" }] });
   if (!fields.recurrence) return compactPanel(blocks, state);
   try {
@@ -758,7 +749,7 @@ async function renderPanel(
       ]),
       {
         type: "context",
-        text: `${inspection.total} dates in this window. Schedule changes affect every language; announcement changes affect ${state.locale || "this language"} only.`,
+        text: `${inspection.total} dates in this window.`,
       },
     );
     blocks.push({

@@ -69,17 +69,19 @@ export function buildCalendarLinks(event: CalendarEventInput, siteUrl = ""): Cal
 		outlookEnd = endUtc;
 	}
 
-	const google = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${googleDates}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(loc)}`;
-	const outlookBase = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(loc)}&startdt=${encodeURIComponent(outlookStart)}&enddt=${encodeURIComponent(outlookEnd)}${isAllDayParam}`;
-	const office365 = `https://outlook.office.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(title)}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(loc)}&startdt=${encodeURIComponent(outlookStart)}&enddt=${encodeURIComponent(outlookEnd)}${isAllDayParam}`;
+	const enc = encodeURIComponent;
+	const google = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${enc(title)}&dates=${googleDates}&details=${enc(details)}&location=${enc(loc)}`;
+	const q = `path=/calendar/action/compose&rru=addevent&subject=${enc(title)}&body=${enc(details)}&location=${enc(loc)}&startdt=${enc(outlookStart)}&enddt=${enc(outlookEnd)}${isAllDayParam}`;
+	const outlook = `https://outlook.live.com/calendar/0/deeplink/compose?${q}`;
+	const office365 = `https://outlook.office.com/calendar/0/deeplink/compose?${q}`;
 
 	const eventBaseId = event.id.split("#")[0]!;
-	const icsPath = `/_emdash/api/plugins/eventual/calendar?eventId=${encodeURIComponent(eventBaseId)}`;
+	const icsPath = `/_emdash/api/plugins/eventual/calendar?eventId=${enc(eventBaseId)}`;
 	const ics = siteUrl ? new URL(icsPath, siteUrl).href : icsPath;
 
 	return {
 		google,
-		outlook: outlookBase,
+		outlook,
 		office365,
 		ics,
 	};
