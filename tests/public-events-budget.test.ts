@@ -109,7 +109,8 @@ describe('publicEvents HTTP response contract', { timeout: 60_000 }, () => {
     const failed = await host.actions.routes.request('publicEvents', { method: 'GET', url });
     expect(failed.status).toBe(400);
     expect(failed.headers.get('cache-control')).toBe('private, no-store');
-    expect(await failed.json()).toMatchObject({ success: false, error: { code: 'ROUTE_ERROR', message: 'The sandbox RPC budget is exceeded.' } });
+    // EmDash 1.2 prefixes the error's class name ("SandboxBudgetError: …"); 1.4 sends the message alone.
+    expect(await failed.json()).toMatchObject({ success: false, error: { code: 'ROUTE_ERROR', message: expect.stringMatching(/^(SandboxBudgetError: )?The sandbox RPC budget is exceeded\.$/) } });
     for (const locale of ['fr', 'en']) {
       const success = await host.actions.routes.request('publicEvents', { method: 'GET', url: url + '&publicUrls=false&locale=' + locale });
       expect(success.status).toBe(200);
