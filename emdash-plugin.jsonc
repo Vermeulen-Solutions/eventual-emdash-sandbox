@@ -43,10 +43,12 @@
 		"content:publish",
 		"content:revisions:read",
 		"schema:read",
-		"hooks.content-policy:register"
-
+		"hooks.content-policy:register",
+		"network:request"
 	],
-	"allowedHosts": [],
+	// Language packs only: translations are downloaded once from the public npm CDN,
+	// checked against SHA-256 hashes pinned in this bundle, and kept in plugin KV.
+	"allowedHosts": ["cdn.jsdelivr.net"],
 	"storage": {
 		"events": { "indexes": ["start", "published", ["published", "start"], "venueId", "organizerId"] },
 		"venues": { "indexes": ["name"] },

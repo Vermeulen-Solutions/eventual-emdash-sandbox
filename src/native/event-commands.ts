@@ -100,7 +100,7 @@ export function formatHumanRecurrence(rule: unknown): string {
     const pattern = rule.pattern;
     summary += pattern.type === "dayOfMonth"
       ? ` on day ${pattern.dayOfMonth} (${pattern.missingDayBehavior === "skip" ? "skip missing months" : "use last day if missing"})`
-      : ` on ${pattern.position === "last" ? "last" : ["first", "second", "third", "fourth", "fifth"][pattern.position - 1]} ${pattern.weekday}`;
+      : ` on ${pattern.position === "last" ? "last" : ["first", "second", "third", "fourth", "fifth"][pattern.position - 1]} ${pattern.weekday[0]!.toUpperCase()}${pattern.weekday.slice(1)}`;
   }
   return `${summary} through ${rule.until}`;
 }

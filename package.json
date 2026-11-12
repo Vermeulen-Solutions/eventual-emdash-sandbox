@@ -65,7 +65,7 @@
   ],
   "scripts": {
     "validate": "emdash-plugin validate",
-    "build": "emdash-plugin build && node scripts/build-host.mjs",
+    "build": "npm run i18n:pack && emdash-plugin build && node scripts/build-host.mjs",
     "prepack": "node scripts/build-host.mjs",
     "dev": "emdash-plugin dev",
     "typecheck": "tsc --noEmit",
@@ -81,7 +81,8 @@
     "test:cache": "node scripts/verify-public-cache.mjs",
     "test:editor": "node scripts/verify-editor-host.mjs",
     "profile": "vitest run --config vitest.profile.config.ts",
-    "release:prepare": "node scripts/prepare-release.mjs"
+    "release:prepare": "node scripts/prepare-release.mjs",
+    "i18n:pack": "node node_modules/@vermeulen.solutions/eventual-locales/scripts/pack-manifest.mjs core src/ui/locales"
   },
   "peerDependencies": {
     "@emdash-cms/admin": ">=1.2.0 <2.0.0",
@@ -106,7 +107,8 @@
   "dependencies": {
     "@emdash-cms/blocks": "1.4.0",
     "@lingui/core": "5.9.5",
-    "zod": "4.5.4"
+    "zod": "4.5.4",
+    "@vermeulen.solutions/eventual-locales": "0.1.0"
   },
   "allowScripts": {
     "esbuild": true,

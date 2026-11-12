@@ -2,9 +2,16 @@
 import { createElement as h, useEffect, useRef, useState } from "react";
 import { useLocale } from "@emdash-cms/admin";
 import {i18n} from "@lingui/core";
-import { editorText,fillFrenchCoreMessages } from "./editor-i18n.mjs";
+import { editorText,fillFrenchCoreMessages,loadEditorCatalog,onEditorCatalog } from "./editor-i18n.mjs";
 export { eventualEditor, createPlugin } from "./descriptor.mjs";
-function useText() { const { locale } = useLocale(); useEffect(()=>{fillFrenchCoreMessages(i18n);},[locale]); return value => editorText(value, locale); }
+function useText() {
+  const { locale } = useLocale();
+  const [, rerender] = useState(0);
+  useEffect(()=>{fillFrenchCoreMessages(i18n);},[locale]);
+  // Catalogs load per language; re-render once the admin's language arrives.
+  useEffect(()=>{ const off=onEditorCatalog(()=>rerender(n=>n+1)); loadEditorCatalog(locale); return off; },[locale]);
+  return value => editorText(value, locale);
+}
 
 // Core field widgets receive one value. Scope attendance presentation to the
 // enclosing editor form; this never changes, clears or persists another field.

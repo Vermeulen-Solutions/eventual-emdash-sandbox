@@ -1,9 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { editorText, localizeEventualBlocks, draftSummary,fillFrenchCoreMessages } from "../astro/editor-i18n.mjs";
+import { editorText, localizeEventualBlocks, draftSummary,fillFrenchCoreMessages,loadEditorCatalog } from "../astro/editor-i18n.mjs";
 import {setupI18n} from "@lingui/core";
 import { patchEventualPresentation } from "../astro/editor-compat.mjs";
+await loadEditorCatalog("fr");
 test("French presentation follows UI language and preserves editable data and row titles", () => {
   const source = [{ type: "context", block_id: "eventual-ui", text: "When" }, { type: "form", fields: [{ label: "Repeat", initial_value: "Daily", options: [{ value: "daily", label: "Daily" }] }], submit: { action_id: "apply", label: "Apply dates to draft" } }, { type: "table", columns: [{ label: "Event" }], rows: [{ title: "Repeat", status: "draft", edit: {type:"button",label:"Edit",value:"Daily"} }] }];
   const original = structuredClone(source);
@@ -36,7 +37,7 @@ test("French catalog repairs preserve host translations and English messages",()
   i18n.activate("en");assert.equal(fillFrenchCoreMessages(i18n),false);assert.equal(i18n._("xVT291"),"Live version");
 });
 test("recurrence summaries explain weekdays and monthly missing-day behavior", () => {
-  assert.equal(editorText("every 2 weeks on Monday, Thursday through 2026-12-17", "fr"), "Toutes les 2 semaines, le lundi et le jeudi jusqu’au 17 décembre 2026");
+  assert.equal(editorText("every 2 weeks on Monday, Thursday through 2026-12-17", "fr"), "Toutes les 2 semaines, le lundi et jeudi jusqu’au 17 décembre 2026");
   assert.equal(editorText("monthly on last monday through 2026-12-17", "fr"), "Chaque mois, le dernier lundi jusqu’au 17 décembre 2026");
   assert.match(editorText("monthly on day 31 (use last day if missing) through 2026-12-17", "fr"), /dernier jour du mois/);
 });

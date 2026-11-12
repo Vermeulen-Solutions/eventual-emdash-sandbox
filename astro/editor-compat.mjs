@@ -160,10 +160,12 @@ export function patchEventualPresentation(source) {
   const editPage = 'function ContentEditPage() {';
   if (!source.includes(original) || !source.includes(panel) || !source.includes(fieldLabel) || !source.includes(editPage)) throw new Error("Unsupported EmDash admin presentation adapter. Use the tested compatibility matrix.");
   let patched=source.replace(original, original.replace("{ BlockRenderer,", "{ BlockRenderer as EventualOriginalBlockRenderer,") + `
-import { localizeEventualBlocks, draftSummary as eventualDraftSummary, editorText as eventualEditorText } from ${JSON.stringify(presentationModule)};
+import { localizeEventualBlocks, draftSummary as eventualDraftSummary, editorText as eventualEditorText, loadEditorCatalog as eventualLoadCatalog, onEditorCatalog as eventualOnCatalog } from ${JSON.stringify(presentationModule)};
 function BlockRenderer(props) {
  const {locale}=useLocale();
- const blocks=React$1.useMemo(()=>localizeEventualBlocks(props.blocks, locale), [props.blocks,locale]);
+ const [eventualCatalogTick,eventualSetCatalogTick]=React$1.useState(0);
+ React$1.useEffect(()=>{ const off=eventualOnCatalog(()=>eventualSetCatalogTick(n=>n+1)); eventualLoadCatalog(locale); return off; },[locale]);
+ const blocks=React$1.useMemo(()=>localizeEventualBlocks(props.blocks, locale), [props.blocks,locale,eventualCatalogTick]);
  return jsx(EventualOriginalBlockRenderer, {...props,blocks});
 }`)
     .replace(panel, panel + '\n const {locale: eventualUiLocale}=useLocale();\n if(pluginId === "eventual") title=eventualEditorText(title,eventualUiLocale);')

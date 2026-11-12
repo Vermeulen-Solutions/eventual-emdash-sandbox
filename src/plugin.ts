@@ -2,6 +2,9 @@ import { pluginResponse, pluginRoute, type SandboxedPlugin } from "emdash/plugin
 
 import { handleAdmin } from "./admin";
 import { localizeResponse } from "./ui/localize";
+import { adminTranslator, warmLanguagePack } from "./ui/i18n";
+import { withInvocationBudget } from "./domain/invocation-budget";
+import type { EventualContext } from "./storage";
 import { handleSavedSchedulePanel } from './native/saved-panel';
 import { handlePublicEvents } from "./routes/public-events";
 import { handlePublicEventImage } from "./routes/public-media";
@@ -15,8 +18,17 @@ import { SandboxBudgetError } from './domain/invocation-budget';
 
 const unavailable = (error: Error) => pluginResponse({status: 503, headers: {'content-type':'text/plain; charset=utf-8', 'cache-control':'no-store', 'retry-after':'60'}, body:{kind:'text',value:error.message}});
 
+/** Localize after the handler, with whatever RPC budget the handler left (shared counter). */
+async function localized<T extends Parameters<typeof localizeResponse>[0]>(ctx: EventualContext, locale: string | undefined, render: (ctx: EventualContext) => Promise<T>) {
+	const budgeted = withInvocationBudget(ctx);
+	const response = await render(budgeted);
+	const translate = await adminTranslator(budgeted, locale);
+	return translate ? localizeResponse(response, translate) : response;
+}
+
 const plugin: SandboxedPlugin = {
 	hooks: {
+		"plugin:activate": async (_event, ctx) => { await warmLanguagePack(ctx as EventualContext); },
 		"content:beforeSave": handleContentBeforeSave,
 		"content:beforeDelete": handleContentBeforeDelete,
 		"content:beforePublish": handleContentBeforePublish,
@@ -28,11 +40,11 @@ const plugin: SandboxedPlugin = {
 		...transferRoutes,
 		admin: {
 			permission: "content:edit_any",
-            handler: async (routeCtx, ctx) => localizeResponse(await handleAdmin(routeCtx.input, {...ctx,site:{...ctx.site,url:ctx.site.url || new URL(routeCtx.request.url).origin}}, routeCtx.user), routeCtx.ui?.locale),
+            handler: async (routeCtx, ctx) => localized(ctx as EventualContext, routeCtx.ui?.locale, budgeted => handleAdmin(routeCtx.input, {...budgeted,site:{...budgeted.site,url:budgeted.site.url || new URL(routeCtx.request.url).origin}} as never, routeCtx.user)),
 		},
 		"admin/editor/schedule": {
 			permission: "content:edit_any",
-			handler: async (routeCtx,ctx) => localizeResponse(await handleSavedSchedulePanel(routeCtx,ctx), routeCtx.ui?.locale),
+			handler: async (routeCtx,ctx) => localized(ctx as EventualContext, routeCtx.ui?.locale, budgeted => handleSavedSchedulePanel(routeCtx,budgeted as never)),
 		},
 		publicEvents: pluginRoute({
 			public: true,
