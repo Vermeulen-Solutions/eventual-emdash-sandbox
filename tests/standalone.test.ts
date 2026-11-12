@@ -68,7 +68,7 @@ describe('Sandbox native onboarding',{timeout:60_000},()=>{
        ], submit: { action_id: 'save-repeat', label: 'Save repeat settings' } }
      ]
    }, tr('de'));
-   expect(germanResult.blocks[0].text).toBe('Veranstaltungen');
+   expect(germanResult.blocks[0].text).toBe('Events');
    expect(germanResult.blocks[1].fields[0].options.map((o: any) => o.label)).toEqual(['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']);
    expect(germanResult.blocks[1].submit.label).toBe('Wiederholungseinstellungen speichern');
 

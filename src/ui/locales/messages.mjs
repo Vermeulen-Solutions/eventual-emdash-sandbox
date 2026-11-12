@@ -71,9 +71,15 @@ export function textTranslator(catalog, locale = "en") {
     if (typeof text !== "string" || !text) return text;
     const exact = catalog[text];
     if (exact) return exact.includes("{") ? formatMessage(exact, {}, locale) : exact;
+    // Several patterns can match nested text ("monthly on first Sunday through 2026-12-17").
+    // The outermost one ends with the shortest capture, so it wins; inner parts recurse.
+    let best = null;
     for (const [pattern, names, key] of patterns) {
-      const match = pattern.exec(text);
-      if (!match || !catalog[key]) continue;
+      const match = catalog[key] && pattern.exec(text);
+      if (match && (!best || match[match.length - 1].length < best[0][best[0].length - 1].length)) best = [match, names, key];
+    }
+    if (best) {
+      const [match, names, key] = best;
       const params = {};
       names.forEach((name, index) => {
         const value = match[index + 1];

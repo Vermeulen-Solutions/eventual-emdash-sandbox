@@ -7,7 +7,7 @@ import { resolveLocale } from "./locale.mjs";
  * plugin bundle, kept in plugin KV, and cached in the isolate. Any failure means English
  * for now and another try a few minutes later — localization never breaks a request.
  *
- * manifest: { package, version, namespace, hashes: { de: "<hex sha256>", … } }
+ * manifest: { package, version, namespace, hashes: { de: "<sha256, first 16 bytes, base64>", … } }
  * budget:   optional () => host calls this code may still make. A KV read needs 1; a
  *           download needs 2 more (fetch + KV write).
  */
@@ -21,9 +21,10 @@ export function packUrl(manifest, lang) {
 
 const keyFor = (manifest, lang) => `i18n:${manifest.namespace}:${manifest.version}:${lang}`;
 
+// First 128 bits of the SHA-256, base64 without padding (see packHash in scripts/pack-manifest.mjs).
 async function sha256(text) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return btoa(String.fromCharCode(...new Uint8Array(digest, 0, 16))).slice(0, 22);
 }
 
 /** Fetch, verify and store one pack (2 calls). Returns the messages, or null. */
