@@ -11,7 +11,7 @@
   <a href="https://emdashcms.com"><img src="https://img.shields.io/badge/EmDash-1.2.x%20%7C%201.4.x-0b4d3d" alt="EmDash Compatibility" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-d89521" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6" alt="TypeScript Strict" />
-  <img src="https://img.shields.io/badge/Sandbox-0%20outbound-2ea44f" alt="Zero Outbound Requests" />
+  <img src="https://img.shields.io/badge/Sandbox-1%20host%20(language%20packs)-2ea44f" alt="One outbound host: language packs" />
 </p>
 
 Plan and publish events in [EmDash CMS](https://emdashcms.com). Write announcements, choose venues and organizers, set repeat schedules, and share events through your website and calendar subscriptions.
@@ -27,10 +27,10 @@ In 0.14.x, old events stored inside the plugin are shown only when an administra
 - **Announcements and images:** use EmDash's normal editor, save drafts, then publish.
 - **Flexible schedules:** one-off, daily, weekly or monthly events, with changes to individual dates.
 - **Saved venues and organizers:** choose existing entries instead of retyping them.
-- **Languages:** separate announcements per language, with shared published schedules.
+- **Languages:** separate announcements per language, with shared published schedules. The admin speaks 21 languages, including Arabic and Hebrew right to left.
 - **Calendars:** event downloads and iCalendar subscriptions.
 - **Website integration:** JSON feeds, optional Astro helpers and seven example layouts.
-- **Sandboxed:** declared permissions and no outbound HTTP hosts.
+- **Sandboxed:** declared permissions; the only outbound host is `cdn.jsdelivr.net`, for the admin's language packs, each checked against a hash built into the release.
 
 ## Get Started
 

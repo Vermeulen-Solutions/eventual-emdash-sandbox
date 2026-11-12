@@ -9,7 +9,7 @@ Eventual was conceived as a comprehensive event management solution for EmDash C
 2. **The 50 ms CPU Ceiling**:
    Date mathematics, recurrence calculations, timezone conversions, and Portable Text serialization run close to the 50 ms limit.
 3. **The Capability / Trust Boundary**:
-   Eventual Core currently requests 8 capabilities with `allowedHosts: []`. Bundling external payments (Stripe) or transactional email (confirmations) into Core would require `network:request` and `email:send`, creating an intrusive consent barrier for site owners who simply want an event calendar.
+   Eventual Core requests 9 capabilities; its only host is `cdn.jsdelivr.net`, for hash-checked language packs (`allowedHosts: ["cdn.jsdelivr.net"]`). Bundling external payments (Stripe) or transactional email (confirmations) into Core would require `network:request` and `email:send`, creating an intrusive consent barrier for site owners who simply want an event calendar.
 4. **Bundle & Memory Budget**:
    Cloudflare isolate startup and EmDash registry verification enforce tight limits on bundle size (~130 KB uncompressed). Adding extensive third-party SDKs or multi-megabyte translation dictionaries directly into `backend.js` is non-viable.
 

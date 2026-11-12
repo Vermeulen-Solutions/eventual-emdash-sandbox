@@ -2,6 +2,12 @@
 
 All notable changes to Eventual are documented here.
 
+## Unreleased
+
+- The admin speaks 21 languages: English, French, German, Dutch, Spanish, Italian, Portuguese (Portugal and Brazil), Polish, Czech, Swedish, Danish, Norwegian Bokmål, Finnish, Japanese, Simplified Chinese, Korean, Turkish, Ukrainian, Arabic and Hebrew, with right-to-left layout for Arabic and Hebrew. English is built in; the other languages are language packs from the `@vermeulen.solutions/eventual-locales` npm package, downloaded on first use and kept in plugin storage. The French, German, Dutch and Spanish dictionaries moved out of the bundle into those packs.
+- **New permission:** `network:request` to `cdn.jsdelivr.net` (the public npm CDN), only for the language packs. Each pack is checked against a hash built into the release; without network, a request stays in English and tries again a few minutes later. Administrators approve the plugin again when updating.
+- Table buttons and status badges in admin pages (events list, dates panel) are translated; titles and other data cells are left as they are.
+
 ## 0.17.0 - 2026-11-07
 
 - Add complete native UI localization dictionaries for German (`de`), Dutch (`nl`), and Spanish (`es`) alongside French (`fr`) with normalized language-code fallback (`resolveLanguage`).
