@@ -49,7 +49,7 @@ async function loadCollectionBindings(ctx: EventualContext): Promise<LoadedColle
     collectionSchemas(ctx),
   ]);
   if (selected && (!selected.events || Object.values(selected).some(value => typeof value !== 'string' || (value !== '' && !slug.test(value)))))
-    reject('Invalid collections. Choose them again in Eventual settings.');
+    reject('Invalid collections. Choose them again in Event settings.');
   const events = selected?.events ?? 'events';
   const schema = schemas.find(item => item.slug === events);
   if (selected && !schema) reject('The selected event collection is missing.');
@@ -63,7 +63,7 @@ async function loadCollectionBindings(ctx: EventualContext): Promise<LoadedColle
     organizers: selected?.organizers ?? target('organizer_ref', 'organizers'),
   };
   if(selected) for(const name of [bindings.venues,bindings.organizers])
-    if(name && !schemas.some(item=>item.slug===name)) reject('Selected directory missing. Review Eventual settings.');
+    if(name && !schemas.some(item=>item.slug===name)) reject('Selected directory missing. Review Event settings.');
   return { ...bindings, schema, schemas, configured: !!selected };
 }
 
@@ -77,7 +77,7 @@ export async function saveCollectionBindings(ctx: EventualContext, bindings: Col
   const required: Record<string, string> = {title:'string', description:'portableText', start:'datetime', end:'datetime', start_date:'string', end_date:'string', all_day:'boolean', timezone:'string', recurrence:'json', exceptions:'json', occurrence_content:'json'};
   for (const [name, type] of Object.entries(required)) {
     const field = schema.fields.find(item => item.slug === name);
-    if (!field || field.type !== type) reject('Event collection needs '+name+' ('+type+'). Apply the Eventual blueprint first.');
+    if (!field || field.type !== type) reject('Event collection needs '+name+' ('+type+'). Apply the event blueprint first.');
     const translatable = ['title','description','occurrence_content'].includes(name);
     if (field.translatable !== translatable) reject('Set '+name+' translatable to '+translatable+' before selecting this collection.');
   }

@@ -37,7 +37,7 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
   const page=request.page;
   if(page==='/settings' || request.action_id==='save-settings' || request.action_id==='save-legacy-reads') {
     // plugins:manage is the administrator role in core; use host-attested identity.
-    if(!user || user.role<50) return {blocks:[nav(),context('An administrator must manage Eventual collection settings.')]};
+    if(!user || user.role<50) return {blocks:[nav(),context('Only an administrator can change these settings.')]};
     if(request.action_id==='save-legacy-reads') {
       try {
         const submitted=(request.values as Record<string,unknown>|undefined)?.legacyReads;
@@ -59,11 +59,11 @@ export async function handleAdmin(input:unknown,ctx:EventualContext,user?:Sandbo
     const bindings=await collectionBindings(ctx);
     if(!bindings.schema) {
       const legacyReads=await legacyReadsEnabled(ctx);
-      return {blocks:[nav(),{type:'header',text:'Connect Eventual to content types'},context('Choose an event content type.'),context(legacyReads?'Public calendars show old plugin events.':'Turn on "Show old events saved inside the plugin" in settings if needed.'),context('You can copy the old events into a content type. See the setup guide.')]};
+      return {blocks:[nav(),{type:'header',text:'Connect events to a content type'},context('Choose an event content type.'),context(legacyReads?'Public calendars show old plugin events.':'Turn on "Show old events saved inside the plugin" in settings if needed.'),context('You can copy the old events into a content type. See the setup guide.')]};
     }
     if(page==='/venues' || page==='/organizers') {
       const slug=page==='/venues'?bindings.venues:bindings.organizers;
-      return {blocks:[nav(),context('Create and edit these entries in the EmDash content editor.'),...(slug?[collectionLink(ctx,slug,page==='/venues'?'Manage venues':'Manage organizers')]:[context('No collection selected. Ask an administrator to configure it in Eventual settings.')])]};
+      return {blocks:[nav(),context('Create and edit these entries in the EmDash content editor.'),...(slug?[collectionLink(ctx,slug,page==='/venues'?'Manage venues':'Manage organizers')]:[context('No collection selected. Ask an administrator to configure it in Event settings.')])]};
     }
     return {blocks:[nav(),...(await nativeWorkspace(request,ctx,user)).blocks]};
   } catch(error) {return {blocks:[nav(),{type:'banner',title:'Review collection settings',description:error instanceof Error?error.message:'Collections could not be loaded.',variant:'error'}]};}

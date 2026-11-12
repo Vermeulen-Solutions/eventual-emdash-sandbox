@@ -45,7 +45,7 @@ test('English legacy switch persists booleans and an unconfigured feed fails clo
  const feed=async()=>{const response=await page.request.get('/_emdash/api/plugins/eventual/publicEvents?from='+fixtures.from+'&through='+fixtures.through);return response.json();};
  const unavailable=await feed();
  expect(unavailable.success).toBe(false);
- expect(unavailable.error.message).toContain('Eventual is not connected to a content type');
+ expect(unavailable.error.message).toContain('Events are not connected to a content type');
  expect(unavailable.error.message).toContain('Show old events saved inside the plugin');
  for(const enabled of [true,false]) {
   await toggle.setChecked(enabled);

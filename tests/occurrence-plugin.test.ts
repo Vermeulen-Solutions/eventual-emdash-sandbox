@@ -63,7 +63,7 @@ describe("legacy occurrence MCP compatibility", {timeout:60_000}, () => {
     })) as { event: EventRecord };
     expect(details.event.exceptions).toHaveLength(500);
     const page = await h.admin.loadPage("/events");
-    expect(JSON.stringify(page)).toContain("Connect Eventual to content types");
+    expect(JSON.stringify(page)).toContain("Connect events to a content type");
     expect(JSON.stringify(page)).not.toContain("save-event");
     expect(JSON.stringify(page)).toContain("copy the old events into a content type");
   }, 60000);

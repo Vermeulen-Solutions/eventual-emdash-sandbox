@@ -29,9 +29,9 @@ describe('Sandbox native onboarding',{timeout:60_000},()=>{
  const h=await createPluginRuntimeTestHost({site:{url:'https://audit.example.com',locale:'fr'}});
  try{const user=await h.fixtures.user({email:'onboarding@example.com',role:'editor',emailVerified:true});
  const page=await h.admin.loadPage('/events',{user});expect(validateBlockResponse(page,{}).valid).toBe(true);
- expect(JSON.stringify(page)).toContain('Connect Eventual to content types');expect(JSON.stringify(page)).not.toContain('save-event');
+ expect(JSON.stringify(page)).toContain('Connect events to a content type');expect(JSON.stringify(page)).not.toContain('save-event');
  await h.admin.act('/events','new-event',{user});expect(await h.inspect.storage.list('events')).toHaveLength(0);
- expect(JSON.stringify(await h.admin.loadPage('/settings',{user}))).toContain('An administrator must');
+ expect(JSON.stringify(await h.admin.loadPage('/settings',{user}))).toContain('Only an administrator can change');
  }finally{await h.dispose();}
  });
  it('lets an administrator switch old plugin events on and off from settings',async()=>{
@@ -43,7 +43,7 @@ describe('Sandbox native onboarding',{timeout:60_000},()=>{
  expect(JSON.stringify(before)).toContain('Show old events saved inside the plugin');
  expect(await h.inspect.setting('legacyReads')).toBeNull();
  const denied=await h.admin.submit('/settings','save-legacy-reads',{legacyReads:true},{user:editor});
- expect(JSON.stringify(denied)).toContain('An administrator must');
+ expect(JSON.stringify(denied)).toContain('Only an administrator can change');
  expect(await h.inspect.setting('legacyReads')).toBeNull();
  const invalid=await h.admin.submit('/settings','save-legacy-reads',{legacyReads:'invalid'},{user});
  expect(JSON.stringify(invalid)).toContain('The legacy read setting must be on or off.');

@@ -16,7 +16,7 @@ const failure = (message:string):BlockResponse => ({blocks:[{type:'banner',title
 export async function handleSavedSchedulePanel(route: SandboxedRouteContext, ctx: EventualContext):Promise<BlockResponse> {
   ctx = withInvocationBudget(ctx);
   const schema = await eventSchema(ctx), identity = route.ui?.entry;
-  if (!schema || identity?.collection !== schema.slug) return {blocks:[{type:'context',text:'Eventual manages the event collection selected in its settings.'}]};
+  if (!schema || identity?.collection !== schema.slug) return {blocks:[{type:'context',text:'Eventual RSVP manages the collection chosen in Event settings.'}]};
   const entry = await ctx.content?.get(schema.slug, identity.id);
   if (!entry) return failure('This event no longer exists.');
   const revision = entry.draftRevisionId ? await ctx.content?.getRevision?.(schema.slug, entry.id, entry.draftRevisionId) : undefined;

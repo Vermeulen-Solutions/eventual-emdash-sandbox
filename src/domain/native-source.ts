@@ -25,7 +25,7 @@ export async function nativeSchema(
   if (!ctx.schema || !ctx.content) return undefined;
   const schema = await eventSchema(ctx);
   if (schema && !schema.fields?.some((field) => field.slug === "start"))
-    reject("Not an Eventual schema.");
+    reject("Not an event schema.");
   return schema;
 }
 export async function listNative(
@@ -58,7 +58,7 @@ export async function readEventSource(ctx: EventualContext, through?: string) {
   if (!schema) {
     // Private plugin storage is pre-0.13 data: public reads use it only on explicit opt-in.
     if (!(await legacyReadsEnabled(ctx)))
-      reject('Eventual is not connected to a content type. Turn on "Show old events saved inside the plugin".');
+      reject('Events are not connected to a content type. Turn on "Show old events saved inside the plugin".');
     return {
       native: false,
       events: (await listEvents(ctx, {

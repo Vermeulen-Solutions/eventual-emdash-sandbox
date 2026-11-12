@@ -20,10 +20,10 @@ export function formatCalendarFeed(
 	const lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
-		"PRODID:-//Vermeulen Solutions//Eventual Calendar//EN",
+		"PRODID:-//Vermeulen Solutions//Eventual RSVP//EN",
 		"CALSCALE:GREGORIAN",
 		"METHOD:PUBLISH",
-		`X-WR-CALNAME:${escapeText(calendarName || "Eventual events")}`,
+		`X-WR-CALNAME:${escapeText(calendarName || "Eventual RSVP")}`,
 		...events.flatMap((event) => eventLines(event, host, generatedAt)),
 		...[...uniqueCancellations.values()].flatMap((item) => cancellationLines(item, host, generatedAt)),
 		"END:VCALENDAR",

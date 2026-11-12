@@ -12,14 +12,14 @@ import {collectionSchemas} from './domain/collections';
 /** Native companion: navigation, inspection and clean draft duplication only. */
 export async function handleAdmin(input:unknown,ctx:EventualContext,user?:SandboxedRouteContext['user']):Promise<BlockResponse> {
  const request=input as Record<string,unknown>,schema=await nativeSchema(ctx);
- if(!schema) return {blocks:[{type:'context',text:'Choose an event collection in Eventual settings.'}]};
+ if(!schema) return {blocks:[{type:'context',text:'Choose an event collection in Event settings.'}]};
  const link=(path:string,label:string)=>({type:'link' as const,label,target:{kind:'external' as const,url:new URL(path,ctx.site.url).href}});
  const content='/_emdash/admin/content/'+encodeURIComponent(schema.slug);
  if(request.page==='widget:upcoming-events') {
   const feed=await handlePublicEvents({},ctx);
   return {blocks:[{type:'header',text:'Upcoming events'},...(feed.events ?? []).slice(0,5).map(event=>({type:'section' as const,block_id:'eventual-verbatim',text:event.title+' · '+event.start}))]};
  }
- const blocks:BlockResponse['blocks']=[{type:'header',text:'Events'},{type:'context',text:'Create and edit announcements in EmDash. Save first, then open the Eventual schedule panel.'}];
+ const blocks:BlockResponse['blocks']=[{type:'header',text:'Events'},{type:'context',text:'Create and edit announcements in EmDash. Save first, then open the Dates, venue & repeat panel.'}];
  if(request.action_id==='duplicate-event') {
   if(!user || typeof request.value!=='string') reject('Sign in before creating a copy.');
   const entry=await ctx.content!.get(schema.slug,request.value);

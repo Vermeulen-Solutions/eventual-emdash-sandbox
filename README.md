@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./images/registry/banner-v1.png" alt="Eventual - Event Management for EmDash CMS" width="100%" />
+  <img src="./images/registry/banner-v1.png" alt="Eventual RSVP - Event Management for EmDash CMS" width="100%" />
 </p>
 
-# Eventual
+# Eventual RSVP – Core
 
 <p align="center">
   <a href="https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/actions/workflows/ci.yml"><img src="https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
@@ -34,12 +34,12 @@ In 0.14.x, old events stored inside the plugin are shown only when an administra
 
 ## Get Started
 
-1. An administrator [installs Eventual and connects the collections](./docs/collection-setup.md).
+1. An administrator [installs Eventual RSVP and connects the collections](./docs/collection-setup.md).
 2. Editors follow [Managing events](./docs/user-guide.md): save an announcement, open **Dates, venue & repeat**, then publish.
 3. Site builders use the [developer guide](./docs/native-modernization.md) to connect visitor pages.
 
 For the opt-in HTML cache integration, see [public feed caching](./docs/public-feed-caching.md)
-and [release notes](./docs/release-notes-0.15.0.md). Eventual does not enable site caching.
+and [release notes](./docs/release-notes-0.15.0.md). Eventual RSVP does not enable site caching.
 
 Requires **EmDash >=1.2.0 <2.0.0**; tested on 1.2.0 and 1.4.0. **1.4.0 is recommended** because it fixes nested Block Kit forms and Cloudflare plugin mutations; 1.2/1.3 remain supported with those host limitations. Upgrades from 0.12.x or earlier need the [native-content upgrade](./docs/upgrade-0.13.0.md). Source/developer tooling needs Node 24+.
 
@@ -66,10 +66,10 @@ Visitors can view full event details, join virtual meetings, get venue direction
 ---
 
 ### 3. Native Event Editor
-Write announcements in EmDash's rich-text editor. Save the draft, then open Dates, venue & repeat for local dates, recurrence and individual-date changes. The Eventual workspace links to the selected content types and offers safe draft duplication.
+Write announcements in EmDash's rich-text editor. Save the draft, then open Dates, venue & repeat for local dates, recurrence and individual-date changes. The Eventual RSVP workspace links to the selected content types and offers safe draft duplication.
 
 <p align="center">
-  <img src="./images/registry-0.13.0/native-fr-editor-desktop.png" alt="French native Eventual editor" width="90%" />
+  <img src="./images/registry-0.13.0/native-fr-editor-desktop.png" alt="French native Eventual RSVP editor" width="90%" />
 </p>
 
 ---
@@ -99,11 +99,11 @@ Visitors can switch between seven viewing formats via query parameter (e.g., `/e
 
 ## For Developers
 
-Eventual's Registry package supplies the sandbox backend and editor controls. Optional Astro, schema and transfer helpers use the repository's source package. GitHub download versions and Registry releases are listed separately; the badges above identify each.
+Eventual RSVP's Registry package supplies the sandbox backend and editor controls. Optional Astro, schema and transfer helpers use the repository's source package. GitHub download versions and Registry releases are listed separately; the badges above identify each.
 
 Use the **actual installed plugin ID** in API URLs and MCP tool names. Config-managed sites normally use `eventual`; Registry sites get a generated ID. Pass `pluginId` to `fetchPublicFeed` for a Registry installation; the showcase defaults to `eventual`.
 
-The [developer guide](./docs/native-modernization.md) covers public JSON/ICS/image routes, SSR dispatch, tool names, settings, transfer formats, permissions and sandbox limits. It also explains installing matching 0.15.0 source helpers. Eventual's MCP tools inspect native data; native edits and publication use EmDash's core tools.
+The [developer guide](./docs/native-modernization.md) covers public JSON/ICS/image routes, SSR dispatch, tool names, settings, transfer formats, permissions and sandbox limits. It also explains installing matching 0.15.0 source helpers. Eventual RSVP's MCP tools inspect native data; native edits and publication use EmDash's core tools.
 
 For source changes:
 
@@ -135,4 +135,4 @@ The backend shares EmDash's fixed sandbox RPC budget. Large feeds and migrations
 
 ## License
 
-Eventual is licensed under the [MIT License](./LICENSE).
+Eventual RSVP is licensed under the [MIT License](./LICENSE).

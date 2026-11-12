@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Eventual are documented here.
+All notable changes to Eventual RSVP – Core (formerly Eventual RSVP) are documented here.
 
 ## Unreleased
 
@@ -41,8 +41,8 @@ All notable changes to Eventual are documented here.
 
 ## 0.14.0 - 2026-10-14 (breaking)
 
-- **Public reads no longer fall back to private plugin storage by default.** When no event content type is configured or the selected one is missing, `publicEvents`, the calendar feed and the calendar-state reconciliation now fail with an actionable error instead of silently serving old plugin records — the failure mode that labelled French events `[EN]` and hid the events from editors. Administrators turn on **Show old events saved inside the plugin** in Eventual settings, or set `legacyReads` through MCP `updateSettings`, to keep serving that data.
-- The settings page shows the switch with a plain-language explanation, and the "Connect Eventual to content types" panel says whether public feeds fail or show the old events.
+- **Public reads no longer fall back to private plugin storage by default.** When no event content type is configured or the selected one is missing, `publicEvents`, the calendar feed and the calendar-state reconciliation now fail with an actionable error instead of silently serving old plugin records — the failure mode that labelled French events `[EN]` and hid the events from editors. Administrators turn on **Show old events saved inside the plugin** in Eventual RSVP settings, or set `legacyReads` through MCP `updateSettings`, to keep serving that data.
+- The settings page shows the switch with a plain-language explanation, and the "Connect Eventual RSVP to content types" panel says whether public feeds fail or show the old events.
 - Migration, legacy write tools and native reads are unchanged. See [release notes](docs/release-notes-0.14.0.md).
 - Acceptance restored French recurrence weekday labels, refreshed the settings screenshot, and verified the live switch on EmDash 1.2.0. [Publication record](audit/releases/0.14.0/README.md).
 
@@ -73,7 +73,7 @@ All notable changes to Eventual are documented here.
 ## 0.13.0 - 2026-10-07 (breaking)
 
 - Requires EmDash >=1.2.0 <2.0.0. Native content types own events, venues, organizers, rich text, translations, drafts, revisions and publication.
-- Self-contained sandbox schedule/recurrence/occurrence controls; no mandatory Eventual frontend/host package.
+- Self-contained sandbox schedule/recurrence/occurrence controls; no mandatory Eventual RSVP frontend/host package.
 - Configurable collections, validated directory references, dependency guards, native MCP inspection/export and safe duplication.
 - Clean default schemas: 19 event fields, comma-separated categories in core, no duplicate category control or default prototype metadata.
 - Optional schema exporter/MCP setup prompt and explicit opt-in non-destructive migration compatibility.
@@ -91,7 +91,7 @@ Initial native-collection modernization. Upgrade through the breaking 0.13.0 run
 
 ## 0.11.1
 
-- Allow EmDash Editors to manage Eventual events, venues, organizers, and settings through the Editor-level `content:edit_any` permission. MCP management tools and plugin installation remain restricted to administrators.
+- Allow EmDash Editors to manage Eventual RSVP events, venues, organizers, and settings through the Editor-level `content:edit_any` permission. MCP management tools and plugin installation remain restricted to administrators.
 
 ## 0.11.0
 
@@ -110,7 +110,7 @@ Initial native-collection modernization. Upgrade through the breaking 0.13.0 run
 
 - Event list publication status and upcoming/past start date filters that persist during pagination.
 - Stale event and venue editing detection to prevent concurrent overwrite collisions.
-- Site integration guidance in Eventual Settings (public JSON feed and iCalendar paths, link to Astro example).
+- Site integration guidance in Eventual RSVP Settings (public JSON feed and iCalendar paths, link to Astro example).
 
 ## 0.9.2
 
@@ -119,7 +119,7 @@ Initial native-collection modernization. Upgrade through the breaking 0.13.0 run
 
 ## 0.9.1
 
-- Correct registry installation guidance and event editor admin hints to match current EmDash plugin manager navigation (**Admin → Plugins → Eventual → Agent access**).
+- Correct registry installation guidance and event editor admin hints to match current EmDash plugin manager navigation (**Admin → Plugins → Eventual RSVP → Agent access**).
 
 ## 0.9.0
 
@@ -160,7 +160,7 @@ Initial native-collection modernization. Upgrade through the breaking 0.13.0 run
 
 ## 0.5.0
 
-- Initial MIT-licensed release of sandboxed Eventual plugin for EmDash CMS.
+- Initial MIT-licensed release of sandboxed Eventual RSVP plugin for EmDash CMS.
 - Event and venue storage in plugin-owned SQLite KV database.
 - Public JSON feed (`/_emdash/api/plugins/eventual/publicEvents`) and iCalendar subscription (`/_emdash/api/plugins/eventual/calendar`).
 - Media library cover image integration (up to 8 MiB).

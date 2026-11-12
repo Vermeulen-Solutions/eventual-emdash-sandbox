@@ -125,7 +125,7 @@ export async function migrateToNative(
     const schemas = await collectionSchemas(ctx);
     const eventsSchema = await eventSchema(ctx);
     if (!eventsSchema)
-      reject("Apply the Eventual events blueprint before migrating.");
+      reject("Apply the event blueprint before migrating.");
     const reference = referenceTarget(eventsSchema,"venue");
     const venueField = referenceField(eventsSchema,"venue");
     if (!eventsSchema.fields.some(field => field.slug === venueField))
