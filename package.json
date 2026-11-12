@@ -108,7 +108,7 @@
     "@emdash-cms/blocks": "1.4.0",
     "@lingui/core": "5.9.5",
     "zod": "4.5.4",
-    "@vermeulen.solutions/eventual-locales": "0.1.0"
+    "@vermeulen.solutions/eventual-locales": "0.1.1"
   },
   "allowScripts": {
     "esbuild": true,
