@@ -219,6 +219,10 @@ describe("Milestone 3: Multilingual Calendar Feeds & iCalendar", () => {
 
 	describe("handleCalendarFeed - end-to-end multi-locale feed generation", () => {
 		it("serves localized feed from native content collections", async () => {
+			// The feed lists upcoming events only: pin the clock before the fixture dates (10–12 Nov 2026).
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z"));
+			try {
 			const mockEvents = [
 				{
 					id: "event-fr",
@@ -326,6 +330,9 @@ describe("Milestone 3: Multilingual Calendar Feeds & iCalendar", () => {
 			expect(enFeed).not.toContain("Symposium International");
 			// Stable UID verification between FR and EN feeds!
 			expect(enFeed).toContain("UID:eventual-tg-symposium@mysite.com");
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 	});
 });
