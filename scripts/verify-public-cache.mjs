@@ -87,10 +87,23 @@ const logPath = resolve(root, 'reports/public-cache-host.log');
 writeFileSync(logPath, '');
 let server, token, authCookie;
 function start(args) {
-  server = spawn(process.execPath, args, { cwd: work, windowsHide: true, env: { ...process.env, EVENTUAL_CACHE_TEST_TOKEN: token ?? '', HOST: '127.0.0.1', PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe'] });
+  // Own process group on POSIX, so stop() also ends the workerd sandbox processes the host starts.
+  server = spawn(process.execPath, args, { cwd: work, windowsHide: true, detached: process.platform !== 'win32', env: { ...process.env, EVENTUAL_CACHE_TEST_TOKEN: token ?? '', HOST: '127.0.0.1', PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe'] });
   for (const stream of [server.stdout, server.stderr]) stream.on('data', data => appendFileSync(logPath, data));
 }
-async function stop() { if (server?.exitCode === null) { server.kill(); await once(server, 'exit'); } }
+// On Linux SIGTERM alone left the host (or its workerd children, which hold the log pipes) running and
+// the script waiting until CI's 30-minute limit. End the whole group; force it after 10 seconds.
+async function stop() {
+  if (!server) return;
+  const signal = sig => { try { if (process.platform === 'win32') server.kill(sig); else process.kill(-server.pid, sig); } catch {} };
+  if (server.exitCode === null && server.signalCode === null) {
+    const exited = once(server, 'exit');
+    signal('SIGTERM');
+    if (!await Promise.race([exited.then(() => true), new Promise(resolve => setTimeout(resolve, 10_000, false))])) { signal('SIGKILL'); await exited; }
+  }
+  if (process.platform !== 'win32') signal('SIGKILL'); // children left in the group
+  server.stdout?.destroy(); server.stderr?.destroy();
+}
 async function ready(path) {
   for (let attempt = 0; attempt < 80; attempt++) {
     if (server.exitCode !== null) throw Error('Host exited; inspect ' + logPath);
