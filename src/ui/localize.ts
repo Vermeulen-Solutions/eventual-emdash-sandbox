@@ -14,8 +14,13 @@ export function localizeResponse(response: BlockResponse, translate: Translate):
     return Object.fromEntries(Object.entries(item).map(([key, child]) => {
       if (['value', 'initial_value', 'target', 'condition', 'patch'].includes(key)) return [key, child];
       if (key === 'options' && verbatimOptions.has(String(item.action_id))) return [key, (child as { value: string; label: string }[]).map(option => option.value === '' ? { ...option, label: translate(option.label) } : option)];
-      // Table cells and directory/editorial button names are data, not UI copy.
-      if (key === 'rows') return [key, child];
+      // Text cells are data (titles, dates), not UI copy: only a row's buttons and links, its status
+      // badges ("draft" → "Draft" → catalog) and the "{date} (all day)" suffix are translated.
+      if (key === 'rows') return [key, (child as Record<string, unknown>[]).map(row => Object.fromEntries(Object.entries(row).map(([cell, text]) => {
+        if (typeof text != 'string') return [cell, walk(text)];
+        const word = text[0]?.toUpperCase() + text.slice(1), out = (item.columns as { key: string; format?: string }[]).some(c => c.key == cell && c.format == 'badge') ? translate(word) : cell == 'effective' ? translate(text) : text;
+        return [cell, out == word ? text : out];
+      })))];
       if (key === 'label' && item.action_id === 'edit-organizer') return [key, child];
       return [key, keys.has(key) && typeof child === 'string' ? translate(child) : walk(child)];
     }));

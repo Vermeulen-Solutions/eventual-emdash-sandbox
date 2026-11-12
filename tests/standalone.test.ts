@@ -55,6 +55,16 @@ describe('Sandbox native onboarding',{timeout:60_000},()=>{
  expect(await h.inspect.setting('legacyReads')).toBe(false);
  }finally{await h.dispose();}
  });
+ it('localizes table buttons, status badges and the all-day suffix but keeps data cells',()=>{
+ const result:any=localizeResponse({blocks:[{type:'table',page_action_id:'p',columns:[{key:'title',label:'Event'},{key:'status',label:'Status',format:'badge'},{key:'effective',label:'Current date'},{key:'edit',label:'Edit',format:'element'}],rows:[
+  {title:'Draft',status:'draft',effective:'12 Nov 2026 (all day)',edit:{type:'button',action_id:'duplicate-event',label:'Duplicate',value:'Edit'}},
+  {title:'Edit',status:'modified',effective:'12 Nov 2026',edit:{type:'link',label:'Edit',target:{kind:'external',url:'https://x.test/Edit'}}}]}]}, tr('fr'));
+ const [a,b]=result.blocks[0].rows;
+ expect([a.title,a.status,a.effective,a.edit.label,a.edit.value]).toEqual(['Draft','Brouillon','12 Nov 2026 (journée entière)','Dupliquer','Edit']);
+ expect([b.title,b.status,b.effective,b.edit.label,b.edit.target.url]).toEqual(['Edit','modified','12 Nov 2026','Modifier','https://x.test/Edit']);
+ const english:any=localizeResponse({blocks:[{type:'table',page_action_id:'p',columns:[{key:'status',label:'Status',format:'badge'}],rows:[{status:'draft'}]}]},t=>t);
+ expect(english.blocks[0].rows[0].status).toBe('draft');
+ });
  it('localizes controls while preserving collection labels and initial values',()=>{ const result:any=localizeResponse({blocks:[{type:'header',text:'Events'},{type:'section',block_id:'eventual-verbatim:2026-10-19T08:00:00Z',text:'Daily'},{type:'form',block_id:'unchanged',fields:[{type:'text_input',action_id:'title',label:'Title',initial_value:'Daily'},{type:'select',action_id:'venues',label:'Venue collection',initial_value:'hall',options:[{label:'Daily',value:'hall'}]}],submit:{action_id:'save-settings',label:'Save settings'}}]}, tr('fr'));
  expect(result.blocks[0].text).toBe('Événements');expect(result.blocks[1].text).toBe('Daily');expect(result.blocks[2].fields[0].initial_value).toBe('Daily');expect(result.blocks[2].fields[1].options).toEqual([{label:'Daily',value:'hall'}]);expect(validateBlockResponse(result,{}).valid).toBe(true);
  });
