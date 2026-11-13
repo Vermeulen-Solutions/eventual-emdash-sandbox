@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./images/registry/banner-v1.png" alt="Eventual RSVP - Event Management for EmDash CMS" width="100%" />
+  <img src="./images/registry/banner-v2.png" alt="Eventual RSVP – Core: events for EmDash CMS" width="100%" />
 </p>
 
 # Eventual RSVP – Core

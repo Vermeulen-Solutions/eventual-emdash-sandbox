@@ -13,7 +13,7 @@ const events=[
 let state="populated",site,browser;
 const output=resolve("reports/public-visual");mkdirSync(output,{recursive:true});
 const cms=createServer((request,response)=>{
-  if(request.url === "/poster.png") {response.setHeader("content-type","image/png");response.end(readFileSync("images/registry/banner-v1.png"));return;}
+  if(request.url === "/poster.png") {response.setHeader("content-type","image/png");response.end(readFileSync("images/registry/banner-v2.png"));return;}
   if(state === "error") {response.writeHead(503);response.end("Unavailable fixture");return;}
   response.setHeader("content-type","application/json");
   const url=new URL(request.url,"http://fixture.test");
