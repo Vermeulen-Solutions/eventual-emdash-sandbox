@@ -31,7 +31,7 @@ export function directionsUrl(destination: string): string {
 }
 
 export function safeHttpUrl(value: string): string {
-  if (!value.trim()) return "";
+  if (typeof value !== "string" || !value.trim()) return "";
   try {
     const url = new URL(value);
     // workerd's URL parser can accept an empty HTTP authority (e.g. "https://").

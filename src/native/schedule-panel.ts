@@ -1,3 +1,4 @@
+import { text } from "../domain/text";
 import { reject } from '../domain/messages';
 import type {
   BlockResponse,
@@ -46,7 +47,6 @@ import {
 } from "../domain/portable-text";
 import { directoryChoices } from "./directory";
 
-const text = (value: unknown) => (typeof value === "string" ? value : "");
 const object = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -89,7 +89,7 @@ const select = (
   options,
   initial_value: text(value),
 });
-const form = (
+export const form = (
   id: string,
   label: string,
   fields: FormField[],

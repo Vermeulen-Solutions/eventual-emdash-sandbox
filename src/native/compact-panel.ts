@@ -1,6 +1,6 @@
 import type {BlockResponse,FormField,ActionElement} from '@emdash-cms/blocks';
 import type {EventualContext} from '../storage';
-import {scheduleFields} from './schedule-panel';
+import {scheduleFields,form} from './schedule-panel';
 import {recurrenceToFormValues,formatHumanRecurrence} from './event-commands';
 import {inspectNativeOccurrences} from './occurrence-service';
 import {normalizeNativeSchedule} from '../domain/native-validation';
@@ -15,7 +15,6 @@ import {collectionSchemas} from '../domain/collections';
 const input=(id:string,label:string,value:unknown='',multiline=false):FormField=>({type:'text_input',action_id:id,label,initial_value:String(value ?? ''),multiline});
 const select=(id:string,label:string,options:{value:string;label:string}[],value:unknown):FormField=>({type:'select',action_id:id,label,options,initial_value:String(value ?? '')});
 const date=(id:string,label:string,value:unknown):FormField=>({type:'date_input',action_id:id,label,initial_value:String(value ?? '')});
-const form=(id:string,label:string,fields:FormField[]):BlockResponse['blocks'][number]=>({type:'form',block_id:id,fields,submit:{action_id:id,label}});
 const button=(action_id:string,label:string,value:unknown):ActionElement=>({type:'button',action_id,label,value});
 const section=(label:string,blocks:BlockResponse['blocks'],open=false):BlockResponse['blocks'][number]=>({type:'accordion',label,blocks,default_open:open});
 type State={selectedId:string;offset:number;windowStart?:string;locale:string;uiLocale:string;values?:Record<string,unknown>;error?:string;message?:string;action?:string};

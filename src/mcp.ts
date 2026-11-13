@@ -53,6 +53,8 @@ import { normalizeVenueRecord, localizedVenue } from "./domain/venue-adapter";
 import { nativeEntryToEventRecord } from "./domain/event-expansion";
 import {withInvocationBudget} from './domain/invocation-budget';
 
+const notFound = () => ({ ok: false as const, error: "NOT_FOUND" as const });
+
 function route(
   schema: Parameters<typeof validateMcpInput>[0],
   run: (input: any, ctx: EventualContext) => Promise<unknown>,
@@ -244,7 +246,7 @@ export const mcpRoutes = {
     "updateOrganizer",
     async (input, ctx) => {
       const previous = await organizerCollection(ctx).get(input.id);
-      if (!previous) return { ok: false, error: "NOT_FOUND" };
+      if (!previous) return notFound();
       return saveOrganizer(
         ctx,
         { ...previous, ...input.patch },
@@ -323,9 +325,9 @@ export const mcpRoutes = {
       const eventCollection = await nativeSchema(ctx);
       if (eventCollection) {
         const entry = await ctx.content?.get(eventCollection.slug, id);
-        if (!entry) return { ok: false, error: "NOT_FOUND" };
+        if (!entry) return notFound();
         const event = nativeEntryToEventRecord(entry);
-        if (!event) return { ok: false, error: "NOT_FOUND" };
+        if (!event) return notFound();
         const schema = await nativeSchema(ctx);
         const venues = await resolveEventVenues(ctx, [event], schema);
         return {
@@ -335,7 +337,7 @@ export const mcpRoutes = {
         };
       }
       const event = await getEvent(ctx, id);
-      if (!event) return { ok: false, error: "NOT_FOUND" };
+      if (!event) return notFound();
       return {
         ok: true,
         event,
@@ -355,9 +357,9 @@ export const mcpRoutes = {
       const eventCollection = await nativeSchema(ctx);
       if (eventCollection) {
         const entry = await ctx.content?.get(eventCollection.slug, input.id);
-        if (!entry) return { ok: false, error: "NOT_FOUND" };
+        if (!entry) return notFound();
         const event = nativeEntryToEventRecord(entry);
-        if (!event) return { ok: false, error: "NOT_FOUND" };
+        if (!event) return notFound();
         return {
           ok: true,
           eventId: event.id,
@@ -367,7 +369,7 @@ export const mcpRoutes = {
       }
 
       const event = await getEvent(ctx, input.id);
-      if (!event) return { ok: false, error: "NOT_FOUND" };
+      if (!event) return notFound();
       return {
         ok: true,
         eventId: event.id,
@@ -384,7 +386,7 @@ export const mcpRoutes = {
   "mcp/events/update": route("updateEvent", async ({ id, patch }, ctx) => {
     if (!Object.keys(patch).length) return { ok: false, error: "EMPTY_PATCH" };
     const previous = await getEvent(ctx, id);
-    if (!previous) return { ok: false, error: "NOT_FOUND" };
+    if (!previous) return notFound();
     const current = eventToDraft(previous);
     const recurrence =
       patch.recurrence === undefined ? previous.recurrence : patch.recurrence;
@@ -412,7 +414,7 @@ export const mcpRoutes = {
   }),
   "mcp/events/publish": route("getEvent", async ({ id }, ctx) => {
     const event = await getEvent(ctx, id);
-    if (!event) return { ok: false, error: "NOT_FOUND" };
+    if (!event) return notFound();
     const updated = {
       ...event,
       published: true,
@@ -424,7 +426,7 @@ export const mcpRoutes = {
   }),
   "mcp/events/unpublish": route("getEvent", async ({ id }, ctx) => {
     const event = await getEvent(ctx, id);
-    if (!event) return { ok: false, error: "NOT_FOUND" };
+    if (!event) return notFound();
     const updated = {
       ...event,
       published: false,
@@ -440,7 +442,7 @@ export const mcpRoutes = {
   })),
   "mcp/events/exception/set": route("setOccurrenceException", async (input, ctx) => {
     const event = await getEvent(ctx, input.eventId);
-    if (!event) return { ok: false, error: "NOT_FOUND" };
+    if (!event) return notFound();
     if (!event.recurrence) return { ok: false, error: "NOT_RECURRING" };
     const day = input.recurrenceId.slice(0, 10);
     const timedId = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -538,7 +540,7 @@ export const mcpRoutes = {
     "removeOccurrenceException",
     async ({ eventId, recurrenceId }, ctx) => {
       const event = await getEvent(ctx, eventId);
-      if (!event) return { ok: false, error: "NOT_FOUND" };
+      if (!event) return notFound();
       const exceptions = event.exceptions.filter(
         (item) => item.recurrenceId !== recurrenceId,
       );
@@ -577,13 +579,13 @@ export const mcpRoutes = {
   "mcp/venues/update": route("updateVenue", async ({ id, patch }, ctx) => {
     if (!Object.keys(patch).length) return { ok: false, error: "EMPTY_PATCH" };
     const previous = await getVenue(ctx, id);
-    if (!previous) return { ok: false, error: "NOT_FOUND" };
+    if (!previous) return notFound();
     const venue = venueInput({ ...previous, ...patch }, previous);
     await putVenue(ctx, venue);
     return { ok: true, venue };
   }),
   "mcp/venues/delete": route("getEvent", async ({ id }, ctx) => {
-    if (!(await getVenue(ctx, id))) return { ok: false, error: "NOT_FOUND" };
+    if (!(await getVenue(ctx, id))) return notFound();
     if (await listEventsByVenueId(ctx, id))
       return { ok: false, error: "VENUE_IN_USE" };
     return { ok: true, deleted: await deleteVenue(ctx, id) };

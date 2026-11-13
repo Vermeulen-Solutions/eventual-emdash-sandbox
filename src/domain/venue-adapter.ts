@@ -4,8 +4,8 @@
  * an existing `locations` collection, or legacy plugin storage.
  */
 
+import { text } from "./text";
 import { portableTextToPlainText } from "./portable-text";
-const text = (value: unknown) => (typeof value === "string" ? value : "");
 export function localizedVenue(
   venues: Map<string, NormalizedVenue> | undefined,
   event: { venueId?: string; locale?: string },

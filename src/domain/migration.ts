@@ -1,3 +1,4 @@
+import { text } from "./text";
 import { reject } from './messages';
 import type {
   PluginContentItem as ContentItem,
@@ -62,7 +63,6 @@ export function slugify(text: string): string {
       .replace(/^-+|-+$/g, "") || "item"
   );
 }
-const text = (value: unknown) => (typeof value === "string" ? value : "");
 const ledgerKey = (collection: string, id: string) =>
   "state:eventual-migration:" + collection + ":" + encodeURIComponent(id);
 function fitPayload(

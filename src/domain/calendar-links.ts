@@ -1,3 +1,4 @@
+import { safeHttpUrl } from "./venue";
 export interface CalendarLinks {
 	google: string;
 	outlook: string;
@@ -18,15 +19,6 @@ export interface CalendarEventInput {
 	virtualUrl?: string;
 }
 
-function safeHttpUrl(value: string): string {
-	if (typeof value !== "string" || !value.trim()) return "";
-	try {
-		const url = new URL(value);
-		return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
-	} catch {
-		return "";
-	}
-}
 
 /**
  * Builds standard 1-click web calendar links for Google Calendar, Outlook Web,

@@ -69,7 +69,16 @@ describe('Sandbox invocation accounting and bounded reads',()=>{
     expect(feed).toContain('first@example.org');
     expect(await old.kv.get('state:eventual-calendar:first')).toBeTruthy();
   });
-  it('keeps the whole calendar when URL lookups would exceed the budget',async()=>{
+  it('links twenty events with one URL lookup per locale',async()=>{
+    const {ctx,calls} = tracedContext(Array.from({length:20},(_,i)=>({...row('event-'+i),slug:'event-'+i})));
+    ctx.content!.getPublicUrl = async(_c:string,id:string)=>{calls.push('content.getPublicUrl');return 'https://example.org/events/'+id;};
+    const result = await handleCalendarFeed(ctx,'example.org');
+    expect((result.match(/BEGIN:VEVENT/g) ?? []).length).toBe(20);
+    for (let i = 0; i < 20; i++) expect(result).toContain('URL:https://example.org/events/event-'+i+'\r\n');
+    expect(calls.filter(name=>name==='content.getPublicUrl')).toHaveLength(1);
+    expect(calls.length).toBeLessThanOrEqual(10);
+  });
+  it('keeps the whole calendar when URLs cannot be derived and the budget runs low',async()=>{
     const {ctx,calls} = tracedContext(Array.from({length:20},(_,i)=>({...row('event-'+i),slug:'event-'+i})));
     ctx.content!.getPublicUrl = async()=>{calls.push('content.getPublicUrl');return 'https://example.org/event';};
     const result = await handleCalendarFeed(ctx,'example.org');

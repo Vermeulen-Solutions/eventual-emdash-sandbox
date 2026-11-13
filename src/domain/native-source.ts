@@ -227,18 +227,26 @@ export async function hydrateNativeAssets(
   }
 
   const pId = ctx.plugin?.id ?? "eventual";
-  // One getPublicUrl per event: stop while two calls remain (venue reads run alongside), so a busy
-  // month lists its later events without a URL instead of failing the whole feed.
-  let left = remainingRpcCalls(ctx) - 2;
-  const asked = new Set<string>();
+  // Canonical URLs: one getPublicUrl per locale shows that locale's prefix and trailing slash, which
+  // EmDash takes from Astro config a sandbox cannot read; the other events reuse them with the
+  // collection's url_pattern (EmDash's interpolateUrlPattern). Patterns with date tokens need the
+  // publish date, which events don't carry: those are looked up one by one. Lookups stop while fewer
+  // than three calls remain (venue reads run alongside), leaving the rest without a URL.
+  const urls = new Map<string, string | null>(), base: Record<string, string[]> = {};
+  if (publicUrls && schema && ctx.content?.getPublicUrl) for (const e of events) {
+    const id = e.id.split('#')[0]!, b = base[e.locale!];
+    if (!e.published || !e.slug || urls.has(id)) continue;
+    const p = (schema.urlPattern ?? '/' + schema.slug + '/{slug}').replace('{slug}', encodeURIComponent(e.slug)).replace('{id}', id).replace(/(.)\/$/, '$1');
+    if (b) { urls.set(id, b[0] + p + b[1]); continue; }
+    if (remainingRpcCalls(ctx) < 3) continue;
+    const u = await requestMemo(ctx, 'url:' + schema.slug + ':' + id, () => ctx.content!.getPublicUrl!(schema.slug, id)), t = u?.replace(/\/$/, '');
+    urls.set(id, u);
+    if (t?.endsWith(p) && !p.includes('{')) base[e.locale!] = [t.slice(0, -p.length), u!.slice(t.length)];
+  }
   return Promise.all(
     events.map(async (e) => {
       const org = organizers.get((e.organizerId ?? "") + "|" + (e.locale ?? "").toLowerCase()) ?? organizers.get(e.organizerId ?? "");
-      let publicUrl = e.publicUrl;
-      const id = e.id.split('#')[0]!;
-      if (publicUrls && schema && e.published && e.slug && ctx.content?.getPublicUrl && (asked.has(id) || left-- > 0 && !!asked.add(id))) {
-        publicUrl = await requestMemo(ctx, 'url:'+schema.slug+':'+id, () => ctx.content!.getPublicUrl!(schema.slug, id)) ?? e.publicUrl;
-      }
+      const publicUrl = urls.get(e.id.split('#')[0]!) ?? e.publicUrl;
       return {
         ...e,
         organizer: e.organizer || org?.name || e.organizerDetails?.name || "",

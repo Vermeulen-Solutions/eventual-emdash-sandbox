@@ -1,3 +1,4 @@
+import { text } from "./text";
 import { reject } from './messages';
 import { expandEventsInDateRange, scheduledOccurrence } from "./recurrence";
 import type { EventRecord, EventException } from "./event";
@@ -19,7 +20,6 @@ export interface ExpandOccurrencesOptions {
   venues?: unknown[] | Map<string, unknown>;
   siteUrl?: string;
 }
-const text = (value: unknown) => (typeof value === "string" ? value : "");
 const timestamp = (value: unknown) =>
   value instanceof Date ? value.toISOString() : text(value);
 export function nativeEntryToEventRecord(entry: unknown): EventRecord | null {
