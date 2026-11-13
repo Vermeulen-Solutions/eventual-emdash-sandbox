@@ -14,18 +14,18 @@ const eventRow = (index: number) => ({
     all_day: false, timezone: 'UTC', venue: 'hall', organizer: 'Club',
     featured_image: { id: 'image' }, categories: ['Club'] },
 });
-function tracedContext(count = 8) {
+function tracedContext(count = 8, opts: { locale?: (index: number) => string; url?: (id: string) => string; pattern?: string } = {}) {
   const calls: string[] = [];
   const trace = (name: string, fn: (...args: any[]) => any) => (...args: any[]) => { calls.push(name); return fn(...args); };
   const ctx = {
     plugin: { id: 'eventual' }, site: { url: 'https://club.example', locale: 'fr' },
     settings: { get: trace('settings.get', async () => undefined) },
-    schema: { listCollections: trace('schema.listCollections', async () => [createEventsCollectionBlueprint(), createVenuesCollectionBlueprint()]) },
+    schema: { listCollections: trace('schema.listCollections', async () => [{ ...createEventsCollectionBlueprint(), ...(opts.pattern ? { urlPattern: opts.pattern } : {}) }, createVenuesCollectionBlueprint()]) },
     content: {
       list: trace('content.list', async (collection: string) => ({ hasMore: false, items: collection === 'events'
-        ? Array.from({ length: count }, (_, index) => eventRow(index))
+        ? Array.from({ length: count }, (_, index) => ({ ...eventRow(index), locale: opts.locale?.(index) ?? 'fr' }))
         : [{ id: 'hall', locale: 'fr', status: 'published', data: { name: 'Salle', street: 'Rue du club' } }] })),
-      getPublicUrl: trace('content.getPublicUrl', async (_collection: string, id: string) => 'https://club.example/events/' + id),
+      getPublicUrl: trace('content.getPublicUrl', async (_collection: string, id: string) => opts.url?.(id) ?? 'https://club.example/events/' + id),
     },
     media: { get: vi.fn(), readBytes: vi.fn() },
   } as unknown as EventualContext;
@@ -58,13 +58,34 @@ describe('publicEvents canonical URL budget', () => {
     expect(withoutUrl(without.events)).toEqual(withoutUrl(result.events));
   });
 
-  it('fails without returning partial events when default hydration exceeds ten calls', async () => {
-    const { ctx, calls } = tracedContext();
+  it('gives a busy month canonical URLs with one lookup per locale', async () => {
+    const { ctx, calls } = tracedContext(20);
     const result = await handlePublicEvents(range, ctx);
-    expect(result).toMatchObject({ ok: false, error: 'SANDBOX_BUDGET_EXCEEDED' });
-    expect(result.events).toBeUndefined();
-    expect(calls).toHaveLength(10);
-    expect(calls.filter(name => name === 'content.getPublicUrl')).toHaveLength(6);
+    expect(result.ok).toBe(true);
+    expect(result.events?.map(event => event.publicUrl)).toEqual(Array.from({ length: 20 }, (_, i) => 'https://club.example/events/event-' + i));
+    expect(calls.filter(name => name === 'content.getPublicUrl')).toHaveLength(1);
+  });
+
+  it('keeps each locale prefix and trailing slash that EmDash returns', async () => {
+    const { ctx, calls } = tracedContext(6, {
+      locale: index => index % 2 ? 'en' : 'fr',
+      url: (id: string) => Number(id.split('-')[1]) % 2 ? 'https://club.example/en/events/' + id + '/' : 'https://club.example/events/' + id,
+    });
+    const result = await handlePublicEvents(range, ctx);
+    expect(result.events?.map(event => event.publicUrl)).toEqual(Array.from({ length: 6 }, (_, i) =>
+      i % 2 ? 'https://club.example/en/events/event-' + i + '/' : 'https://club.example/events/event-' + i));
+    expect(calls.filter(name => name === 'content.getPublicUrl')).toHaveLength(2);
+  });
+
+  it('looks dated URL patterns up one by one within the budget and never fails the feed', async () => {
+    const { ctx, calls } = tracedContext(8, { pattern: '/{year}/{slug}', url: (id: string) => 'https://club.example/2026/' + id });
+    const result = await handlePublicEvents(range, ctx);
+    expect(result.ok).toBe(true);
+    expect(result.events).toHaveLength(8);
+    const linked = result.events!.filter(event => event.publicUrl);
+    expect(linked.length).toBeGreaterThan(0);
+    expect(linked.every(event => event.publicUrl === 'https://club.example/2026/' + event.slug)).toBe(true);
+    expect(calls.length).toBeLessThanOrEqual(10);
   });
 
   it.each([undefined, false, 'false', true, 'true'])('preserves strict locale selection for strict=%s', async strict => {
@@ -93,7 +114,7 @@ describe('publicEvents canonical URL budget', () => {
 let host: PluginRuntimeTestHost | undefined;
 afterEach(async () => { await host?.dispose(); host = undefined; });
 describe('publicEvents HTTP response contract', { timeout: 60_000 }, () => {
-  it('returns uncached ROUTE_ERROR on exhaustion and normal JSON success for the URL opt-out', async () => {
+  it('returns eight linked events by default and normal JSON success for the URL opt-out', async () => {
     host = await createPluginRuntimeTestHost({ site: { url: 'https://club.example', locale: 'fr' },
       i18n: { defaultLocale: 'fr', locales: ['fr', 'en'] } });
     await host.fixtures.collection(createEventsCollectionBlueprint() as any);
@@ -106,11 +127,11 @@ describe('publicEvents HTTP response contract', { timeout: 60_000 }, () => {
       await host.fixtures.content('events', { id: row.id, slug: row.slug, locale: row.locale, status: 'published', data });
     }
     const url = 'https://club.example/_emdash/api/plugins/eventual/publicEvents?' + new URLSearchParams(range);
-    const failed = await host.actions.routes.request('publicEvents', { method: 'GET', url });
-    expect(failed.status).toBe(400);
-    expect(failed.headers.get('cache-control')).toBe('private, no-store');
-    // EmDash 1.2 prefixes the error's class name ("SandboxBudgetError: …"); 1.4 sends the message alone.
-    expect(await failed.json()).toMatchObject({ success: false, error: { code: 'ROUTE_ERROR', message: expect.stringMatching(/^(SandboxBudgetError: )?The sandbox RPC budget is exceeded\.$/) } });
+    const linked = await host.actions.routes.request('publicEvents', { method: 'GET', url });
+    expect(linked.status).toBe(200);
+    const linkedEvents = (await linked.json() as any).data.events as Array<{ slug: string; publicUrl?: string }>;
+    expect(linkedEvents).toHaveLength(8);
+    for (const event of linkedEvents) expect(event.publicUrl).toMatch(new RegExp('^https://club\\.example/.*' + event.slug + '/?$'));
     for (const locale of ['fr', 'en']) {
       const success = await host.actions.routes.request('publicEvents', { method: 'GET', url: url + '&publicUrls=false&locale=' + locale });
       expect(success.status).toBe(200);

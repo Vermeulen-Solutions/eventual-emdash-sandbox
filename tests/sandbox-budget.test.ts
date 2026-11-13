@@ -69,14 +69,22 @@ describe('Sandbox invocation accounting and bounded reads',()=>{
     expect(feed).toContain('first@example.org');
     expect(await old.kv.get('state:eventual-calendar:first')).toBeTruthy();
   });
-  it('returns no partial calendar when URL hydration exceeds the budget',async()=>{
-    const {ctx,calls,kv} = tracedContext(Array.from({length:20},(_,i)=>({...row('event-'+i),slug:'event-'+i})));
-    ctx.content!.getPublicUrl = async()=>{calls.push('content.getPublicUrl');return 'https://example.org/event';};
-    await expect(handleCalendarFeed(ctx,'example.org')).rejects.toThrow('sandbox RPC budget');
+  it('links twenty events with one URL lookup per locale',async()=>{
+    const {ctx,calls} = tracedContext(Array.from({length:20},(_,i)=>({...row('event-'+i),slug:'event-'+i})));
+    ctx.content!.getPublicUrl = async(_c:string,id:string)=>{calls.push('content.getPublicUrl');return 'https://example.org/events/'+id;};
+    const result = await handleCalendarFeed(ctx,'example.org');
+    expect((result.match(/BEGIN:VEVENT/g) ?? []).length).toBe(20);
+    for (let i = 0; i < 20; i++) expect(result).toContain('URL:https://example.org/events/event-'+i+'\r\n');
+    expect(calls.filter(name=>name==='content.getPublicUrl')).toHaveLength(1);
     expect(calls.length).toBeLessThanOrEqual(10);
-    // The atomic reconciliation can finish before URL rendering fails; no partial feed is returned.
-    expect(calls.filter(name=>name==='kv.compareAndSet')).toHaveLength(1);
-    expect(await kv.get('state:eventual-calendar-snapshot')).toBeTruthy();
+  });
+  it('keeps the whole calendar when URLs cannot be derived and the budget runs low',async()=>{
+    const {ctx,calls} = tracedContext(Array.from({length:20},(_,i)=>({...row('event-'+i),slug:'event-'+i})));
+    ctx.content!.getPublicUrl = async()=>{calls.push('content.getPublicUrl');return 'https://example.org/event';};
+    const result = await handleCalendarFeed(ctx,'example.org');
+    // Lookups stop before the budget runs out; the events beyond them are listed without a link.
+    expect((result.match(/BEGIN:VEVENT/g) ?? []).length).toBe(20);
+    expect(calls.length).toBeLessThanOrEqual(10);
   });
   it('leaves the previous snapshot intact when a source scan cannot finish',async()=>{
     const {ctx,calls,kv} = tracedContext();
