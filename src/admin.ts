@@ -25,7 +25,7 @@ async function settings(ctx:EventualContext,error?:string):Promise<BlockResponse
     ...(error ? [{type:'banner' as const,title:'Settings not saved',description:error,variant:'error' as const}] : []),
     {type:'form',block_id:'collection-settings:'+Object.values(selected ?? {}).join(':'),fields:[choose('events','Event collection'),choose('venues','Venue collection'),choose('organizers','Organizer collection')],submit:{action_id:'save-settings',label:'Save settings'}},
     {type:'form',block_id:'legacy-reads:'+legacyReads,fields:[{type:'toggle',action_id:'legacyReads',label:'Show old events saved inside the plugin',description:'Enable to serve old plugin events.',initial_value:legacyReads}],submit:{action_id:'save-legacy-reads',label:'Save switch'}},
-    {type:'actions',elements:[{type:'link',label:'Setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox'}}]}]};
+    {type:'actions',elements:[{type:'link',label:'Setup guide',target:{kind:'external',url:'https://github.com/Vermeulen-Solutions/eventual-rsvp-core'}}]}]};
 }
 
 /** Companion navigation only. Creation and editorial editing belong to core. */

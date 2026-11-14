@@ -59,13 +59,13 @@ All notable changes to Eventual RSVP – Core (formerly Eventual) are documented
 ## 0.13.4 - 2026-10-11
 
 - Replace the 0.11-era public event detail screenshot in the registry gallery. Its derived 2000 px lossless `feed_thumbnail` measured 1,196,250 bytes, above EmDash's 1 MiB artifact proxy cap, so releases 0.11.0–0.13.3 show a failing image in the admin gallery. The current `images/registry-0.13.4/public-event-detail-fr-desktop.png` capture derives to roughly 483 KB.
-- Add `npm run registry:media`, enforced in CI and `npm run release:prepare`, with a `--published <version>` check of the real CDN bytes. No runtime, capability, schema or route changes. See [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.4.md).
+- Add `npm run registry:media`, enforced in CI and `npm run release:prepare`, with a `--published <version>` check of the real CDN bytes. No runtime, capability, schema or route changes. See [release notes](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.4.md).
 
 ## 0.13.3 - 2026-10-09
 
 - Add `publicUrls=false` to the public JSON feed and optional Astro helper to skip canonical URL RPCs when the consumer supplies event links. The default remains `true`; locale selection, recurrence, relationships and media are preserved.
 - Throw sandbox budget failures from the JSON route so EmDash returns a failed, uncacheable request instead of wrapping a raw error response in successful JSON.
-- Add focused RPC-count, input-validation and EmDash runtime response-contract regressions. Large-source pagination remains deferred. See [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.3.md).
+- Add focused RPC-count, input-validation and EmDash runtime response-contract regressions. Large-source pagination remains deferred. See [release notes](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.3.md).
 
 ## 0.13.2 - 2026-10-08
 
@@ -73,7 +73,7 @@ All notable changes to Eventual RSVP – Core (formerly Eventual) are documented
 - Atomic aggregate calendar reconciliation replaces per-group reads/writes, preserving existing identities and cancellation history.
 - Authoritative, deduplicated canonical URLs; direct native image retrieval with indexed legacy aliases.
 - Batch legacy import/reference reads and cancellation writes; resumable pending import rows and fail-closed scheduled-draft dependency checks.
-- Public requests fail explicitly before an eleventh call. Large native sources and the legacy migration/mutation job redesign remain limited; Cloudflare CPU headroom is not certified by local tests. See [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.2.md).
+- Public requests fail explicitly before an eleventh call. Large native sources and the legacy migration/mutation job redesign remain limited; Cloudflare CPU headroom is not certified by local tests. See [release notes](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.2.md).
 
 ## 0.13.1 - 2026-10-08
 
@@ -88,7 +88,7 @@ All notable changes to Eventual RSVP – Core (formerly Eventual) are documented
 - Clean default schemas: 19 event fields, comma-separated categories in core, no duplicate category control or default prototype metadata.
 - Optional schema exporter/MCP setup prompt and explicit opt-in non-destructive migration compatibility.
 - Multilingual JSON/ICS, stable UIDs, cancellation notices, rich description blocks and optional localized Astro/JSON-LD helpers.
-- Breaking upgrades require backup, host/schema review, collection selection and explicit legacy migration. Existing schemas are not automatically stripped or converted. Preserve migrated calendar identity. See [upgrade guide](docs/upgrade-0.13.0.md) and [release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.0.md).
+- Breaking upgrades require backup, host/schema review, collection selection and explicit legacy migration. Existing schemas are not automatically stripped or converted. Preserve migrated calendar identity. See [upgrade guide](docs/upgrade-0.13.0.md) and [release notes](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/9bd38934de72c562639093e38a56fe6b3e3e2818/docs/release-notes-0.13.0.md).
 - Existing styling is preserved. Internal fields remain visible in stock core; no hidden Advanced renderer or complete concurrent-write transaction is claimed.
 
 ## 0.12.1 - unreleased proposal, superseded by 0.13.0

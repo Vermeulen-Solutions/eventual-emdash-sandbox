@@ -33,7 +33,7 @@ Registry installs never execute the source transform; their rendering comes from
 
 ### Known limitation
 
-The full-year calendar subscription can exceed EmDash's ten-bridge-call sandbox budget on a larger native dataset. The local 1.4.0 site recorded a 503 for `/_emdash/api/plugins/eventual/calendar` with five native events; the JSON feed and per-event ICS route were unaffected. Narrower feeds, background jobs and bulk APIs remain open work ([Eventual #5](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/issues/5), [EmDash #4004](https://github.com/emdash-cms/emdash/issues/4004)).
+The full-year calendar subscription can exceed EmDash's ten-bridge-call sandbox budget on a larger native dataset. The local 1.4.0 site recorded a 503 for `/_emdash/api/plugins/eventual/calendar` with five native events; the JSON feed and per-event ICS route were unaffected. Narrower feeds, background jobs and bulk APIs remain open work ([Eventual #5](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/issues/5), [EmDash #4004](https://github.com/emdash-cms/emdash/issues/4004)).
 
 ## Upgrade
 
