@@ -2,12 +2,15 @@
 
 All notable changes to Eventual RSVP – Core (formerly Eventual) are documented here.
 
-## Unreleased
+## 0.18.0 - 2026-11-14
 
+- **New name: Eventual RSVP – Core** (formerly Eventual). The plugin ID stays `eventual`, so sites update in place; admin texts point to the **Event settings** page.
 - **Fixed: busy months no longer break the public calendar.** The events feed and the calendar subscription looked up each event's web address separately, so about eight events in one range exceeded the sandbox's 10 calls and the page showed "Events are temporarily unavailable". Core now asks EmDash for one address per language and builds the rest from the collection's URL pattern with the same language prefix and trailing slash. URL patterns with date placeholders are looked up one by one while calls remain; events beyond that are listed without a link instead of failing the whole feed. To make room under the registry's 128 KB file limit, a few duplicated helpers were merged (the backend is now 130,636 bytes).
 - The admin speaks 21 languages: English, French, German, Dutch, Spanish, Italian, Portuguese (Portugal and Brazil), Polish, Czech, Swedish, Danish, Norwegian Bokmål, Finnish, Japanese, Simplified Chinese, Korean, Turkish, Ukrainian, Arabic and Hebrew, with right-to-left layout for Arabic and Hebrew. English is built in; the other languages are language packs from the `@vermeulen.solutions/eventual-locales` npm package, downloaded on first use and kept in plugin storage. The French, German, Dutch and Spanish dictionaries moved out of the bundle into those packs.
 - **New permission:** `network:request` to `cdn.jsdelivr.net` (the public npm CDN), only for the language packs. Each pack is checked against a hash built into the release; without network, a request stays in English and tries again a few minutes later. Administrators approve the plugin again when updating.
 - Table buttons and status badges in admin pages (events list, dates panel) are translated; titles and other data cells are left as they are.
+- Registry contacts are `support@eventual.rsvp` and `security@eventual.rsvp`.
+- See [release notes](docs/release-notes-0.18.0.md).
 
 ## 0.17.0 - 2026-11-07
 

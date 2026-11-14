@@ -1,6 +1,6 @@
 {
   "name": "eventual",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "license": "MIT",
   "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
   "type": "module",
@@ -61,7 +61,8 @@
     "docs/public-feed-caching.md",
     "docs/release-notes-0.15.0.md",
     "docs/release-notes-0.16.0.md",
-    "docs/release-notes-0.17.0.md"
+    "docs/release-notes-0.17.0.md",
+    "docs/release-notes-0.18.0.md"
   ],
   "scripts": {
     "validate": "emdash-plugin validate",
