@@ -1,3 +1,7 @@
+## 0.18.2
+
+New registry screenshots, and the **Setup guide** link on the Event settings page points to the renamed repository (`eventual-rsvp-core`). No runtime, permission or schema changes. EmDash **>=1.2.0 <2.0.0**. [Release notes](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/main/docs/release-notes-0.18.2.md).
+
 ## 0.18.1
 
 Site builders can install the optional Astro, schema and transfer helpers from npm: `npm install @vermeulen.solutions/eventual`. The plugin ID stays `eventual`; nothing changes for administrators, and there are no new permissions. EmDash **>=1.2.0 <2.0.0**. [Release notes](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/main/docs/release-notes-0.18.1.md).
@@ -11,8 +15,5 @@ New name: **Eventual RSVP – Core** (formerly Eventual); the plugin ID stays `e
 - **0.17.0:** German, Dutch and Spanish admin dictionaries, 1-click calendar links and single-event queries.
 - **0.16.0:** parallelized public feed resolution, cache headers for public media, and direct `imageMedia` metadata for responsive Astro `<Image>`.
 - **0.15.0:** opt-in public feed cache evidence: actual collection dependencies, empty-list invalidation and absolute expiry.
-- **0.14.1:** EmDash 1.4 editor compatibility; no runtime or permission changes.
-- **0.14.0:** public legacy storage reads require explicit opt-in; native collections stay authoritative.
-- **0.13.0:** native rich content, translations, drafts, directories and publication.
 
 [Full changelog](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/main/CHANGELOG.md).

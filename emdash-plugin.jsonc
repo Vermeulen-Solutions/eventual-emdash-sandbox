@@ -22,11 +22,10 @@
 			"icon": { "file": "./images/registry/icon-v2.png" },
 			"banner": { "file": "./images/registry/banner-v2.png" },
 			"screenshots": [
-				{ "file": "./images/registry-0.13.0/native-fr-editor-desktop.png" },
-				{ "file": "./images/registry-0.14.0/native-fr-settings.png" },
-				{ "file": "./images/registry-0.13.0/native-en-workspace-mobile.png" },
-				{ "file": "./images/registry-0.11.0/05-public-events.jpg" },
-				{ "file": "./images/registry-0.13.4/public-event-detail-fr-desktop.png" }
+				{ "file": "./images/registry/screenshots-v1/1-event-editor.png" },
+				{ "file": "./images/registry/screenshots-v1/2-public-calendar.png" },
+				{ "file": "./images/registry/screenshots-v1/3-event-page.png" },
+				{ "file": "./images/registry/screenshots-v1/4-settings.png" }
 			]
 		}
 	},

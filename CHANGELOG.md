@@ -2,6 +2,12 @@
 
 All notable changes to Eventual RSVP – Core (formerly Eventual) are documented here.
 
+## 0.18.2 - 2026-11-14
+
+- **Registry page:** new screenshots (the event editor, the public calendar, an event page and Event settings), and a description tab with links to the website, documentation and support.
+- The **Setup guide** link on the Event settings page points to the repository's new name, `eventual-rsvp-core` (the old address redirects).
+- No runtime, permission or schema changes.
+
 ## 0.18.1 - 2026-11-14
 
 - **On npm as `@vermeulen.solutions/eventual`.** The optional Astro, schema and transfer helpers can now be installed with `npm install @vermeulen.solutions/eventual` instead of a downloaded source archive. Imports change from `eventual/…` to `@vermeulen.solutions/eventual/…` (for example `@vermeulen.solutions/eventual/astro`); the plugin ID stays `eventual`, so Registry installations, routes, data and settings are unchanged.

@@ -1,8 +1,8 @@
-# Eventual RSVP – Core 0.18.1
+# Eventual RSVP – Core 0.18.2
 
 Requires EmDash **>=1.2.0 <2.0.0** for event management. **1.4.0 is recommended** for nested forms and Cloudflare plugin mutations, and required for the optional cache integration.
 
-In **Plugins → Registry**, find **Eventual RSVP – Core** by **vermeulen.solutions**, review permissions and install or update. Version 0.18.1 asks for no new permissions; since 0.18.0 Core uses `network:request` to `cdn.jsdelivr.net` for the admin's language packs. It adds no MCP tools. Enable intended tools separately under **Agent access**.
+In **Plugins → Registry**, find **Eventual RSVP – Core** by **vermeulen.solutions**, review permissions and install or update. Version 0.18.2 asks for no new permissions; since 0.18.0 Core uses `network:request` to `cdn.jsdelivr.net` for the admin's language packs. It adds no MCP tools. Enable intended tools separately under **Agent access**.
 
 Open **Event settings**, select compatible event, venue and organizer collections, then **Save settings**. Installation does not create schemas or migrate content. Site builders: [collection setup](https://github.com/Vermeulen-Solutions/eventual-rsvp-core/blob/main/docs/collection-setup.md).
 
