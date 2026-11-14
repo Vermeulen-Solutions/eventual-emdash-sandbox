@@ -2,7 +2,7 @@
   "name": "@vermeulen.solutions/eventual",
   "version": "0.18.1",
   "license": "MIT",
-  "homepage": "https://plugins.emdashcms.com/plugins/@vermeulen.solutions/eventual",
+  "homepage": "https://eventual.rsvp/",
   "type": "module",
   "engines": {
     "node": ">=24"

@@ -5,12 +5,13 @@
 	"publisher": "did:plc:g2hei4vcwndrdl3gdbb6np6c", // vermeulen.solutions
 
 	"license": "MIT",
-	"author": { "name": "Jaap Vermeulen", "email": "support@eventual.rsvp" },
+	"author": { "name": "Jaap Vermeulen", "url": "https://eventual.rsvp/", "email": "support@eventual.rsvp" },
 	"security": { "email": "security@eventual.rsvp" },
 	"name": "Eventual RSVP – Core",
 	"description": "Native EmDash events with rich text, localization, friendly recurrence, saved venues and multilingual calendar feeds.",
 	"keywords": ["events", "calendar", "event management", "iCalendar", "venues"],
 	"sections": {
+		"description": { "file": "./docs/registry-description.md" },
 		"installation": { "file": "./docs/registry-installation.md" },
 		"changelog": { "file": "./docs/registry-changelog.md" }
 	},
