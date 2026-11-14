@@ -1,5 +1,5 @@
 /**
- * Legacy source-install transform for `eventual/install`. Registry installs
+ * Legacy source-install transform for `@vermeulen.solutions/eventual/install`. Registry installs
  * never execute this file; the host renders plugin panels directly.
  *
  * Blocks 1.2-1.3 render a form block as <form> inside the content editor's

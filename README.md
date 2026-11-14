@@ -99,11 +99,11 @@ Visitors can switch between seven viewing formats via query parameter (e.g., `/e
 
 ## For Developers
 
-Eventual RSVP's Registry package supplies the sandbox backend and editor controls. Optional Astro, schema and transfer helpers use the repository's source package. GitHub download versions and Registry releases are listed separately; the badges above identify each.
+Eventual RSVP's Registry package supplies the sandbox backend and editor controls. Optional Astro, schema and transfer helpers are on npm as [`@vermeulen.solutions/eventual`](https://www.npmjs.com/package/@vermeulen.solutions/eventual) (`npm install @vermeulen.solutions/eventual`); keep its version aligned with the Registry backend. The plugin ID stays `eventual`. GitHub download versions and Registry releases are listed separately; the badges above identify each.
 
 Use the **actual installed plugin ID** in API URLs and MCP tool names. Config-managed sites normally use `eventual`; Registry sites get a generated ID. Pass `pluginId` to `fetchPublicFeed` for a Registry installation; the showcase defaults to `eventual`.
 
-The [developer guide](./docs/native-modernization.md) covers public JSON/ICS/image routes, SSR dispatch, tool names, settings, transfer formats, permissions and sandbox limits. It also explains installing matching 0.15.0 source helpers. Eventual RSVP's MCP tools inspect native data; native edits and publication use EmDash's core tools.
+The [developer guide](./docs/native-modernization.md) covers public JSON/ICS/image routes, SSR dispatch, tool names, settings, transfer formats, permissions and sandbox limits. It also explains installing the matching npm helpers. Eventual RSVP's MCP tools inspect native data; native edits and publication use EmDash's core tools.
 
 For source changes:
 

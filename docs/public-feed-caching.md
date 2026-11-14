@@ -87,7 +87,7 @@ cache only anonymous `/events` HTML for up to 15 seconds, with no stale serving:
 
 ```astro
 ---
-import { parsePublicFeed, publicFeedCacheOptions, publicEventTimeBoundary } from 'eventual/astro';
+import { parsePublicFeed, publicFeedCacheOptions, publicEventTimeBoundary } from '@vermeulen.solutions/eventual/astro';
 const pluginId = import.meta.env.EVENTUAL_PLUGIN_ID ?? 'eventual';
 const requestUrl = new URL(`/_emdash/api/plugins/${encodeURIComponent(pluginId)}/publicEvents`, Astro.url);
 requestUrl.search = new URLSearchParams({ locale: 'fr', publicUrls: 'false' }).toString();

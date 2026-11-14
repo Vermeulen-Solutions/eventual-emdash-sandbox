@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
-import { measureArchive, checkBudget, budgets } from './bundle-budget.mjs';
+import { measureArchive, checkBudget, budgets, pluginSlug } from './bundle-budget.mjs';
 
 test('counts uncompressed payload rather than compressed or padded archive bytes', () => {
   const header = Buffer.alloc(512);
@@ -16,4 +16,9 @@ test('each working budget is enforced independently and inclusively', () => {
   assert.deepEqual(checkBudget({ entries: [{ name: 'x', bytes: budgets.file }], total: budgets.total, files: budgets.files }), []);
   assert.equal(checkBudget({ entries: [{ name: 'x', bytes: budgets.file + 1 }], total: budgets.total + 1, files: budgets.files + 1 }).length, 3);
   assert.throws(() => measureArchive(gzipSync(Buffer.alloc(1024))), /Empty/);
+});
+
+test('names the Registry archive after the plugin slug, not the scoped npm name', () => {
+  assert.equal(pluginSlug('{\n\t"$schema": "x",\n\t"slug": "eventual", // id\n}'), 'eventual');
+  assert.throws(() => pluginSlug('{}'), /no slug/);
 });

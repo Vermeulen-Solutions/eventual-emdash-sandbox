@@ -17,7 +17,7 @@ const expectedHost = process.env.EVENTUAL_EXPECTED_EMDASH_VERSION || packed.host
 if (!expectedHost) throw new Error("Packed consumer report is missing hostEmdashVersion.");
 const work = packed.consumer;
 for(const file of packed.installedFiles ?? []) {
-  const actual=createHash("sha256").update(readFileSync(join(work,"node_modules/eventual",file.path))).digest("hex");
+  const actual=createHash("sha256").update(readFileSync(join(work,"node_modules/@vermeulen.solutions/eventual",file.path))).digest("hex");
   if(actual!==file.sha256) throw new Error("Installed package changed after packing: "+file.path+". Rerun npm run test:package.");
 }
 if (!work.startsWith(resolve(root, "reports") + (process.platform === "win32" ? "\\" : "/"))) throw new Error("Packed consumer must be an isolated reports directory.");
@@ -35,14 +35,14 @@ if (identity.emdashVersion !== expectedHost || packed.hostEmdashVersion !== expe
 await executor.execute({ action: "apply", i18n: {defaultLocale: "fr", locales: ["fr", "en"]}, artifact: { emdashVersion: identity.emdashVersion, migrationSetFingerprint: identity.fingerprint } });
 const db = new Kysely({ dialect: createDialect({ url: "file:" + database }) });
 try {
-  const exported=spawnSync(process.execPath,[join(work,'node_modules/eventual/scripts/export-native-schema.mjs'),'--event-collection','activities','--venue-collection','locations','--organizer-collection','hosts'],{cwd:work,encoding:'utf8',windowsHide:true});
+  const exported=spawnSync(process.execPath,[join(work,'node_modules/@vermeulen.solutions/eventual/scripts/export-native-schema.mjs'),'--event-collection','activities','--venue-collection','locations','--organizer-collection','hosts'],{cwd:work,encoding:'utf8',windowsHide:true});
   if(exported.status!==0) throw new Error(exported.stderr);
   const seed=JSON.parse(exported.stdout);
   seed.content={locations:[{id:'school',slug:'school',locale:'fr',status:'published',data:{name:'École communale',street:'Rue de l’École 1',locality:'Genève'}}],hosts:[{id:'association',slug:'association',locale:'fr',status:'published',data:{name:'Association de quartier'}}],activities:[{id:'gathering',slug:'gathering',locale:'fr',status:'draft',data:{title:'Rencontre des voisins',description:[{_type:'block',_key:'intro',style:'normal',markDefs:[],children:[{_type:'span',_key:'copy',text:'Annonce riche préservée',marks:['strong']}]}],start:firstDate+'T08:00:00Z',end:firstDate+'T09:00:00Z',timezone:'Europe/Paris',all_day:false,categories:'Music, Community'}}]};
   await applySeed(db, seed, {includeContent:true,onConflict:'error'});
   writeFileSync(join(work,'browser-fixtures.json'),JSON.stringify({firstDate,from,through}));
 } finally { await db.destroy(); }
-writeFileSync(join(work,"astro.config.mjs"), `import {defineConfig} from 'astro/config'; import node from '@astrojs/node'; import react from '@astrojs/react'; import emdash,{local} from 'emdash/astro'; import {sqlite} from 'emdash/db'; import eventual from 'eventual'; export default defineConfig({output:'server',adapter:node({mode:'standalone'}),integrations:[react(),emdash({fonts:false,database:sqlite({url:${JSON.stringify("file:"+database)}}),storage:local({directory:'./uploads',baseUrl:'/_emdash/api/media/file'}),sandboxed:[eventual],sandboxRunner:'@emdash-cms/sandbox-workerd/sandbox'})], i18n:{defaultLocale:'fr',locales:['fr','en']},devToolbar:{enabled:false}});`);
+writeFileSync(join(work,"astro.config.mjs"), `import {defineConfig} from 'astro/config'; import node from '@astrojs/node'; import react from '@astrojs/react'; import emdash,{local} from 'emdash/astro'; import {sqlite} from 'emdash/db'; import eventual from '@vermeulen.solutions/eventual'; export default defineConfig({output:'server',adapter:node({mode:'standalone'}),integrations:[react(),emdash({fonts:false,database:sqlite({url:${JSON.stringify("file:"+database)}}),storage:local({directory:'./uploads',baseUrl:'/_emdash/api/media/file'}),sandboxed:[eventual],sandboxRunner:'@emdash-cms/sandbox-workerd/sandbox'})], i18n:{defaultLocale:'fr',locales:['fr','en']},devToolbar:{enabled:false}});`);
 // The separate Astro component check already generated these routes. Keep the
 // host acceptance app focused on the sandbox workspace and plugin endpoints.
 writeFileSync(join(work,"src/pages/index.astro"), "<html><head><title>Editor acceptance</title></head><body>Eventual installation acceptance</body></html>");

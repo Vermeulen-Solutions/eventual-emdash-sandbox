@@ -71,16 +71,16 @@ writeFileSync(
   join(work, "astro.config.mjs"),
   "import {defineConfig} from 'astro/config'; export default defineConfig({output:'static',site:'https://consumer.example'});\n",
 );
-writeFileSync(join(work,'verify-editor.mjs'),"import eventual from 'eventual'; import emdash from 'emdash/astro'; if(typeof emdash!=='function'||!eventual.adminPages.some(page=>page.path==='/venues'))throw Error('Self-contained descriptor failed'); emdash({sandboxed:[eventual]});");
+writeFileSync(join(work,'verify-editor.mjs'),"import eventual from '@vermeulen.solutions/eventual'; import emdash from 'emdash/astro'; if(typeof emdash!=='function'||!eventual.adminPages.some(page=>page.path==='/venues'))throw Error('Self-contained descriptor failed'); emdash({sandboxed:[eventual]});");
 run(join(work,'verify-editor.mjs'),[],work);
-const installedSchema=JSON.parse(run(join(work,"node_modules/eventual/scripts/export-native-schema.mjs"),[],work));
+const installedSchema=JSON.parse(run(join(work,"node_modules/@vermeulen.solutions/eventual/scripts/export-native-schema.mjs"),[],work));
 if(!installedSchema.collections.some(collection=>collection.slug === "events")) throw new Error("Installed schema CLI failed.");
 writeFileSync(
   join(work, "src", "pages", "[locale].astro"),
   `---
-import {expandEventOccurrences,eventToJsonLd,serializeJsonLd} from 'eventual/astro';
-import {createEventsCollectionBlueprint} from 'eventual/schema';
-import EventList from 'eventual/astro/EventList.astro';
+import {expandEventOccurrences,eventToJsonLd,serializeJsonLd} from '@vermeulen.solutions/eventual/astro';
+import {createEventsCollectionBlueprint} from '@vermeulen.solutions/eventual/schema';
+import EventList from '@vermeulen.solutions/eventual/astro/EventList.astro';
 export function getStaticPaths(){return ['en','fr','ar','th'].map(locale=>({params:{locale}}));}
 const locale=Astro.params.locale;
 const native={id:'cms-id',type:'events',status:'published',locale:'fr',slug:'native-slug',url:'https://consumer.example/fr/events/native-slug',data:{title:'Concert é',description:[{_type:'block',children:[{text:'Literal <example> and **notation**'}]}],start:'2026-11-15T10:00:00Z',end:'2026-11-15T11:00:00Z',all_day:0,timezone:'Europe/Paris',venue:'hall',featured_image:{src:'/assets/poster.png'},event_status:'rescheduled',previous_start_date:'2026-11-14T10:00:00Z'}};
@@ -132,7 +132,7 @@ if (
   throw new Error("Packed dates were not localized.");
 const packagePath=join(work,packed[0].filename);
 const digest=path=>createHash("sha256").update(readFileSync(path)).digest("hex");
-const report = { package: packed[0].filename, packagePath, sha256:digest(packagePath), hostEmdashVersion, consumer: work, pages: reports, installedFiles:packed[0].files.map(file=>({path:file.path,sha256:digest(join(work,"node_modules/eventual",file.path))})) };
+const report = { package: packed[0].filename, packagePath, sha256:digest(packagePath), hostEmdashVersion, consumer: work, pages: reports, installedFiles:packed[0].files.map(file=>({path:file.path,sha256:digest(join(work,"node_modules/@vermeulen.solutions/eventual",file.path))})) };
 writeFileSync(
   resolve(root, "reports", "packed-astro.json"),
   JSON.stringify(report, null, 2),

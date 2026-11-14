@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "no
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { measureArchive, checkBudget, budgets, hardLimits } from "./bundle-budget.mjs";
+import { measureArchive, checkBudget, budgets, hardLimits, pluginSlug } from "./bundle-budget.mjs";
 const root=process.cwd(), npm=process.env.npm_execpath;
 if (!npm) throw new Error("Use npm run release:prepare.");
 const acceptance=JSON.parse(readFileSync("reports/editor-installation.json","utf8"));
@@ -28,7 +28,7 @@ function run(script,args) {
 }
 run(npm,["run","build"]);
 run(npm,["run","bundle"]);
-const archive=resolve("dist",`${pkg.name}-${pkg.version}.tar.gz`);
+const archive=resolve("dist",`${pluginSlug()}-${pkg.version}.tar.gz`);
 const measured=measureArchive(readFileSync(archive));
 const errors=[...checkBudget(measured),...checkBudget(measured,hardLimits)];
 if(errors.length) throw new Error(errors.join("\n"));

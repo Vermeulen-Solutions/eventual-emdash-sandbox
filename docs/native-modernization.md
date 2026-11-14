@@ -11,18 +11,21 @@ Registry installations use the host's sandbox runner and downloaded bundle. Conf
 
 **Use the installed plugin ID in URLs and MCP names.** Config-managed installs normally use `eventual`; Registry installs have generated IDs such as `r_hxn32uyal53iahxf`. Read it from the install result or authenticated `GET /_emdash/api/admin/plugins`. MCP names are `<pluginId>__<toolName>`.
 
-Astro/schema/transfer helpers use the matching npm-format source archive from the
-[0.15.0 release](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/releases/tag/v0.15.0),
-not the Registry `.tar.gz`. Install the downloaded `eventual-0.15.0.tgz` locally:
+Astro/schema/transfer helpers come from the npm package
+[`@vermeulen.solutions/eventual`](https://www.npmjs.com/package/@vermeulen.solutions/eventual)
+(0.18.1 and later), not the Registry `.tar.gz`. Install the version that matches the Registry backend:
 
 ```sh
-npm install /path/to/eventual-0.15.0.tgz
+npm install @vermeulen.solutions/eventual@0.18.1
 ```
+
+Import it as `@vermeulen.solutions/eventual/astro`, `@vermeulen.solutions/eventual/schema` and so on; the plugin ID stays `eventual`.
+Releases before 0.18.1 were not on npm; their source archives (`eventual-<version>.tgz`) are attached to the GitHub releases.
 
 To build the same helpers from the release checkout, run `npm ci`, `npm run build`
 and `npm pack`. Keep helper and backend versions aligned.
 
-Source tooling needs Node 24+. Peer ranges are in [package.json](../package.json); release acceptance uses EmDash/Admin/Block Kit **1.2.0 and 1.4.0**, Astro 7.3.x/7.4.x and React 19. The source `eventual/install` lane accepts 1.2.0 and 1.4.0; Registry installs never execute that transform.
+Source tooling needs Node 24+. Peer ranges are in [package.json](../package.json); release acceptance uses EmDash/Admin/Block Kit **1.2.0 and 1.4.0**, Astro 7.3.x/7.4.x and React 19. The source `@vermeulen.solutions/eventual/install` lane accepts 1.2.0 and 1.4.0; Registry installs never execute that transform.
 
 | Host | Status | Notes |
 | --- | --- | --- |
@@ -54,7 +57,7 @@ Handle both `success:false` host failures and `data.ok:false` plugin failures. E
 
 ## Astro integration
 
-`fetchPublicFeed(origin, from, through, category, {locale, strict, publicUrls})` from `eventual/astro` validates responses and throws FeedError. **It hardcodes ID `eventual`**; its options do not accept a Registry ID. The showcase has the same assumption. Registry sites need a site-owned adapter to the actual URL or EmDash's SSR dispatcher:
+`fetchPublicFeed(origin, from, through, category, {locale, strict, publicUrls})` from `@vermeulen.solutions/eventual/astro` validates responses and throws FeedError. **It hardcodes ID `eventual`**; its options do not accept a Registry ID. The showcase has the same assumption. Registry sites need a site-owned adapter to the actual URL or EmDash's SSR dispatcher:
 
 ```ts
 const pluginId = 'YOUR_INSTALLED_PLUGIN_ID';
@@ -71,7 +74,7 @@ if (!result.success) throw new Error(result.error?.message ?? 'Event feed unavai
 // Validate result.data.ok and result.data.events before rendering.
 ```
 
-`eventual/astro/EventList.astro` is an optional unstyled list. JSON-LD helpers are eventToJsonLd and serializeJsonLd; use the safe serializer. The [showcase](../examples/astro-events/README.md) supplies seven complete visitor layouts.
+`@vermeulen.solutions/eventual/astro/EventList.astro` is an optional unstyled list. JSON-LD helpers are eventToJsonLd and serializeJsonLd; use the safe serializer. The [showcase](../examples/astro-events/README.md) supplies seven complete visitor layouts.
 
 ## Settings, tools and transfer
 
@@ -85,7 +88,7 @@ Optional collections contains `{events,venues,organizers}`. Native timezone defa
 
 Enable intended tools under the plugin's **Agent access** controls. Eventual tools require plugins:manage; native editing uses core content tools and content:edit_any. Read tools: listEvents, getEvent, listOccurrences, listVenues, listOrganizers. Legacy writes are blocked once native collections are active. [Tool schemas](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/src/mcp-schemas.ts) define exact inputs/routes.
 
-exportRecords follows cursors (default 5, maximum 10). Native native-content-v1 exports are inspection records, not full backups or legacy-import input. previewImport/importRecords accept legacy data only: at most 10 rows / 64 KiB, insert absent IDs, and import events as drafts. The [eventual/transfer interface](../transfer/index.d.mts) supplies legacy backup/copy/CSV/ICS helpers. CSV needs stable source IDs and explicit-offset timed dates; all-day ends are inclusive. ICS conversion accepts standalone UTC or VALUE=DATE events and rejects unsupported recurrence/timezone constructs. Media, settings, revisions and calendar-state recovery need the host's backup facilities.
+exportRecords follows cursors (default 5, maximum 10). Native native-content-v1 exports are inspection records, not full backups or legacy-import input. previewImport/importRecords accept legacy data only: at most 10 rows / 64 KiB, insert absent IDs, and import events as drafts. The [@vermeulen.solutions/eventual/transfer interface](../transfer/index.d.mts) supplies legacy backup/copy/CSV/ICS helpers. CSV needs stable source IDs and explicit-offset timed dates; all-day ends are inclusive. ICS conversion accepts standalone UTC or VALUE=DATE events and rejects unsupported recurrence/timezone constructs. Media, settings, revisions and calendar-state recovery need the host's backup facilities.
 
 ## Limits and checks
 

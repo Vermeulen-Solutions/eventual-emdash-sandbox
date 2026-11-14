@@ -37,7 +37,11 @@ const savePanel=async(page,label)=>{
   expect(page.url()).toBe(url);expect(navigations,'Panel save must not submit/reload the outer editor form').toEqual([]);
  } finally {page.off('framenavigated',listener);}
 };
-const login=async(page,context,locale)=>{await context.addCookies([{name:'emdash-locale',value:locale,url:origin+'/_emdash'}]);await page.goto('/_emdash/api/auth/dev-bypass?redirect='+encodeURIComponent('/_emdash/admin/plugins/eventual/settings'));const welcome=page.getByRole('dialog').getByRole('button',{name:locale==='fr'?'Commencer':'Get Started',exact:true});await welcome.waitFor({state:'visible',timeout:15000}).then(()=>welcome.click()).catch(()=>{});};
+const login=async(page,context,locale)=>{await context.addCookies([{name:'emdash-locale',value:locale,url:origin+'/_emdash'}]);await page.goto('/_emdash/api/auth/dev-bypass?redirect='+encodeURIComponent('/_emdash/admin/plugins/eventual/settings'));await dismissWelcome(page,locale);};
+// EmDash shows a first-login "Welcome to EmDash, Dev!" dialog whenever its user query resolves, which can be after the page looks ready.
+// A locator handler dismisses it before any later action or assertion and waits until it is gone; the click tolerates the dialog closing mid-animation.
+const welcomeHandled=new WeakSet();
+const dismissWelcome=async(page,locale)=>{if(welcomeHandled.has(page))return;welcomeHandled.add(page);const start=page.getByRole('button',{name:locale==='fr'?'Commencer':'Get Started',exact:true});const welcome=page.getByRole('dialog').filter({has:start});await page.addLocatorHandler(welcome,async dialog=>{await dialog.locator(start).click({timeout:10000}).catch(()=>{});});};
 test('English legacy switch persists booleans and an unconfigured feed fails closed',async({page,context})=>{
  await login(page,context,'en');
  const toggle=page.getByRole('switch',{name:'Show old events saved inside the plugin',exact:true});

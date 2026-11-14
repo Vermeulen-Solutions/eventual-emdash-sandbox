@@ -24,7 +24,7 @@ After `npm ci` and `npm run build` in this repository, using Node 24+:
 node scripts/export-native-schema.mjs --locale fr --output eventual-schema.json
 ```
 
-From an installed source package, use `node node_modules/eventual/scripts/export-native-schema.mjs` with the same options. The exporter writes schema JSON only and refuses to overwrite an output file.
+From an installed source package, use `node node_modules/@vermeulen.solutions/eventual/scripts/export-native-schema.mjs` with the same options. The exporter writes schema JSON only and refuses to overwrite an output file.
 
 Defaults are `events`, `venues`, and `organizers` (19/8/3 fields). Custom names and directory reuse:
 

@@ -27,6 +27,13 @@ export function measureArchive(gzip) {
   return { entries, total: entries.reduce((sum, entry) => sum + entry.bytes, 0), files: entries.length };
 }
 
+/** The Registry CLI names the archive after the plugin slug, not the npm package name. */
+export function pluginSlug(source = readFileSync('emdash-plugin.jsonc', 'utf8')) {
+  const slug = source.match(/"slug"\s*:\s*"([^"]+)"/)?.[1];
+  if (!slug) throw new Error('emdash-plugin.jsonc has no slug');
+  return slug;
+}
+
 export function checkBudget(report, limits = budgets) {
   const errors = report.entries.filter(entry => entry.bytes > limits.file).map(entry => `${entry.name}: ${entry.bytes} > ${limits.file} bytes`);
   if (report.total > limits.total) errors.push(`Total: ${report.total} > ${limits.total} bytes`);
@@ -37,7 +44,7 @@ export function checkBudget(report, limits = budgets) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const archives = readdirSync('dist').filter(name => name.endsWith('.tar.gz'));
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-  const archive = `${pkg.name}-${pkg.version}.tar.gz`;
+  const archive = `${pluginSlug()}-${pkg.version}.tar.gz`;
   if (!archives.includes(archive)) throw new Error('Run npm run bundle first');
   const report = measureArchive(readFileSync(`dist/${archive}`));
   const errors = checkBudget(report);

@@ -1,3 +1,7 @@
+## 0.18.1
+
+Site builders can install the optional Astro, schema and transfer helpers from npm: `npm install @vermeulen.solutions/eventual`. The plugin ID stays `eventual`; nothing changes for administrators, and there are no new permissions. EmDash **>=1.2.0 <2.0.0**. [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.18.1.md).
+
 ## 0.18.0
 
 New name: **Eventual RSVP – Core** (formerly Eventual); the plugin ID stays `eventual`, so sites update in place. The admin speaks 21 languages, including Arabic and Hebrew right to left, through hash-checked language packs. **New permission:** `network:request` to `cdn.jsdelivr.net`, only for those packs; administrators approve the plugin again. Busy months no longer break the public calendar: web addresses are looked up once per language. EmDash **>=1.2.0 <2.0.0**. [Release notes](https://github.com/Vermeulen-Solutions/eventual-emdash-sandbox/blob/main/docs/release-notes-0.18.0.md).
